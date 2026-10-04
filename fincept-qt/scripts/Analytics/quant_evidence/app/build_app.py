@@ -141,7 +141,9 @@ def build(out_dir: str | None = None, standalone: bool = True, scan_repo: bool =
     for e in index:
         with open(os.path.join(root, e['path']), encoding='utf-8', errors='replace') as src, \
                 open(os.path.join(out_dir, 'code', f"{e['id']}.txt"), 'w', encoding='utf-8') as dst:
-            dst.write(src.read())
+            # Some repo files already contain U+FFFD from a past bad decode; static
+            # hosts may reject it, so the published copy shows '?' instead.
+            dst.write(src.read().replace('\ufffd', '?'))
     page = os.path.join(out_dir, 'index.html')
     with open(page, 'w', encoding='utf-8') as f:
         f.write(render_page(index, scan_repo=scan_repo, standalone=standalone))
