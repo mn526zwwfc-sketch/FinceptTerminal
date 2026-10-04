@@ -14,6 +14,7 @@ reach the whole repository:
     GET  /api/repo/tree?path=   directory listing under fincept-qt/
     GET  /api/repo/file?path=   text of a file under fincept-qt/
     GET  /api/run/list          repository CLIs that can be run
+    GET  /api/market[?refresh=1] live quotes for the MERCADO screen (market.py)
     POST /api/run               {"script", "command", "params"} -> CLI output
 
 It binds to 127.0.0.1 by default, accepts only localhost Host headers (DNS
@@ -225,6 +226,9 @@ class StudioHandler(BaseHTTPRequestHandler):
                 return self._ok(read_text((q.get('path') or [''])[0]))
             if path == '/api/run/list':
                 return self._ok([{'id': r['id'], 'label': r['label']} for r in RUNNABLE])
+            if path == '/api/market':
+                from . import market
+                return self._ok(market.snapshot(force=(q.get('refresh') or ['0'])[0] == '1'))
             return self._err('Ruta desconocida.', HTTPStatus.NOT_FOUND)
         except PermissionError as e:
             return self._err(str(e), HTTPStatus.FORBIDDEN)

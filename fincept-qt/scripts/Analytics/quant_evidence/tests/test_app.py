@@ -22,7 +22,7 @@ ANALYTICS = os.path.dirname(os.path.dirname(HERE))
 if ANALYTICS not in sys.path:
     sys.path.insert(0, ANALYTICS)
 
-from quant_evidence.app import build_app  # noqa: E402
+from quant_evidence.app import build_app, market  # noqa: E402
 from quant_evidence.app.server import make_server, resolve_repo_path  # noqa: E402
 from quant_evidence.evaluator import evaluate_decision  # noqa: E402
 
@@ -76,6 +76,60 @@ class TestBuild(unittest.TestCase):
     def test_standalone_page_has_doctype(self):
         html = build_app.render_page([], scan_repo=False, standalone=True)
         self.assertTrue(html.startswith('<!doctype html>'))
+
+
+def _chart(closes, price, ts0=1_790_000_000, mtime=None, currency='MXN'):
+    ts = [ts0 + i * 86400 for i in range(len(closes))]
+    return {'chart': {'error': None, 'result': [{
+        'meta': {'regularMarketPrice': price, 'regularMarketTime': mtime or ts[-1] + 3600,
+                 'currency': currency, 'exchangeName': 'MEX'},
+        'timestamp': ts, 'indicators': {'quote': [{'close': closes}]}}]}}
+
+
+class TestMarket(unittest.TestCase):
+    def setUp(self):
+        self._fetch = market.fetch_chart
+        market._cache.update(t=0.0, data=None)
+
+    def tearDown(self):
+        market.fetch_chart = self._fetch
+        market._cache.update(t=0.0, data=None)
+
+    def test_parse_uses_previous_session_close(self):
+        q = market.parse_chart('^MXX', _chart([100.0, None, 102.0, 104.0], 105.0))
+        self.assertEqual(q['last'], 105.0)
+        self.assertEqual(q['prev_close'], 102.0)        # newest bar is today's session
+        self.assertAlmostEqual(q['change_pct'], 105 / 102 * 100 - 100)
+        self.assertAlmostEqual(q['month_pct'], 5.0)
+        self.assertEqual(q['series'], [100.0, 102.0, 104.0])
+        # Market time after the newest bar (bar not yet printed): previous close is that bar.
+        q = market.parse_chart('^MXX', _chart([100.0, 104.0], 105.0, mtime=1_790_000_000 + 5 * 86400))
+        self.assertEqual(q['prev_close'], 104.0)
+
+    def test_errors_never_become_numbers(self):
+        with self.assertRaises(ValueError):
+            market.parse_chart('X', {'chart': {'error': {'code': 'Not Found', 'description': 'No data'}, 'result': None}})
+
+        def fake(sym):
+            if sym == 'MXN=X':
+                raise OSError('sin red')
+            return _chart([10.0, 11.0], 12.0)
+        market.fetch_chart = fake
+        snap = market.snapshot(force=True)
+        rows = {r['symbol']: r for g in snap['groups'] for r in g['rows']}
+        self.assertIn('error', rows['MXN=X'])
+        self.assertNotIn('last', rows['MXN=X'])
+        self.assertEqual(rows['^MXX']['last'], 12.0)
+        self.assertEqual(snap['ok'], snap['total'] - 1)
+        ids = {r['strategy_id'] for r in rows.values() if r['strategy_id']}
+        from quant_evidence.knowledge_base import get_strategy
+        for sid in ids:
+            self.assertIsNotNone(get_strategy(sid), sid)
+
+    def test_page_has_no_embedded_quotes(self):
+        html = build_app.render_page([], scan_repo=False, standalone=False, ui='terminal')
+        self.assertIn('MERCADO &lt;7&gt;', html)
+        self.assertNotIn('regularMarketPrice', html)
 
 
 class TestPathGuard(unittest.TestCase):
@@ -164,6 +218,19 @@ class TestServer(unittest.TestCase):
         r.read()
         c.close()
         self.assertEqual(r.status, 403)
+
+    def test_market_endpoint(self):
+        saved = market.fetch_chart
+        market.fetch_chart = lambda sym: _chart([1.0, 2.0], 3.0, currency='USD')
+        market._cache.update(t=0.0, data=None)
+        try:
+            st, j = self.req('GET', '/api/market?refresh=1')
+        finally:
+            market.fetch_chart = saved
+            market._cache.update(t=0.0, data=None)
+        self.assertEqual(st, 200)
+        self.assertEqual(j['data']['ok'], j['data']['total'])
+        self.assertEqual([g['key'] for g in j['data']['groups']], ['mx', 'us', 'global', 'factors'])
 
     def test_run_cli(self):
         st, j = self.req('POST', '/api/run', {'script': 'quant_evidence', 'command': 'list', 'params': {}})

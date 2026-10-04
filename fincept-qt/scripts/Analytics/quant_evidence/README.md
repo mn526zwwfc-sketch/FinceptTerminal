@@ -14,7 +14,7 @@ Everything here is educational. It is not personalized financial advice and it m
 
 `app/` packages everything above, plus the repository source, as a single-page app with two interfaces over the same engine and data.
 
-The default interface (`terminal.html`, *Fincept Quant Terminal*) is a financial-terminal layout. A command line with autocomplete (`MOM <GO>`, `DSR 2.5 100 5`, `CODE stats.py`, `HELP`), function keys and dense panels that can be minimized, maximized, closed and restored. It has six screens:
+The default interface (`terminal.html`, *Fincept Quant Terminal*) is a financial-terminal layout. A command line with autocomplete (`MOM <GO>`, `DSR 2.5 100 5`, `CODE stats.py`, `HELP`), function keys and dense panels that can be minimized, maximized, closed and restored. It has seven screens:
 
 - **MONITOR**: the decision analyzer with live sensitivity charts (net edge and score against cost, turnover, trials or years), the parameter sheet with the net-edge cascade, the checks wire, and the matrix of the 44 strategies.
 - **CABLE**: the evidence wire (every strategy and repository gap as a story) and a reader with claims, critiques and sources.
@@ -22,8 +22,9 @@ The default interface (`terminal.html`, *Fincept Quant Terminal*) is a financial
 - **REPOSITORIO**: the category matrix (curated modules, keyword-scan hits, strategies, gaps), the 19 gaps and the modules per category.
 - **CÁLCULO**: Deflated Sharpe, Harvey-Liu haircut, MinBTL, cost drag, Bodie and Kelly calculators, plus the formulas and score weights.
 - **CONSOLA**: the command log, saved decisions and `RUN` (local app only).
+- **MERCADO**: live quotes for Mexico (S&P/BMV IPC, USD/MXN, large BMV stocks), the US (S&P 500, Nasdaq, Dow, Russell 2000, 10-year Treasury yield, VIX), global indices and commodities, and factor ETFs (momentum, value, quality, min-vol, size), each with change, 1-month change and a sparkline. Factor rows open the related strategy in MONITOR. Local app only (`app/market.py`, Yahoo Finance chart data via the standard library, cached 60 s); a symbol that fails to load shows "sin dato", never a number.
 
-The scores and curves are computed by the evaluator; the ticker shows the knowledge base's 0-100 evidence ratings. No market prices or quotes are shown.
+The scores and curves are computed by the evaluator; the ticker shows the knowledge base's 0-100 evidence ratings. Market quotes appear only on the MERCADO screen of the local app; the static build shows none.
 
 `--studio` builds the alternative product-page interface (`template.html`): a configurator with activity rings, strategy cards, the code explorer and the method page. The local server also serves it at `/studio`.
 
