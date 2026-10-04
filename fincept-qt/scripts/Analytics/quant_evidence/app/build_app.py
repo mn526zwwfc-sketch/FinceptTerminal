@@ -1,8 +1,8 @@
 """
 Builds Fincept Quant Studio, a single-page app over the quant_evidence engine
 and the FinceptTerminal source code. Two interfaces share the same engine and
-data: a market-terminal UI (terminal.html, default) and an Apple-style product
-page (template.html).
+data: a market-terminal UI (terminal.html, default) and a product-page style
+interface (template.html).
 
 Output directory layout:
 
@@ -12,7 +12,7 @@ Output directory layout:
 
     python -m quant_evidence.app.build_app [out_dir] [--fragment] [--no-scan] [--studio]
 
---studio builds the Apple-style product page instead of the default terminal.
+--studio builds the product-page style interface instead of the default terminal.
 
 --fragment omits the <!doctype html>/<html> wrapper, for hosts that add their
 own document skeleton (such as a claude.ai artifact). The local server
@@ -31,7 +31,7 @@ from ..repo_indexer import REPO_ROOT
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES = {
     'terminal': os.path.join(APP_DIR, 'terminal.html'),   # default: market-terminal interface
-    'studio': os.path.join(APP_DIR, 'template.html'),     # Apple-style product page
+    'studio': os.path.join(APP_DIR, 'template.html'),     # product-page style interface
 }
 TEMPLATE = TEMPLATES['terminal']
 ENGINE = os.path.join(PACKAGE_DIR, 'web', 'engine.js')

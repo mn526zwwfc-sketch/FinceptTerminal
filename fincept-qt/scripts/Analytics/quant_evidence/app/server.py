@@ -5,7 +5,7 @@ Serves the app and a JSON API so the page runs on the Python engine and can
 reach the whole repository:
 
     GET  /                      the app (terminal interface)
-    GET  /studio                the Apple-style interface
+    GET  /studio                the product-page style interface
     GET  /api/health            {"app": "quant-studio", ...}
     GET  /api/kb | /api/repo-map
     POST /api/evaluate          quant_evidence.evaluate_decision(body)

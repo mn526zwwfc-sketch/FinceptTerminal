@@ -292,7 +292,7 @@ def evaluate_decision(raw: dict, kb: dict | None = None, repo_map: dict | None =
     if edge_strategy and inp['published']:
         checks.append(_check(
             'decay', 'Decaimiento tras la publicación',
-            'warn', 'Si la idea viene de un paper, libro o internet, suponga que rinde la mitad o menos '
+            'warn', 'Si la idea viene de un paper, libro o internet, supón que rinde la mitad o menos '
             'en adelante (−26% fuera de muestra, −58% tras publicarse).', DECAY_SOURCE))
     if inp['microcap_share'] >= 0.3:
         checks.append(_check(

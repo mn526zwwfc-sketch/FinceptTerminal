@@ -421,7 +421,7 @@
       'rentables después de costos; las de mayor rotación generalmente no.', SRC.cost));
     if (edge && inp.published) {
       checks.push(check('decay', 'Decaimiento tras la publicación', 'warn',
-        'Si la idea viene de un paper, libro o internet, suponga que rinde la mitad o menos en adelante ' +
+        'Si la idea viene de un paper, libro o internet, supón que rinde la mitad o menos en adelante ' +
         '(−26% fuera de muestra, −58% tras publicarse).', SRC.decay));
     }
     if (inp.microcap_share >= 0.3) {

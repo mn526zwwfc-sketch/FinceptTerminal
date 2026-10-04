@@ -52,6 +52,7 @@ a:hover { text-decoration: underline; }
 .cmd span { color: var(--amber); }
 .cmd input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: var(--white); text-transform: uppercase; caret-color: var(--amber); letter-spacing: 0.02em; }
 .cmd input::placeholder { color: var(--muted); text-transform: none; }
+.cmd:focus-within { border-color: var(--amber); box-shadow: inset 0 0 0 1px var(--amber); }
 .cmd kbd { font: inherit; color: var(--amber); border: 1px solid var(--amber-dim); padding: 0 4px; cursor: pointer; background: transparent; }
 .suggest { position: absolute; left: 0; right: 0; top: 100%; z-index: 30; background: var(--panel-2); border: 1px solid var(--line-2); border-top: 0; max-height: 280px; overflow-y: auto; }
 .suggest button { display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; gap: 10px; width: 100%; text-align: left; border: 0; background: transparent; padding: 4px 8px; cursor: pointer; }
@@ -59,6 +60,7 @@ a:hover { text-decoration: underline; }
 .suggest button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .suggest button em { font-style: normal; color: var(--muted); }
 .suggest button[aria-selected="true"], .suggest button:hover { background: var(--sel); }
+.suggest button[aria-selected="true"] { box-shadow: inset 2px 0 0 var(--amber); }
 .fkeys { display: flex; gap: 4px; flex-wrap: nowrap; }
 .fkeys button { background: transparent; border: 1px solid var(--line-2); color: var(--cyan); padding: 1px 5px; cursor: pointer; white-space: nowrap; font-size: 11px; }
 .fkeys button:hover { border-color: var(--cyan); }
@@ -75,17 +77,20 @@ a:hover { text-decoration: underline; }
 .ticker > b { color: var(--cyan); font-weight: 600; flex: none; }
 .marquee { overflow: hidden; flex: 1; min-width: 0; mask-image: linear-gradient(90deg, transparent, #000 2%, #000 98%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent, #000 2%, #000 98%, transparent); }
 .marquee .track { display: inline-flex; gap: 22px; animation: scroll 140s linear infinite; padding-left: 8px; }
-.marquee:hover .track { animation-play-state: paused; }
-.marquee .tk { cursor: pointer; }
+.marquee:hover .track, .marquee:focus-within .track, .marquee .track.paused { animation-play-state: paused; }
+.marquee .tk { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; white-space: nowrap; }
+#tickpause { flex: none; padding: 0 6px; font-size: 10.5px; }
+#tickpause[aria-pressed="true"] { background: var(--amber); color: var(--amber-ink); }
 .marquee .tk b { color: var(--white); font-weight: 600; margin-right: 6px; }
 @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-@media (prefers-reduced-motion: reduce) { .marquee .track { animation: none; } .marquee { overflow-x: auto; } }
+@media (prefers-reduced-motion: reduce) { .marquee .track { animation: none; } .marquee { overflow-x: auto; } #tickpause { display: none; } }
+@media (max-width: 640px) { .ticker .tk-sub { display: none; } }
 
 .tabs { display: flex; align-items: stretch; gap: 0; background: var(--chrome); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
 .tabs::-webkit-scrollbar { display: none; }
 .tabs button.tab { background: transparent; border: 0; border-right: 1px solid var(--line); color: var(--text); padding: 6px 14px; cursor: pointer; white-space: nowrap; letter-spacing: 0.03em; }
 .tabs button.tab:hover { background: var(--row); }
-.tabs button.tab[aria-selected="true"] { background: var(--amber); color: var(--amber-ink); font-weight: 700; font-size: 14px; padding-inline: 16px; }
+.tabs button.tab[aria-current="page"] { background: var(--amber); color: var(--amber-ink); font-weight: 700; font-size: 14px; padding-inline: 16px; }
 .tabs .space { flex: 1; }
 .tabs .ws { display: flex; align-items: center; gap: 8px; padding: 0 10px; white-space: nowrap; color: var(--muted); }
 .tabs .ws b { color: var(--amber); font-weight: 500; }
@@ -93,19 +98,18 @@ a:hover { text-decoration: underline; }
 .tabs .hidden-panels button { background: transparent; border: 1px dashed var(--amber-dim); color: var(--amber); padding: 0 6px; cursor: pointer; margin-left: 4px; font-size: 10.5px; }
 
 .body { display: grid; grid-template-columns: 64px minmax(0, 1fr); min-height: 0; }
-@media (max-width: 900px) { .body { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 900px) { .body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); align-content: start; } }
 .rail { background: var(--chrome); border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; padding: 6px 4px; }
 .rail button { background: transparent; border: 0; color: var(--muted); padding: 7px 2px; display: grid; justify-items: center; gap: 3px; cursor: pointer; font-size: 9.5px; letter-spacing: 0.06em; }
 .rail button svg { width: 18px; height: 18px; }
 .rail button:hover { color: var(--text); }
-.rail button[aria-current="true"] { background: var(--amber); color: var(--amber-ink); font-weight: 700; }
-.rail .rt { margin-top: auto; text-align: center; font-size: 9.5px; color: var(--muted); padding-bottom: 4px; }
-.rail .rt i { display: block; width: 8px; height: 8px; border-radius: 50%; background: var(--green); margin: 0 auto 3px; box-shadow: 0 0 6px var(--green); }
+.rail button[aria-current="page"] { background: var(--amber); color: var(--amber-ink); font-weight: 700; }
+.rail .rt { margin-top: auto; text-align: center; font-size: 9.5px; color: var(--muted); padding-bottom: 4px; letter-spacing: 0.06em; }
 @media (max-width: 900px) { .rail { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); } .rail button { min-width: 64px; } .rail .rt { margin: 0 0 0 auto; padding: 0 8px; align-self: center; } }
 
 .screen { min-height: 0; min-width: 0; display: grid; gap: 4px; padding: 4px; }
 .screen[hidden] { display: none !important; }
-.quad { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
+.quad { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr); }
 .split { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
 .three { grid-template-columns: minmax(240px, 0.75fr) minmax(0, 2fr) minmax(0, 0.95fr); grid-template-rows: minmax(0, 1fr); }
 .repo-grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1.1fr) minmax(0, 0.9fr); }
@@ -113,6 +117,13 @@ a:hover { text-decoration: underline; }
 .calc-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 0.8fr); }
 .calc-grid .p-formulas { grid-column: 1 / -1; }
 .cons-grid { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+@media (max-height: 820px) and (min-width: 901px) { .calc-grid { grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) fit-content(32%); } }
+/* A closed panel leaves no hole: the remaining panels share the screen. */
+.quad.has-hidden { grid-template-rows: none; grid-auto-rows: minmax(0, 1fr); }
+.split.has-hidden, .three.has-hidden, .cons-grid.has-hidden { grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }
+.repo-grid.has-hidden { grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); }
+.repo-grid.has-hidden .p-cat { grid-row: auto; }
+.calc-grid.has-hidden:has(> .p-formulas[hidden]) { grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
 .screen.maxed > .panel { display: none; }
 .screen.maxed > .panel.max { display: flex; grid-column: 1 / -1; grid-row: 1 / -1; }
 @media (max-width: 900px) {
@@ -132,12 +143,17 @@ a:hover { text-decoration: underline; }
 .ph .wc { display: flex; gap: 2px; }
 .ph .wc button { background: transparent; border: 0; color: var(--muted); padding: 0 3px; cursor: pointer; line-height: 1.2; }
 .ph .wc button:hover { color: var(--white); }
-.ph .wc button.x { background: var(--red); color: var(--white); font-weight: 700; padding: 0 4px; }
+.ph .wc button.x { background: #c62828; color: var(--white); font-weight: 700; padding: 0 4px; }
 .pb { flex: 1; min-height: 0; overflow: auto; padding: 6px 8px; }
 .panel.min .pb, .panel.min .pf { display: none; }
-.panel.min { flex: none; }
+.panel.min { flex: none; align-self: start; min-height: 0; }
 .pf { display: flex; justify-content: space-between; gap: 10px; padding: 3px 8px; border-top: 1px solid var(--line); color: var(--muted); white-space: nowrap; overflow: hidden; }
 .pf b { color: var(--amber); font-weight: 500; }
+.pf:not(.pf-act) > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pf:not(.pf-act) > :last-child { flex: none; }
+.pf-act { align-items: center; flex-wrap: wrap; }
+.pf-act .btnrow { margin: 0; flex: none; flex-wrap: nowrap; overflow: visible; }
+.pf-act > .toast { flex: 1 1 14ch; min-width: 0; min-height: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; }
 .chips { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
 .chips button { background: transparent; border: 1px solid var(--line-2); color: var(--text); padding: 0 6px; cursor: pointer; font-size: 11px; }
 .chips button[aria-pressed="true"] { background: var(--amber); color: var(--amber-ink); border-color: var(--amber); font-weight: 600; }
@@ -152,7 +168,7 @@ a:hover { text-decoration: underline; }
 table.t { width: 100%; border-collapse: collapse; }
 table.t th { text-align: left; color: var(--muted); font-weight: 500; padding: 2px 4px; border-bottom: 1px solid var(--line); white-space: nowrap; position: sticky; top: 0; background: var(--panel); z-index: 1; }
 table.t td { padding: 2px 4px; border-bottom: 1px solid rgba(27, 37, 48, 0.6); white-space: nowrap; }
-table.t td.wrap { white-space: normal; }
+table.t td.wrap { white-space: normal; overflow-wrap: anywhere; }
 table.t .n, table.t th.n { text-align: right; }
 table.t tr.sec td { color: var(--amber); font-weight: 600; padding-top: 6px; border-bottom: 1px solid var(--line); }
 table.t tr.click { cursor: pointer; }
@@ -161,14 +177,26 @@ table.t tr.on td { background: var(--sel); }
 table.t tr.on td:first-child { box-shadow: inset 2px 0 0 var(--amber); }
 .code-cell { color: var(--amber); font-weight: 600; }
 .tablewrap { overflow-x: auto; }
+#matrix { table-layout: fixed; }
+#matrix th:nth-child(1) { width: 9ch; }
+#matrix th:nth-child(3) { width: 6ch; }
+#matrix th:nth-child(4) { width: 9ch; }
+#matrix th:nth-child(5), #matrix th:nth-child(6) { width: 6ch; }
+#matrix td:nth-child(2) { overflow: hidden; text-overflow: ellipsis; }
+#mods { table-layout: fixed; }
+#mods th:nth-child(1) { width: 32%; }
+#mods th:nth-child(2) { width: 15ch; }
+#mods td:nth-child(-n+2) { overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 1300px) { #mods th:nth-child(2), #mods td:nth-child(2) { display: none; } }
+@media (max-width: 1100px) { #cats th:nth-child(3), #cats td:nth-child(3) { display: none; } }
 
 /* ── Monitor: analyzer ──────────────────────────────────────────────────── */
-.quote { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.quote { display: flex; align-items: baseline; gap: 0 12px; flex-wrap: wrap; }
 .quote .nm { color: var(--amber); font-weight: 600; font-size: 13px; text-transform: uppercase; }
-.quote .px { font-size: 26px; font-weight: 700; color: var(--white); letter-spacing: -0.01em; }
+.quote .px { font-size: 26px; font-weight: 700; color: var(--white); letter-spacing: -0.01em; line-height: 1.15; }
 .quote .px small { font-size: 13px; color: var(--muted); font-weight: 500; }
 .quote .chg { font-weight: 600; font-size: 13px; }
-.statline { color: var(--muted); margin-top: 2px; display: flex; gap: 12px; flex-wrap: wrap; }
+.statline { color: var(--muted); margin-top: 2px; display: flex; gap: 0 12px; flex-wrap: wrap; }
 .statline b { color: var(--white); font-weight: 500; }
 .ranges { display: flex; gap: 2px; flex-wrap: wrap; align-items: center; margin: 6px 0 2px; }
 .ranges button { background: transparent; border: 1px solid var(--line-2); color: var(--text); padding: 0 6px; cursor: pointer; font-size: 11px; }
@@ -188,6 +216,8 @@ table.t tr.on td:first-child { box-shadow: inset 2px 0 0 var(--amber); }
 .chart .band { stroke: var(--red); stroke-dasharray: 2 3; stroke-width: 1; opacity: 0.7; }
 .chart .band.hi { stroke: var(--green); }
 .chart .lbl-t { fill: var(--muted); }
+.chart .lg-hi { fill: var(--green); }
+.chart .lg-lo { fill: var(--red); }
 .subs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 4px; }
 .subs div { border-top: 2px solid var(--line-2); padding-top: 3px; }
 .subs div span { color: var(--muted); font-size: 10.5px; display: block; }
@@ -205,10 +235,11 @@ table.t tr.on td:first-child { box-shadow: inset 2px 0 0 var(--amber); }
 .book .hd { color: var(--muted); border-bottom: 1px solid var(--line); padding: 2px 0; display: flex; justify-content: space-between; }
 .fld { display: grid; grid-template-columns: minmax(0, 1fr) 92px; gap: 6px; align-items: center; padding: 1px 0; border-bottom: 1px solid rgba(27, 37, 48, 0.6); }
 .fld label { color: var(--cyan); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fld input, .fld select { width: 100%; background: var(--green-bg); border: 1px solid transparent; color: var(--green); text-align: right; padding: 1px 4px; outline: none; }
+.fld input, .fld select { width: 100%; background: var(--green-bg); border: 1px solid transparent; color: var(--green); text-align: right; padding: 0 4px; line-height: 1.35; outline: none; }
 .fld select { text-align: left; background: var(--panel-2); color: var(--white); }
 .fld input:focus, .fld select:focus { border-color: var(--amber); background: var(--bg); color: var(--white); }
 .fld input::placeholder { color: var(--muted); }
+.fld:has(> #investor), .fld:has(> #market) { grid-template-columns: minmax(0, 1fr) 124px; gap: 4px; }
 .toggles { display: flex; gap: 4px 12px; flex-wrap: wrap; margin: 6px 0; }
 .toggles label { display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap; }
 .toggles input { appearance: none; -webkit-appearance: none; width: 12px; height: 12px; border: 1px solid var(--muted); margin: 0; display: grid; place-items: center; cursor: pointer; }
@@ -226,6 +257,7 @@ table.t tr.on td:first-child { box-shadow: inset 2px 0 0 var(--amber); }
 .story { display: grid; grid-template-columns: 74px minmax(0, 1fr) 62px; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); cursor: default; }
 .story.click { cursor: pointer; }
 .story.click:hover, .story.on { background: var(--sel); }
+.story.on { box-shadow: inset 2px 0 0 var(--amber); }
 .story .ts { color: var(--white); }
 .story .ts .tag { margin-top: 2px; }
 .story .hl { color: var(--white); font-weight: 600; text-transform: uppercase; }
@@ -249,12 +281,15 @@ table.t tr.on td:first-child { box-shadow: inset 2px 0 0 var(--amber); }
 .ftree summary span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ftree summary em { font-style: normal; color: var(--muted); }
 .ftree button.f { display: block; width: 100%; text-align: left; background: transparent; border: 0; color: var(--text); padding: 0 2px 0 16px; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ftree button.f[hidden] { display: none; }
 .ftree button.f:hover { background: var(--sel); }
 .ftree button.f[aria-current="true"] { background: var(--amber); color: var(--amber-ink); }
 .ftree input.fq { width: 100%; background: var(--bg); border: 1px solid var(--line-2); padding: 2px 6px; margin-bottom: 6px; outline: none; color: var(--white); }
+.ftree input.fq::placeholder { color: var(--muted); }
+.ftree input.fq:focus-visible { border-color: var(--amber); outline: 1px solid var(--amber); outline-offset: 0; }
 .src { display: flex; min-height: 100%; font-size: 12px; line-height: 1.55; }
 .src pre { margin: 0; padding: 4px 0; }
-.src .gut { color: var(--amber-dim); text-align: right; padding: 4px 10px 4px 4px; border-right: 1px solid var(--line); user-select: none; position: sticky; left: 0; background: var(--panel); }
+.src .gut { color: var(--muted); text-align: right; padding: 4px 10px 4px 4px; border-right: 1px solid var(--line); user-select: none; position: sticky; left: 0; background: var(--panel); }
 .src .code { padding: 4px 10px; white-space: pre; tab-size: 4; color: var(--text); }
 .hljs-keyword, .hljs-built_in, .hljs-literal { color: var(--amber); }
 .hljs-string, .hljs-regexp { color: var(--green); }
@@ -264,7 +299,8 @@ table.t tr.on td:first-child { box-shadow: inset 2px 0 0 var(--amber); }
 .hljs-type, .hljs-title.class_, .hljs-attr, .hljs-meta, .hljs-params { color: var(--yellow); }
 .des dl { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; margin: 0; }
 .des dt { color: var(--cyan); margin-top: 6px; }
-.des dd { margin: 0; }
+.des dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 1100px) { #src-meta { display: none; } }
 .des .codes button { background: transparent; border: 1px solid var(--amber-dim); color: var(--amber); padding: 0 4px; margin: 2px 2px 0 0; cursor: pointer; font-size: 11px; }
 
 /* ── Calc / console ─────────────────────────────────────────────────────── */
@@ -290,12 +326,12 @@ pre.formula { margin: 0; color: var(--text); white-space: pre; font-size: 11.5px
 
 <div class="term">
   <header class="top">
-    <div class="logo" aria-label="Fincept Quant Terminal">FINCEPT<small>QUANT</small></div>
+    <h1 class="logo" style="margin:0">FINCEPT<small>QUANT</small><span class="sr-only"> Terminal</span></h1>
     <div class="cmdwrap">
       <form class="cmd" id="cmdform" autocomplete="off" role="search">
         <span aria-hidden="true">&gt;</span>
         <label for="cmd" class="sr-only">Línea de comandos</label>
-        <input id="cmd" spellcheck="false" placeholder="Escribe un código o un comando, p. ej. MOM EVAL, DSR 2.5 100 5, HELP" aria-autocomplete="list" aria-controls="suggest">
+        <input id="cmd" role="combobox" aria-expanded="false" spellcheck="false" placeholder="Escribe un código o un comando, p. ej. MOM EVAL, DSR 2.5 100 5, HELP" aria-autocomplete="list" aria-controls="suggest">
         <kbd role="button" tabindex="0" id="gobtn" title="Ejecutar">&lt;GO&gt;</kbd>
       </form>
       <div class="suggest" id="suggest" role="listbox" hidden></div>
@@ -306,30 +342,31 @@ pre.formula { margin: 0; color: var(--text); white-space: pre; font-size: 11.5px
   </header>
 
   <div class="ticker" aria-label="Cinta de evidencia">
-    <b>EVIDENCIA:</b>
+    <b>EVIDENCIA<span class="tk-sub"> (VALORACIÓN 0-100)</span>:</b>
+    <button type="button" class="tbtn" id="tickpause" aria-pressed="false">PAUSA</button>
     <div class="marquee"><div class="track" id="track"></div></div>
   </div>
 
-  <nav class="tabs" role="tablist" aria-label="Pantallas">
-    <button class="tab" role="tab" data-screen="monitor" id="tab-monitor">MONITOR &lt;1&gt;</button>
-    <button class="tab" role="tab" data-screen="cable" id="tab-cable">CABLE &lt;2&gt;</button>
-    <button class="tab" role="tab" data-screen="codigo" id="tab-codigo">CÓDIGO &lt;3&gt;</button>
-    <button class="tab" role="tab" data-screen="repo" id="tab-repo">REPOSITORIO &lt;4&gt;</button>
-    <button class="tab" role="tab" data-screen="calc" id="tab-calc">CÁLCULO &lt;5&gt;</button>
-    <button class="tab" role="tab" data-screen="consola" id="tab-consola">CONSOLA &lt;6&gt;</button>
+  <nav class="tabs" aria-label="Pantallas">
+    <button class="tab" data-screen="monitor" id="tab-monitor">MONITOR &lt;1&gt;</button>
+    <button class="tab" data-screen="cable" id="tab-cable">CABLE &lt;2&gt;</button>
+    <button class="tab" data-screen="codigo" id="tab-codigo">CÓDIGO &lt;3&gt;</button>
+    <button class="tab" data-screen="repo" id="tab-repo">REPOSITORIO &lt;4&gt;</button>
+    <button class="tab" data-screen="calc" id="tab-calc">CÁLCULO &lt;5&gt;</button>
+    <button class="tab" data-screen="consola" id="tab-consola">CONSOLA &lt;6&gt;</button>
     <span class="space"></span>
-    <span class="ws"><span class="hidden-panels" id="hidden-panels"></span>ESPACIO: <b>QUANT_EVIDENCE</b><span class="lock">KB 2026-10-04</span></span>
+    <span class="ws"><span class="hidden-panels" id="hidden-panels"></span>ESPACIO: <b>QUANT_EVIDENCE</b><span class="lock" id="kb-version"></span></span>
   </nav>
 
   <div class="body">
     <aside class="rail" aria-label="Accesos">
-      <button data-screen="monitor" title="Monitor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>QUAD</button>
+      <button data-screen="monitor" title="Monitor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>MON</button>
       <button data-screen="cable" title="Cable de evidencia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16M4 10h16M4 15h10M4 20h7"/></svg>CABLE</button>
       <button data-screen="codigo" title="Código"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg>CÓDIGO</button>
       <button data-screen="repo" title="Repositorio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h7l2 2h9v10H3z"/></svg>REPO</button>
       <button data-screen="calc" title="Cálculo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20l5-7 4 4 7-10"/><path d="M15 7h5v5"/></svg>CALC</button>
       <button data-screen="consola" title="Consola"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16"/><path d="M7 9l3 3-3 3M12 15h5"/></svg>CONS</button>
-      <div class="rt"><i></i>RT</div>
+      <div class="rt" id="rail-engine" title="Motor de cálculo">JS</div>
     </aside>
 
     <main style="min-height:0;min-width:0;display:grid">
@@ -389,20 +426,15 @@ pre.formula { margin: 0; color: var(--text); white-space: pre; font-size: 11.5px
                 <label><input type="checkbox" id="out_of_sample">VALIDADA CON DATOS NUEVOS</label>
               </div>
             </form>
-            <div class="sect"><b>CASCADA DE LA VENTAJA (PB/MES)</b><span id="casc-src">STATUS: <span class="up">MOTOR JS</span></span></div>
+            <div class="sect"><b>CASCADA DE LA VENTAJA (PB/MES)</b><span id="casc-src">ESTADO: <span class="up">MOTOR JS</span></span></div>
             <div class="tablewrap"><table class="t" id="cascade"></table></div>
-            <div class="btnrow">
-              <button type="button" class="tbtn solid" id="save">GUARDAR &lt;SAVE&gt;</button>
-              <button type="button" class="tbtn" id="copyjson">JSON PARA EL CLI</button>
-              <button type="button" class="tbtn" id="reset">EJEMPLO</button>
-            </div>
-            <p class="toast" id="toast" role="status" aria-live="polite"></p>
           </div>
+          <div class="pf pf-act"><span class="btnrow"><button type="button" class="tbtn solid" id="save">GUARDAR &lt;SAVE&gt;</button><button type="button" class="tbtn" id="copyjson">JSON PARA EL CLI</button><button type="button" class="tbtn" id="reset">EJEMPLO</button></span><span class="toast" id="toast" role="status" aria-live="polite"></span></div>
         </div>
 
         <div class="panel" data-pid="3">
           <div class="ph"><span class="n">3</span><span class="t">CHK &lt;GO&gt; - CHEQUEOS Y ALERTAS <em>FUENTE: LITERATURA</em></span>
-            <span class="r"><span>ESTADO: <span class="ok" id="chk-status">EN LÍNEA</span></span><span class="wc"><button data-wc="min" aria-label="Minimizar">_</button><button data-wc="max" aria-label="Maximizar">[ ]</button><button data-wc="close" class="x" aria-label="Cerrar">X</button></span></span></div>
+            <span class="r"><span>ESTADO: <span class="ok" id="chk-status">SIN FALLAS</span></span><span class="wc"><button data-wc="min" aria-label="Minimizar">_</button><button data-wc="max" aria-label="Maximizar">[ ]</button><button data-wc="close" class="x" aria-label="Cerrar">X</button></span></span></div>
           <div class="pb">
             <div class="chips" id="chk-filter" role="group" aria-label="Filtrar chequeos"></div>
             <div class="wire" id="checks"></div>
@@ -412,17 +444,17 @@ pre.formula { margin: 0; color: var(--text); white-space: pre; font-size: 11.5px
 
         <div class="panel" data-pid="4">
           <div class="ph"><span class="n">4</span><span class="t">STRAT &lt;GO&gt; - MATRIZ DE ESTRATEGIAS <em>BASE: VALORACIÓN</em></span>
-            <span class="r"><span>44 ESTRATEGIAS</span><span class="wc"><button data-wc="min" aria-label="Minimizar">_</button><button data-wc="max" aria-label="Maximizar">[ ]</button><button data-wc="close" class="x" aria-label="Cerrar">X</button></span></span></div>
+            <span class="r"><span id="p4-count"></span><span class="wc"><button data-wc="min" aria-label="Minimizar">_</button><button data-wc="max" aria-label="Maximizar">[ ]</button><button data-wc="close" class="x" aria-label="Cerrar">X</button></span></span></div>
           <div class="pb"><div class="tablewrap"><table class="t" id="matrix"></table></div></div>
-          <div class="pf"><span>CLIC EN UNA FILA O ESCRIBE SU CÓDIGO PARA EVALUAR</span><b>&lt;STRAT&gt;</b></div>
+          <div class="pf"><span>* VALORACIÓN SINTÉTICA 0-100, NO PUBLICADA POR NINGÚN PAPER · CLIC O CÓDIGO PARA EVALUAR</span><b>&lt;STRAT&gt;</b></div>
         </div>
       </section>
 
       <!-- ── CABLE <2> ── -->
       <section class="screen split" id="screen-cable" aria-label="Cable de evidencia" hidden>
         <div class="panel" data-pid="5">
-          <div class="ph"><span class="n">5</span><span class="t">TOP &lt;GO&gt; - CABLE DE EVIDENCIA <em>44 ESTRATEGIAS · 19 BRECHAS</em></span>
-            <span class="r"><span>FEED: <span class="ok">KB</span></span><span class="wc"><button data-wc="min" aria-label="Minimizar">_</button><button data-wc="max" aria-label="Maximizar">[ ]</button><button data-wc="close" class="x" aria-label="Cerrar">X</button></span></span></div>
+          <div class="ph"><span class="n">5</span><span class="t">TOP &lt;GO&gt; - CABLE DE EVIDENCIA <em id="p5-count"></em></span>
+            <span class="r"><span>FUENTE: <span class="ok">KB</span></span><span class="wc"><button data-wc="min" aria-label="Minimizar">_</button><button data-wc="max" aria-label="Maximizar">[ ]</button><button data-wc="close" class="x" aria-label="Cerrar">X</button></span></span></div>
           <div class="pb"><div class="chips" id="wire-filter" role="group" aria-label="Filtrar cable"></div><div class="wire" id="wire"></div></div>
           <div class="pf"><span id="wire-foot"></span><span>[↑↓] NAVEGAR</span></div>
         </div>
@@ -469,7 +501,7 @@ pre.formula { margin: 0; color: var(--text); white-space: pre; font-size: 11.5px
             <span class="r"><span class="wc"><button data-wc="min" aria-label="Minimizar">_</button><button data-wc="max" aria-label="Maximizar">[ ]</button><button data-wc="close" class="x" aria-label="Cerrar">X</button></span></span></div>
           <div class="pb"><div class="wire" id="gaps"></div></div>
         </div>
-        <div class="panel" data-pid="12">
+        <div class="panel p-mods" data-pid="12">
           <div class="ph"><span class="n">12</span><span class="t" id="mods-title">MOD &lt;GO&gt; - MÓDULOS</span>
             <span class="r"><span class="wc"><button data-wc="min" aria-label="Minimizar">_</button><button data-wc="max" aria-label="Maximizar">[ ]</button><button data-wc="close" class="x" aria-label="Cerrar">X</button></span></span></div>
           <div class="pb"><div class="tablewrap"><table class="t" id="mods"></table></div></div>
@@ -483,8 +515,8 @@ pre.formula { margin: 0; color: var(--text); white-space: pre; font-size: 11.5px
       <section class="screen cons-grid" id="screen-consola" aria-label="Consola" hidden>
         <div class="panel" data-pid="19">
           <div class="ph"><span class="n">19</span><span class="t">LOG &lt;GO&gt; - CONSOLA DE COMANDOS</span>
-            <span class="r"><button type="button" class="tbtn" id="clearlog" style="padding:0 6px">CLEAR</button><span class="wc"><button data-wc="min" aria-label="Minimizar">_</button><button data-wc="max" aria-label="Maximizar">[ ]</button><button data-wc="close" class="x" aria-label="Cerrar">X</button></span></span></div>
-          <div class="pb"><pre class="log" id="log" aria-live="polite"></pre></div>
+            <span class="r"><button type="button" class="tbtn" id="clearlog" style="padding:0 6px">LIMPIAR</button><span class="wc"><button data-wc="min" aria-label="Minimizar">_</button><button data-wc="max" aria-label="Maximizar">[ ]</button><button data-wc="close" class="x" aria-label="Cerrar">X</button></span></span></div>
+          <div class="pb"><pre class="log" id="log" role="log" aria-live="polite"></pre></div>
           <div class="pf"><span id="run-hint">RUN DISPONIBLE CON LA APP LOCAL: python quant_studio.py</span><b>&lt;HELP&gt;</b></div>
         </div>
         <div class="panel" data-pid="20">
@@ -521,7 +553,7 @@ var CODE = /*__CODE_INDEX__*/null;
     buy_hold_global: 'BHGL', buy_hold_single_country: 'BHCTRY', factor_model_tilt: 'FCTTLT', profitability_quality: 'QUAL', value: 'VALUE',
     momentum: 'MOM', value_momentum_combo: 'VALMOM', betting_against_beta: 'BAB', anomaly_single: 'ANOM1', anomaly_combo: 'ANOMX',
     factor_fund_long_only: 'FCTETF', ml_cross_section: 'MLXS', complexity_timing: 'CMPLX', llm_news: 'LLMNEWS', technical_rules: 'TECH',
-    markowitz_sample: 'MVO', naive_1n: 'EQW', shrinkage_min_variance: 'MINVAR', risk_parity_levered: 'RPAR', kelly_full: 'KELLY',
+    markowitz_sample: 'MVO', naive_1n: 'EQW', shrinkage_min_variance: 'MINVAR', risk_parity_levered: 'RPAR', kelly_full: 'FKELLY',
     kelly_fractional: 'HKELLY', all_equity_lifetime: 'EQ100', lifecycle_glidepath: 'GLIDE', periodic_contributions: 'APORTE', dca_lump_sum: 'DCALS',
     rebalancing: 'REBAL', frequent_trading: 'DAYTR', retail_options: 'OPTWK', active_funds: 'ACTFND', concentrated_stock_picking: 'CONC',
     predictive_regressions: 'PREDREG', cape_timing: 'CAPE', trend_index_ma: 'MA10', tsmom_futures: 'TSMOM', vol_managed_market: 'VOLMGD',
@@ -549,6 +581,8 @@ var CODE = /*__CODE_INDEX__*/null;
   function sgn(x, n) { return x == null || !isFinite(x) ? '—' : (x > 0 ? '+' : '') + Number(x).toFixed(n == null ? 1 : n); }
   function cls(x) { return x == null || !isFinite(x) ? '' : x > 0 ? 'up' : x < 0 ? 'dn' : ''; }
   function band(score) { return score >= 70 ? 'up' : score >= 30 ? 'ye' : 'dn'; }
+  // Prior (evidence) scores use the evaluator's own evidence-check cut: pass from 60.
+  function priorBand(p) { return p >= 60 ? 'up' : p >= 30 ? 'ye' : 'dn'; }
   function marks(arr) {
     return (arr || []).map(function (m) { return '<span class="mk" title="' + esc(KB.meta.marks[m] || '') + '">' + esc(MARK_LABEL[m] || m) + '</span>'; }).join('');
   }
@@ -559,8 +593,8 @@ var CODE = /*__CODE_INDEX__*/null;
   }
   var toastTimer = null;
   function toast(msg) {
-    clearTimeout(toastTimer); $('toast').textContent = msg;
-    toastTimer = setTimeout(function () { $('toast').textContent = ''; }, 4500);
+    clearTimeout(toastTimer); $('toast').textContent = msg; $('toast').title = msg;
+    toastTimer = setTimeout(function () { $('toast').textContent = ''; $('toast').title = ''; }, 4500);
   }
   function strat(id) { return E.getStrategy(KB, id); }
 
@@ -574,8 +608,16 @@ var CODE = /*__CODE_INDEX__*/null;
     $('clock').textContent = p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()) + ' ' + tzName;
   }
   setInterval(tick, 1000); tick();
+  function lastEngine() { return state.last && state.last.result && state.last.result._engine === 'python' ? 'python' : 'js'; }
+  function renderEngine() {
+    var lbl = $('engine-label');
+    lbl.textContent = !state.live ? 'MOTOR: JS · PARIDAD PYTHON' : state.pyDown ? 'MOTOR: JS · PYTHON SIN RESPUESTA' : 'MOTOR: PYTHON · ' + location.host;
+    lbl.className = state.live && state.pyDown ? 'ye' : 'up';
+    $('rail-engine').textContent = lastEngine() === 'python' ? 'PY' : 'JS';
+  }
   function renderStatus() {
     var auto = REPO.auto_index;
+    renderEngine();
     var items = [
       '<span class="a">&lt;HELP&gt;</span> PARA AYUDA',
       'KB <b>' + esc(KB.meta.version) + '</b>',
@@ -585,7 +627,7 @@ var CODE = /*__CODE_INDEX__*/null;
       'EVAL <b>' + (state.evalMs == null ? '—' : state.evalMs.toFixed(2) + ' MS') + '</b>',
       'HIST <b>' + loadHist().length + '</b>',
       '<span class="sp"></span>',
-      'MOTOR <b>' + (state.live ? 'PYTHON LOCAL' : 'JS NAVEGADOR') + '</b>',
+      'MOTOR <b>' + (lastEngine() === 'python' ? 'PYTHON LOCAL' : 'JS NAVEGADOR') + '</b>',
       'EDUCATIVO · NO ES ASESORÍA'
     ];
     $('status').innerHTML = items.map(function (x) { return x === '<span class="sp"></span>' ? x : '<span>' + x + '</span>'; }).join('');
@@ -595,11 +637,16 @@ var CODE = /*__CODE_INDEX__*/null;
   function renderTicker() {
     var items = KB.strategies.slice().sort(function (a, b) { return b.prior.score - a.prior.score; }).map(function (s) {
       var net = s.evidence.net_monthly_bps;
-      return '<span class="tk" data-load="' + esc(s.id) + '"><b>' + TICK[s.id] + '</b><span class="' + band(s.prior.score) + '">' + s.prior.score + '</span>' +
-        (net != null ? ' <span class="' + cls(net) + '">' + sgn(net, 0) + 'PB</span>' : '') + '</span>';
+      return '<button type="button" class="tk" data-load="' + esc(s.id) + '" title="' + esc(s.name) + '"><b>' + TICK[s.id] + '</b><span class="' + priorBand(s.prior.score) + '">' + s.prior.score + '</span>' +
+        (net != null ? ' <span class="' + cls(net) + '">' + sgn(net, 0) + 'PB</span>' : '') + '</button>';
     }).join('');
-    $('track').innerHTML = items + items;
+    // The second copy only makes the loop seamless: hidden from assistive tech and the Tab order.
+    $('track').innerHTML = items + items.replace(/<button /g, '<button tabindex="-1" aria-hidden="true" ');
   }
+  $('tickpause').addEventListener('click', function () {
+    var on = this.getAttribute('aria-pressed') !== 'true';
+    this.setAttribute('aria-pressed', String(on)); $('track').classList.toggle('paused', on);
+  });
   $('track').addEventListener('click', function (ev) { var t = ev.target.closest('[data-load]'); if (t) { loadStrategy(t.getAttribute('data-load')); showScreen('monitor'); } });
 
   // ── Screens & panels ────────────────────────────────────────────────────
@@ -608,8 +655,9 @@ var CODE = /*__CODE_INDEX__*/null;
     if (SCREENS.indexOf(name) < 0) return;
     state.screen = name;
     SCREENS.forEach(function (s) { $('screen-' + s).hidden = s !== name; });
-    document.querySelectorAll('.tabs .tab').forEach(function (b) { b.setAttribute('aria-selected', b.getAttribute('data-screen') === name ? 'true' : 'false'); });
-    document.querySelectorAll('.rail button').forEach(function (b) { if (b.getAttribute('data-screen') === name) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current'); });
+    document.querySelectorAll('.tabs .tab, .rail button').forEach(function (b) {
+      if (b.getAttribute('data-screen') === name) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
     store('qe.term.screen', name);
     try { if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name); } catch (e) { /* sandboxed */ }
     renderHiddenPanels();
@@ -617,17 +665,35 @@ var CODE = /*__CODE_INDEX__*/null;
   document.querySelectorAll('[data-screen]').forEach(function (b) { b.addEventListener('click', function () { showScreen(b.getAttribute('data-screen')); }); });
   window.addEventListener('hashchange', function () { showScreen(location.hash.slice(1)); });
 
+  function updateGridState(screen) {
+    screen.classList.toggle('has-hidden', !!screen.querySelector(':scope > .panel[hidden]'));
+  }
+  function showPanel(p) {
+    var sc = p.parentElement;
+    p.hidden = false; p.classList.remove('min');
+    sc.classList.remove('maxed');
+    sc.querySelectorAll('.panel.max').forEach(function (x) { x.classList.remove('max'); });
+    sc.querySelectorAll('[data-wc="max"]').forEach(function (m) { m.setAttribute('aria-pressed', 'false'); });
+    var mn = p.querySelector('[data-wc="min"]'); if (mn) mn.setAttribute('aria-pressed', 'false');
+    updateGridState(sc);
+  }
   document.addEventListener('click', function (ev) {
     var b = ev.target.closest('[data-wc]'); if (!b) return;
     var panel = b.closest('.panel'), screen = panel.parentElement, act = b.getAttribute('data-wc');
-    if (act === 'min') { panel.classList.toggle('min'); b.setAttribute('aria-pressed', panel.classList.contains('min')); }
+    if (act === 'min') { panel.classList.toggle('min'); b.setAttribute('aria-pressed', String(panel.classList.contains('min'))); }
     if (act === 'max') {
       var on = !panel.classList.contains('max');
       screen.querySelectorAll('.panel').forEach(function (p) { p.classList.remove('max'); });
       if (on) panel.classList.add('max');
       screen.classList.toggle('maxed', on);
+      screen.querySelectorAll('[data-wc="max"]').forEach(function (m) { m.setAttribute('aria-pressed', String(on && m.closest('.panel') === panel)); });
     }
-    if (act === 'close') { panel.hidden = true; panel.classList.remove('max'); screen.classList.remove('maxed'); renderHiddenPanels(); }
+    if (act === 'close') {
+      panel.hidden = true; panel.classList.remove('max'); screen.classList.remove('maxed');
+      var mx = panel.querySelector('[data-wc="max"]'); if (mx) mx.setAttribute('aria-pressed', 'false');
+      updateGridState(screen); renderHiddenPanels();
+      var rb = document.querySelector('[data-restore="' + panel.getAttribute('data-pid') + '"]'); if (rb) rb.focus();
+    }
   });
   function renderHiddenPanels() {
     var hidden = Array.prototype.slice.call(document.querySelectorAll('#screen-' + state.screen + ' > .panel[hidden]'));
@@ -637,50 +703,74 @@ var CODE = /*__CODE_INDEX__*/null;
   }
   $('hidden-panels').addEventListener('click', function (ev) {
     var b = ev.target.closest('[data-restore]'); if (!b) return;
-    var p = document.querySelector('.panel[data-pid="' + b.getAttribute('data-restore') + '"]'); if (p) p.hidden = false;
+    var p = document.querySelector('.panel[data-pid="' + b.getAttribute('data-restore') + '"]');
+    if (p) showPanel(p);
     renderHiddenPanels();
+    if (p) { var x = p.querySelector('[data-wc="close"]'); if (x) x.focus(); }
   });
+  function labelWindowControls() {
+    document.querySelectorAll('.panel').forEach(function (p) {
+      var n = 'panel ' + p.getAttribute('data-pid');
+      p.querySelectorAll('[data-wc]').forEach(function (b) {
+        var k = b.getAttribute('data-wc');
+        b.setAttribute('aria-label', { min: 'Minimizar', max: 'Maximizar', close: 'Cerrar' }[k] + ' ' + n);
+        if (k !== 'close' && !b.hasAttribute('aria-pressed')) b.setAttribute('aria-pressed', 'false');
+      });
+    });
+  }
 
   // ── Function keys ───────────────────────────────────────────────────────
-  var FKEYS = [['F1', 'AYUDA', function () { runCommand('HELP'); }], ['F2', 'EVAL', function () { showScreen('monitor'); }],
+  var FKEYS = [['F1', 'AYUDA', function () { runCommand('HELP'); }], ['F2', 'MONITOR', function () { showScreen('monitor'); }],
     ['F3', 'CABLE', function () { showScreen('cable'); }], ['F4', 'CÓDIGO', function () { showScreen('codigo'); }],
     ['F5', 'REPO', function () { showScreen('repo'); }], ['F6', 'CALC', function () { showScreen('calc'); }],
     ['F7', 'CONSOLA', function () { showScreen('consola'); }], ['F8', 'GUARDAR', function () { saveDecision(); }]];
   $('fkeys').innerHTML = FKEYS.map(function (k, i) { return '<button type="button" data-fk="' + i + '">[' + k[0] + ' ' + k[1] + ']</button>'; }).join('');
   $('fkeys').addEventListener('click', function (ev) { var b = ev.target.closest('[data-fk]'); if (b) FKEYS[Number(b.getAttribute('data-fk'))][2](); });
+  var typeAnywhere = store('qe.term.keys') !== 'off';
   document.addEventListener('keydown', function (ev) {
+    var t = ev.target, typing = t && ((t.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|reset|range|color)$/.test(t.type)) ||
+      t.tagName === 'SELECT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
     var m = /^F([1-8])$/.exec(ev.key);
-    if (m && !ev.altKey && !ev.ctrlKey && !ev.metaKey) { ev.preventDefault(); FKEYS[Number(m[1]) - 1][2](); return; }
+    if (m && (!typing || t.id === 'cmd') && !ev.altKey && !ev.ctrlKey && !ev.metaKey) { ev.preventDefault(); FKEYS[Number(m[1]) - 1][2](); return; }
     if (ev.altKey && /^[1-6]$/.test(ev.key)) { ev.preventDefault(); showScreen(SCREENS[Number(ev.key) - 1]); return; }
-    var t = ev.target, typing = t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
-    if (!typing && !ev.ctrlKey && !ev.metaKey && !ev.altKey && ev.key.length === 1 && /[\w<>.\- ]/.test(ev.key) && ev.key !== ' ') {
+    if (typeAnywhere && !typing && !ev.ctrlKey && !ev.metaKey && !ev.altKey && ev.key.length === 1 && /[\w<>.\-?,À-ſ]/.test(ev.key)) {
       $('cmd').focus();
     }
     if (state.screen === 'cable' && !typing && (ev.key === 'ArrowDown' || ev.key === 'ArrowUp')) { ev.preventDefault(); moveWire(ev.key === 'ArrowDown' ? 1 : -1); }
   });
+  // Enter / Space activate clickable rows and stories (they carry tabindex).
+  document.addEventListener('keydown', function (ev) {
+    if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches && ev.target.matches('tr.click[tabindex], .story.click[tabindex]')) {
+      ev.preventDefault(); ev.target.click();
+    }
+  });
 
   // ── Command line ────────────────────────────────────────────────────────
-  var logLines = [];
   function log(line, kind) {
-    logLines.push('<span class="' + (kind || '') + '">' + esc(line) + '</span>');
-    if (logLines.length > 400) logLines.shift();
-    $('log').innerHTML = logLines.join('\n');
-    var pb = $('log').parentElement; pb.scrollTop = pb.scrollHeight;
+    var el = $('log'), sp = document.createElement('span');
+    sp.className = kind || ''; sp.textContent = line;
+    if (el.firstChild) el.appendChild(document.createTextNode('\n'));
+    el.appendChild(sp);
+    while (el.childNodes.length > 799) el.removeChild(el.firstChild);
+    var pb = el.parentElement; pb.scrollTop = pb.scrollHeight;
+    if (kind === 'er') setTimeout(function () { showScreen('consola'); }, 0);
   }
+  function clearLog() { $('log').textContent = ''; }
   var HELP = [
     'COMANDOS (ENTER = <GO>):',
     '  <CÓDIGO>            CARGA UNA ESTRATEGIA EN EL MONITOR (EJ. MOM, BHGL, CAPE)',
     '  <CÓDIGO> DES        ABRE SU HISTORIA EN EL CABLE',
     '  EVAL | TOP | CODE [FILTRO] | REPO | GAPS | CALC | CONS   CAMBIA DE PANTALLA',
-    '  1..6                CAMBIA DE PANTALLA (TAMBIÉN ALT+1..6 Y F1..F8)',
-    '  SET <CAMPO> <VALOR> AJUSTA UN PARÁMETRO: SHARPE YEARS TRIALS SKEW KURT TURN COST MICRO VOL ALPHA LIVE HORIZON KELLY',
+    '  1..6                CAMBIA DE PANTALLA (TAMBIÉN ALT+1..6 Y F2..F7; F1 AYUDA, F8 GUARDAR)',
+    '  SET <CAMPO> <VALOR> AJUSTA UN PARÁMETRO: SHARPE YEARS TRIALS SKEW KURT TURN COST MICRO VOL ALPHA LIVE HORIZON KELLY FREQ',
     '  DSR <SR> <N> <AÑOS> [PER/AÑO] [VAR]   DEFLATED SHARPE RATIO',
     '  HC <SR> <AÑOS> <N>  SHARPE CON RECORTE POR PRUEBAS MÚLTIPLES (HARVEY-LIU)',
     '  MINBTL <N> <SR>     AÑOS MÍNIMOS DE BACKTEST',
     '  COST <ROT%> <PB> [LS]   COSTO MENSUAL POR ROTACIÓN',
-    '  BODIE <σ%> <AÑOS>   COSTO DEL SEGURO CONTRA RENDIR MENOS QUE LA TASA LIBRE',
+    '  BODIE <σ%> <AÑOS>   COSTO DEL SEGURO CONTRA RENDIR MENOS QUE LA TASA LIBRE DE RIESGO',
     '  KELLY <μ%> <r%> <σ%> [x]   FRACCIÓN DE KELLY Y CRECIMIENTO CONSERVADO',
-    '  SAVE | JSON | HIST | CLEAR | RESET',
+    '  SAVE | JSON | HIST | LIMPIAR | RESET',
+    '  TECLAS ON|OFF       ESCRIBIR EN CUALQUIER PARTE ENVÍA LAS TECLAS A ESTA LÍNEA (AHORA: ' + (typeAnywhere ? 'ON' : 'OFF') + ')',
     '  RUN <PROGRAMA> <COMANDO> [JSON]   SOLO CON LA APP LOCAL (python quant_studio.py)'
   ];
   var SET_ALIAS = { SHARPE: 'sharpe_annual', SR: 'sharpe_annual', YEARS: 'years', ANOS: 'years', 'AÑOS': 'years', TRIALS: 'n_trials', N: 'n_trials',
@@ -695,7 +785,7 @@ var CODE = /*__CODE_INDEX__*/null;
     var up = clean.toUpperCase(), tk = up.split(/\s+/), head = tk[0];
     log('> ' + up + ' <GO>', 'in');
     if (/^[1-6]$/.test(head)) { showScreen(SCREENS[Number(head) - 1]); return; }
-    var id = BY_TICK[head] || (strat(clean.toLowerCase()) ? clean.toLowerCase() : null);
+    var id = BY_TICK[head] || (strat(head.toLowerCase()) ? head.toLowerCase() : null);
     if (id) {
       if (tk[1] === 'DES' || tk[1] === 'CN' || tk[1] === 'TOP') { showScreen('cable'); selectWire('s:' + id); log('HISTORIA DE ' + TICK[id] + ' EN EL CABLE', 'ok'); }
       else { loadStrategy(id); showScreen('monitor'); log(TICK[id] + ' CARGADA: ' + strat(id).name.toUpperCase(), 'ok'); }
@@ -704,18 +794,33 @@ var CODE = /*__CODE_INDEX__*/null;
     var a = tk.slice(1).map(num);
     switch (head) {
       case 'HELP': case 'AYUDA': case 'H': case '?':
+        HELP[13] = '  TECLAS ON|OFF       ESCRIBIR EN CUALQUIER PARTE ENVÍA LAS TECLAS A ESTA LÍNEA (AHORA: ' + (typeAnywhere ? 'ON' : 'OFF') + ')';
         HELP.forEach(function (l) { log(l); }); showScreen('consola'); return;
       case 'EVAL': case 'MONITOR': case 'GP': showScreen('monitor'); return;
       case 'TOP': case 'CABLE': case 'N': case 'NEWS': showScreen('cable'); return;
-      case 'CODE': case 'CODIGO': case 'CÓDIGO': case 'SRC':
+      case 'CODE': case 'CODIGO': case 'CÓDIGO': case 'SRC': {
         showScreen('codigo');
-        if (tk[1]) { $('codeq').value = clean.split(/\s+/).slice(1).join(' '); renderTree(); var first = document.querySelector('#tree [data-file]'); if (first) openCode(first.getAttribute('data-file')); }
+        var cq = clean.split(/\s+/).slice(1).join(' ');
+        if (cq) {
+          var hit = (CODE || []).filter(function (c) { return c.path.toLowerCase().indexOf(cq.toLowerCase()) >= 0; })[0];
+          if (hit) { state.codeView = hit.group === 'nuevo' ? 'nuevo' : 'evidencia'; renderCodeView(); }
+          $('codeq').value = cq; renderTree();
+          if (hit) { openCode(hit.path); log('ABIERTO: ' + hit.path, 'ok'); } else log('NINGÚN ARCHIVO DEL ÍNDICE COINCIDE CON ' + cq.toUpperCase(), 'er');
+        }
         return;
+      }
       case 'REPO': case 'CAT': showScreen('repo'); return;
-      case 'GAPS': case 'BRECHAS': showScreen('repo'); var g = document.querySelector('.panel[data-pid="11"]'); if (g) g.hidden = false; return;
+      case 'GAPS': case 'BRECHAS': {
+        showScreen('repo'); var g = document.querySelector('.panel[data-pid="11"]'); if (g) showPanel(g); renderHiddenPanels(); return;
+      }
       case 'CALC': case 'CALCULO': case 'CÁLCULO': showScreen('calc'); return;
       case 'CONS': case 'CONSOLA': case 'LOG': showScreen('consola'); return;
-      case 'CLEAR': logLines = []; $('log').innerHTML = ''; return;
+      case 'CLEAR': case 'LIMPIAR': clearLog(); return;
+      case 'TECLAS': case 'KEYS': {
+        if (tk[1] !== 'ON' && tk[1] !== 'OFF') { log('USO: TECLAS ON|OFF (AHORA: ' + (typeAnywhere ? 'ON' : 'OFF') + ')', 'er'); return; }
+        typeAnywhere = tk[1] === 'ON'; store('qe.term.keys', typeAnywhere ? 'on' : 'off');
+        log('ESCRIBIR EN CUALQUIER PARTE: ' + tk[1], 'ok'); return;
+      }
       case 'RESET': case 'EJEMPLO': writeForm(EXAMPLE); log('EJEMPLO CARGADO', 'ok'); return;
       case 'SAVE': case 'GUARDAR': saveDecision(); return;
       case 'JSON': copyJson(); return;
@@ -724,41 +829,54 @@ var CODE = /*__CODE_INDEX__*/null;
         var key = SET_ALIAS[tk[1]], val = tk[2];
         if (!key || val == null) { log('USO: SET <CAMPO> <VALOR>. CAMPOS: ' + Object.keys(SET_ALIAS).join(' '), 'er'); return; }
         var el = $(key);
-        if (key === 'periods_per_year') { el.value = /^M/.test(val) ? '12' : /^S|^W/.test(val) ? '52' : '252'; }
-        else { if (num(val) == null) { log('VALOR NO NUMÉRICO: ' + val, 'er'); return; } el.value = num(val); }
+        if (key === 'periods_per_year') {
+          var nv = num(val), fq = nv === 12 || /^M/.test(val) ? '12' : nv === 52 || /^[SW]/.test(val) ? '52' : nv === 252 || /^D/.test(val) ? '252' : null;
+          if (!fq) { log('FRECUENCIA: D/252, S/52 O M/12', 'er'); return; }
+          el.value = fq;
+        } else { if (num(val) == null) { log('VALOR NO NUMÉRICO: ' + val, 'er'); return; } el.value = num(val); }
         render(); showScreen('monitor'); log(key.toUpperCase() + ' = ' + el.value, 'ok'); return;
       }
       case 'DSR': {
         if (a[0] == null || a[1] == null || a[2] == null) { log('USO: DSR <SR ANUAL> <N VARIANTES> <AÑOS> [PERIODOS/AÑO] [VAR SR]', 'er'); return; }
         var d = E.deflatedSharpeRatio(a[0], a[1], a[2], a[3] || 252, a[4] == null ? null : a[4], 0, 3);
-        log('DSR = ' + f2(d.dsr, 4) + '   SR0 (MEJOR SIN HABILIDAD) = ' + f2(d.sr0_annual, 3) + '   N OBS = ' + d.n_obs, 'ok'); setCalc('dsr', { sr: a[0], n: a[1], y: a[2], ppy: a[3] || 252 }); return;
+        log('DSR = ' + f2(d.dsr, 4) + '   SR0 (MEJOR SIN HABILIDAD) = ' + f2(d.sr0_annual, 3) + '   N OBS = ' + d.n_obs + '   (ASIMETRÍA 0, CURTOSIS 3)', 'ok');
+        setCalc('dsr', { sr: a[0], n: a[1], y: a[2], ppy: a[3] || 252, v: a[4] == null ? '' : a[4], sk: 0, ku: 3 }); showScreen('calc'); return;
       }
       case 'HC': case 'HAIRCUT': {
         if (a[0] == null || a[1] == null || a[2] == null) { log('USO: HC <SR ANUAL> <AÑOS> <N PRUEBAS>', 'er'); return; }
         var h = E.haircutSharpe(a[0], a[1], a[2]);
-        log('t = ' + f2(h.t_stat) + '   p AJ = ' + f2(h.p_adjusted, 4) + '   SR CON RECORTE = ' + f2(h.sharpe_haircut, 3) + '   RECORTE = ' + f2(h.haircut_pct * 100, 1) + '%', 'ok'); setCalc('hc', { sr: a[0], y: a[1], n: a[2] }); return;
+        log('t = ' + f2(h.t_stat) + '   p AJ = ' + f2(h.p_adjusted, 4) + '   SR CON RECORTE = ' + f2(h.sharpe_haircut, 3) + '   RECORTE = ' + f2(h.haircut_pct * 100, 1) + '%', 'ok');
+        setCalc('hc', { sr: a[0], y: a[1], n: a[2] }); showScreen('calc'); return;
       }
       case 'MINBTL': {
         if (a[0] == null || a[1] == null) { log('USO: MINBTL <N VARIANTES> <SR OBJETIVO>', 'er'); return; }
-        log('MINBTL = ' + f2(E.minBacktestLength(a[0], a[1]), 2) + ' AÑOS', 'ok'); setCalc('minbtl', { n: a[0], sr: a[1] }); return;
+        log('MINBTL = ' + f2(E.minBacktestLength(a[0], a[1]), 2) + ' AÑOS', 'ok'); setCalc('minbtl', { n: a[0], sr: a[1] }); showScreen('calc'); return;
       }
       case 'COST': case 'COSTO': {
         if (a[0] == null || a[1] == null) { log('USO: COST <ROTACIÓN %> <COSTO IDA Y VUELTA PB> [LS]', 'er'); return; }
         var ls = tk[3] === 'LS';
-        log('COSTO MENSUAL = ' + f2(E.monthlyCostBps(a[0] / 100, a[1], ls), 1) + ' PB' + (a[0] > 50 ? '   (ROTACIÓN > 50%: SUELE NO SOBREVIVIR)' : ''), 'ok'); setCalc('cost', { t: a[0], c: a[1], ls: ls }); return;
+        log('COSTO MENSUAL = ' + f2(E.monthlyCostBps(a[0] / 100, a[1], ls), 1) + ' PB' + (a[0] > 50 ? '   (ROTACIÓN > 50%: SUELE NO SOBREVIVIR)' : ''), 'ok');
+        setCalc('cost', { t: a[0], c: a[1], ls: ls }); showScreen('calc'); return;
       }
       case 'BODIE': {
         if (a[0] == null || a[1] == null) { log('USO: BODIE <σ ANUAL %> <AÑOS>', 'er'); return; }
-        log('SEGURO CONTRA RENDIR MENOS QUE LA TASA LIBRE = ' + f2(E.bodieShortfallPutCost(a[0] / 100, a[1]) * 100, 2) + '% DE LO INVERTIDO', 'ok'); setCalc('bodie', { s: a[0], y: a[1] }); return;
+        if (a[0] < 0 || a[1] < 0) { log('σ Y AÑOS DEBEN SER ≥ 0', 'er'); return; }
+        log('SEGURO CONTRA RENDIR MENOS QUE LA TASA LIBRE DE RIESGO = ' + f2(E.bodieShortfallPutCost(a[0] / 100, a[1]) * 100, 2) + '% DE LO INVERTIDO', 'ok');
+        setCalc('bodie', { s: a[0], y: a[1] }); showScreen('calc'); return;
       }
       case 'KELLY': {
         if (a[0] == null || a[1] == null || a[2] == null) { log('USO: KELLY <μ %> <r %> <σ %> [MÚLTIPLO]', 'er'); return; }
         var f = E.kellyFraction(a[0] / 100, a[1] / 100, a[2] / 100), x = a[3] == null ? 0.5 : a[3];
-        log('f* = ' + f2(f, 3) + '   ' + f2(x) + '× KELLY CONSERVA ' + f2(E.kellyGrowthShare(x) * 100, 1) + '% DEL CRECIMIENTO', 'ok'); setCalc('kelly', { mu: a[0], r: a[1], s: a[2], x: x }); return;
+        log('f* = ' + f2(f, 3) + '   ' + f2(x) + '× KELLY CONSERVA ' + f2(E.kellyGrowthShare(x) * 100, 1) + '% DEL CRECIMIENTO', 'ok');
+        setCalc('kelly', { mu: a[0], r: a[1], s: a[2], x: x }); showScreen('calc'); return;
       }
       case 'RUN': {
         if (!state.live) { log('RUN REQUIERE LA APP LOCAL: cd fincept-qt/scripts/Analytics && python quant_studio.py', 'er'); return; }
-        var parts = clean.split(/\s+/), script = (parts[1] || '').toLowerCase(), command = (parts[2] || 'list').toLowerCase(), pj = parts.slice(3).join(' ') || '{}';
+        // Parse from the raw text so JSON values keep '<', '>' and repeated spaces.
+        var rr = String(raw).replace(/\s*<GO>\s*$/i, ''),
+          rm = /^\s*\S+(?:\s+(\S+))?(?:\s+(\S+))?(?:\s+([\s\S]*?))?\s*$/.exec(rr) || [],
+          script = (rm[1] || '').toLowerCase(), command = (rm[2] || 'list').toLowerCase(), pj = rm[3] || '{}';
+        if (!script) { log('USO: RUN <PROGRAMA> <COMANDO> [JSON]. PROGRAMAS: quant_evidence cfa_quant statsmodels financial_analysis', 'er'); return; }
         var params; try { params = JSON.parse(pj); } catch (e) { log('JSON INVÁLIDO: ' + e.message, 'er'); return; }
         showScreen('consola'); log('EJECUTANDO ' + script + ' ' + command + '…');
         fetch('/api/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ script: script, command: command, params: params }) })
@@ -767,42 +885,47 @@ var CODE = /*__CODE_INDEX__*/null;
             var d = j.data;
             log(d.parsed ? JSON.stringify(d.parsed, null, 2) : (d.stdout || '(SIN SALIDA)'), d.returncode === 0 ? 'ok' : 'er');
             if (d.stderr) log(d.stderr, 'er');
-            log('(SALIDA ' + d.returncode + ', ' + d.seconds + ' S)');
+            log('(CÓDIGO DE SALIDA ' + d.returncode + ', ' + d.seconds + ' S)');
           }).catch(function (e) { log('NO SE PUDO EJECUTAR: ' + e.message, 'er'); });
         return;
       }
     }
     log('COMANDO DESCONOCIDO: ' + head + '. ESCRIBE HELP <GO>', 'er');
-    showScreen('consola');
   }
 
   var sugg = [], suggIdx = -1;
+  function hideSuggest() {
+    $('suggest').hidden = true; sugg = []; suggIdx = -1;
+    $('cmd').setAttribute('aria-expanded', 'false'); $('cmd').removeAttribute('aria-activedescendant');
+  }
   function suggest(q) {
     q = q.replace(/<[^>]*>/g, '').trim().toUpperCase();
-    if (!q || q.indexOf(' ') >= 0) { $('suggest').hidden = true; sugg = []; return; }
-    var cmds = ['HELP', 'EVAL', 'TOP', 'CODE', 'REPO', 'GAPS', 'CALC', 'CONS', 'DSR', 'HC', 'MINBTL', 'COST', 'BODIE', 'KELLY', 'SET', 'SAVE', 'JSON', 'RUN', 'RESET'];
+    if (!q || q.indexOf(' ') >= 0) { hideSuggest(); return; }
+    var cmds = ['HELP', 'EVAL', 'TOP', 'CODE', 'REPO', 'GAPS', 'CALC', 'CONS', 'DSR', 'HC', 'MINBTL', 'COST', 'BODIE', 'KELLY', 'SET', 'SAVE', 'JSON', 'RUN', 'RESET', 'TECLAS', 'LIMPIAR'];
     var out = KB.strategies.filter(function (s) {
       return TICK[s.id].indexOf(q) === 0 || s.name.toUpperCase().indexOf(q) >= 0;
     }).slice(0, 8).map(function (s) { return { v: TICK[s.id], label: s.name, kind: '<' + FAM[s.family][0] + '>' }; });
     cmds.filter(function (c) { return c.indexOf(q) === 0; }).forEach(function (c) { out.push({ v: c, label: 'COMANDO', kind: '<CMD>' }); });
     sugg = out.slice(0, 10); suggIdx = -1;
     $('suggest').innerHTML = sugg.map(function (s, i) {
-      return '<button type="button" role="option" data-i="' + i + '" aria-selected="false"><b>' + esc(s.v) + '</b><span>' + esc(s.label) + '</span><em>' + esc(s.kind) + '</em></button>';
+      return '<button type="button" role="option" id="sg-' + i + '" tabindex="-1" data-i="' + i + '" aria-selected="false"><b>' + esc(s.v) + '</b><span>' + esc(s.label) + '</span><em>' + esc(s.kind) + '</em></button>';
     }).join('');
     $('suggest').hidden = !sugg.length;
+    $('cmd').setAttribute('aria-expanded', String(!!sugg.length)); $('cmd').removeAttribute('aria-activedescendant');
   }
-  function pickSuggest(i) { var s = sugg[i]; if (!s) return; $('cmd').value = s.v; $('suggest').hidden = true; submitCmd(); }
-  function submitCmd() { var v = $('cmd').value; $('cmd').value = ''; $('suggest').hidden = true; runCommand(v); }
+  function pickSuggest(i) { var s = sugg[i]; if (!s) return; $('cmd').value = s.v; submitCmd(); }
+  function submitCmd() { var v = $('cmd').value; $('cmd').value = ''; hideSuggest(); runCommand(v); }
   $('cmd').addEventListener('input', function () { suggest($('cmd').value); });
   $('cmd').addEventListener('keydown', function (ev) {
     if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
       if (!sugg.length) return; ev.preventDefault();
       suggIdx = (suggIdx + (ev.key === 'ArrowDown' ? 1 : -1) + sugg.length) % sugg.length;
       $('suggest').querySelectorAll('button').forEach(function (b, i) { b.setAttribute('aria-selected', i === suggIdx ? 'true' : 'false'); });
-    } else if (ev.key === 'Enter' && suggIdx >= 0) { ev.preventDefault(); pickSuggest(suggIdx); }
-    else if (ev.key === 'Escape') { $('cmd').value = ''; $('suggest').hidden = true; }
+      $('cmd').setAttribute('aria-activedescendant', 'sg-' + suggIdx);
+    } else if (ev.key === 'Enter' && suggIdx >= 0 && sugg.length) { ev.preventDefault(); pickSuggest(suggIdx); }
+    else if (ev.key === 'Escape') { $('cmd').value = ''; hideSuggest(); }
   });
-  $('cmd').addEventListener('blur', function () { setTimeout(function () { $('suggest').hidden = true; }, 150); });
+  $('cmd').addEventListener('blur', function () { setTimeout(hideSuggest, 150); });
   $('suggest').addEventListener('mousedown', function (ev) { var b = ev.target.closest('[data-i]'); if (b) { ev.preventDefault(); pickSuggest(Number(b.getAttribute('data-i'))); } });
   $('cmdform').addEventListener('submit', function (ev) { ev.preventDefault(); submitCmd(); });
   $('gobtn').addEventListener('click', submitCmd);
@@ -865,6 +988,7 @@ var CODE = /*__CODE_INDEX__*/null;
     var t0 = (window.performance || Date).now();
     var r = E.evaluateDecision(d, KB, REPO);
     state.evalMs = (window.performance || Date).now() - t0;
+    r._engine = 'js';
     return r;
   }
   function evaluate(d) {
@@ -872,9 +996,17 @@ var CODE = /*__CODE_INDEX__*/null;
     var t0 = (window.performance || Date).now();
     return fetch('/api/evaluate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) })
       .then(function (r) { return r.json(); })
-      .then(function (j) { if (!j.success) throw new Error(j.error); state.evalMs = (window.performance || Date).now() - t0; return j.data; })
-      .catch(function () { return evalLocal(d); });
+      .then(function (j) {
+        if (!j.success) throw new Error(j.error);
+        state.evalMs = (window.performance || Date).now() - t0;
+        state.pyDown = false; j.data._engine = 'python'; return j.data;
+      })
+      .catch(function () {
+        if (!state.pyDown) { state.pyDown = true; log('EL MOTOR PYTHON NO RESPONDIÓ: RESULTADOS CON EL MOTOR JS HASTA QUE VUELVA', 'er'); }
+        return evalLocal(d);
+      });
   }
+  function engineName(r) { return r && r._engine === 'python' ? 'MOTOR PYTHON' : 'MOTOR JS'; }
 
   // ── Sensitivity charts (always the JS engine; same numbers as Python) ───
   var SENS = {
@@ -885,14 +1017,14 @@ var CODE = /*__CODE_INDEX__*/null;
   };
   function renderSensButtons(hasBt) {
     $('sens-x').innerHTML = Object.keys(SENS).map(function (k) {
-      var s = SENS[k], dis = (s.needsBt || k === 'trials') && !hasBt;
-      return '<button type="button" data-sx="' + k + '" aria-pressed="' + (state.sensX === k) + '"' + (dis ? ' disabled title="Requiere Sharpe y años"' : '') + '>' + s.label + '</button>';
-    }).join('') + '<span class="lbl">EJE X: SENSIBILIDAD · MARCADOR = TU VALOR</span>';
+      var sp = SENS[k], dis = (sp.needsBt || k === 'trials') && !hasBt;
+      return '<button type="button" data-sx="' + k + '" aria-pressed="' + (state.sensX === k) + '"' + (dis ? ' disabled title="Requiere Sharpe y años"' : '') + '>' + sp.label + '</button>';
+    }).join('') + '<span class="lbl">EJE X: SENSIBILIDAD · MARCADOR = TU VALOR · CURVAS: MOTOR JS</span>';
   }
   $('sens-x').addEventListener('click', function (ev) { var b = ev.target.closest('[data-sx]'); if (b && !b.disabled) { state.sensX = b.getAttribute('data-sx'); render(); } });
 
   function lineChart(opts) {
-    var W = 640, H = opts.h || 220, L = 8, R = 62, T = 10, B = 22;
+    var W = opts.w || 640, H = opts.h || 220, L = 8, R = 62, B = 22, legendRow = !!(opts.bands || []).length && W < 600, T = legendRow ? 32 : 20;
     var xs = opts.xs, ys = opts.ys, n = xs.length;
     var xv = function (v) { return opts.log ? Math.log10(v) : v; };
     var x0 = xv(xs[0]), x1 = xv(xs[n - 1]);
@@ -904,16 +1036,16 @@ var CODE = /*__CODE_INDEX__*/null;
     var pad = (hi - lo) * 0.08; if (opts.lo == null) lo -= pad; if (opts.hi == null) hi += pad;
     var X = function (v) { return L + (xv(v) - x0) / ((x1 - x0) || 1) * (W - L - R); };
     var Y = function (v) { return T + (hi - v) / (hi - lo) * (H - T - B); };
+    var cyTag = opts.cur != null && isFinite(opts.cur) ? Math.max(T + 7, Math.min(H - B - 7, Y(opts.cur))) : null;
     var st = niceStep((hi - lo) / 4), out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(opts.aria) + '">';
     for (var t = Math.ceil(lo / st) * st; t <= hi + 1e-9; t += st) {
       var tt = Math.round(t * 1000) / 1000;
-      out += '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(tt).toFixed(1) + '" y2="' + Y(tt).toFixed(1) + '"/>' +
-        '<text x="' + (W - R + 6) + '" y="' + (Y(tt) + 3).toFixed(1) + '">' + tt + '</text>';
+      out += '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(tt).toFixed(1) + '" y2="' + Y(tt).toFixed(1) + '"/>';
+      if (cyTag == null || Math.abs(Y(tt) - cyTag) >= 14) out += '<text x="' + (W - R + 6) + '" y="' + (Y(tt) + 3).toFixed(1) + '">' + tt + '</text>';
     }
     (opts.bands || []).forEach(function (b) {
       if (b.v < lo || b.v > hi) return;
-      out += '<line class="band' + (b.hi ? ' hi' : '') + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(b.v).toFixed(1) + '" y2="' + Y(b.v).toFixed(1) + '"/>' +
-        '<text class="lbl-t" x="' + (L + 4) + '" y="' + (Y(b.v) - 3).toFixed(1) + '">' + esc(b.label) + '</text>';
+      out += '<line class="band' + (b.hi ? ' hi' : '') + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(b.v).toFixed(1) + '" y2="' + Y(b.v).toFixed(1) + '"/>';
     });
     if (opts.zero && lo < 0 && hi > 0) out += '<line class="zero" x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(0).toFixed(1) + '" y2="' + Y(0).toFixed(1) + '"/>';
     var pts = [];
@@ -925,39 +1057,62 @@ var CODE = /*__CODE_INDEX__*/null;
     }
     var tickIdx = [0, Math.floor((n - 1) / 3), Math.floor(2 * (n - 1) / 3), n - 1];
     tickIdx.forEach(function (i) { out += '<text x="' + X(xs[i]).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle">' + esc(opts.fmt(xs[i])) + '</text>'; });
-    if (opts.curX != null && isFinite(opts.curX) && opts.curX >= xs[0] && opts.curX <= xs[n - 1]) {
-      out += '<line class="cur" x1="' + X(opts.curX).toFixed(1) + '" x2="' + X(opts.curX).toFixed(1) + '" y1="' + T + '" y2="' + (H - B) + '"/>';
+    var inRange = opts.curX != null && isFinite(opts.curX) && opts.curX >= xs[0] && opts.curX <= xs[n - 1];
+    if (inRange) out += '<line class="cur" x1="' + X(opts.curX).toFixed(1) + '" x2="' + X(opts.curX).toFixed(1) + '" y1="' + T + '" y2="' + (H - B) + '"/>';
+    if (cyTag != null) {
+      out += '<line class="cur" x1="' + L + '" x2="' + (W - R) + '" y1="' + cyTag.toFixed(1) + '" y2="' + cyTag.toFixed(1) + '"/>';
+      if (inRange) out += '<circle class="dot" cx="' + X(opts.curX).toFixed(1) + '" cy="' + cyTag.toFixed(1) + '" r="3"/>';
+      out += '<rect class="pricetag" x="' + (W - R + 1) + '" y="' + (cyTag - 7).toFixed(1) + '" width="' + (R - 2) + '" height="14"/>' +
+        '<text class="pricetag-t" x="' + (W - R + 5) + '" y="' + (cyTag + 3.5).toFixed(1) + '">' + esc(opts.curLabel != null ? opts.curLabel : f2(opts.cur, 1)) + ' &lt;</text>';
     }
-    if (opts.cur != null && isFinite(opts.cur)) {
-      var cy = Math.max(T + 7, Math.min(H - B - 7, Y(opts.cur)));
-      out += '<line class="cur" x1="' + L + '" x2="' + (W - R) + '" y1="' + cy.toFixed(1) + '" y2="' + cy.toFixed(1) + '"/>';
-      if (opts.curX != null && isFinite(opts.curX) && opts.curX >= xs[0] && opts.curX <= xs[n - 1]) out += '<circle class="dot" cx="' + X(opts.curX).toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="3"/>';
-      out += '<rect class="pricetag" x="' + (W - R + 1) + '" y="' + (cy - 7).toFixed(1) + '" width="' + (R - 2) + '" height="14"/>' +
-        '<text class="pricetag-t" x="' + (W - R + 5) + '" y="' + (cy + 3.5).toFixed(1) + '">' + esc(f2(opts.cur, 1)) + ' &lt;</text>';
-    }
-    out += '<text class="lbl-t" x="' + (L + 4) + '" y="' + (T + 10) + '">' + esc(opts.title) + '</text>';
+    out += '<text class="lbl-t" x="' + L + '" y="12">' + esc(opts.title) + '</text>';
+    var lg = (opts.bands || []).map(function (b) { return '<tspan class="' + (b.hi ? 'lg-hi' : 'lg-lo') + '">— ' + esc(b.label) + '</tspan>'; }).join('   ');
+    if (lg) out += legendRow ? '<text class="lbl-t" x="' + L + '" y="25">' + lg + '</text>' : '<text class="lbl-t" x="' + (W - R) + '" y="12" text-anchor="end">' + lg + '</text>';
     return out + '</svg>';
   }
   function niceStep(raw) { var p = Math.pow(10, Math.floor(Math.log10(raw || 1))), n = raw / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p; }
 
+  // Charts are drawn at the panel's real pixel size so text keeps its size and
+  // the two charts share whatever height the panel has left.
+  function chartDims() {
+    var a = $('sens-chart'), b = $('score-chart'), pb = a.parentElement, w = Math.max(300, Math.floor(a.clientWidth || 640));
+    if (window.innerWidth <= 900) return { w: w, h1: 170, h2: 100 };
+    var cs = getComputedStyle(pb), used = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    Array.prototype.forEach.call(pb.children, function (c) {
+      if (c === a || c === b) return;
+      var cst = getComputedStyle(c); if (cst.position === 'absolute') return;
+      used += c.offsetHeight + parseFloat(cst.marginTop) + parseFloat(cst.marginBottom);
+    });
+    var avail = pb.clientHeight - used - 4;
+    if (avail < 200) return { w: w, h1: Math.max(90, avail), h2: 0 };
+    return { w: w, h1: Math.round(avail * 0.62), h2: Math.round(avail * 0.38) };
+  }
   function renderSensitivity(d, r) {
     var hasBt = r.inputs.has_backtest;
     if ((state.sensX === 'years' || state.sensX === 'trials') && !hasBt) state.sensX = 'cost';
     renderSensButtons(hasBt);
+    var dims = chartDims();
     var spec = SENS[state.sensX], xs = spec.xs(), nets = [], scores = [];
     xs.forEach(function (x) {
       var o = {}; o[spec.key] = x;
       var rr = E.evaluateDecision(readForm(o), KB, null);
       nets.push(rr.net_monthly_bps); scores.push(rr.scores.final);
     });
-    var curX = r.inputs[spec.key];
-    var useNet = r.net_monthly_bps != null;
+    var curX = r.inputs[spec.key], useNet = r.net_monthly_bps != null, finLabel = String(Math.floor(r.scores.final));
     $('sens-chart').innerHTML = lineChart({ xs: xs, ys: useNet ? nets : scores, log: spec.log, fmt: spec.fmt, cur: useNet ? r.net_monthly_bps : r.scores.final,
-      curX: curX, zero: useNet, area: true, h: 150, title: useNet ? 'VENTAJA NETA PB/MES vs ' + spec.label : 'PUNTAJE vs ' + spec.label + ' (SIN VENTAJA MEDIBLE)',
-      aria: 'Sensibilidad de la ventaja neta' });
-    $('score-chart').innerHTML = lineChart({ xs: xs, ys: scores, log: spec.log, fmt: spec.fmt, cur: r.scores.final, curX: curX, lo: 0, hi: 100, h: 86, score: true,
-      bands: [{ v: 70, label: 'RESPALDADA 70', hi: true }, { v: 30, label: 'DÉBIL 30' }], title: 'PUNTAJE FINAL (0-100) vs ' + spec.label, aria: 'Sensibilidad del puntaje' });
+      curLabel: useNet ? null : finLabel, curX: curX, zero: useNet, area: true, w: dims.w, h: dims.h1,
+      title: useNet ? 'VENTAJA NETA PB/MES vs ' + spec.label : 'PUNTAJE vs ' + spec.label + ' (SIN VENTAJA MEDIBLE)', aria: 'Sensibilidad de la ventaja neta' });
+    $('score-chart').innerHTML = dims.h2 ? lineChart({ xs: xs, ys: scores, log: spec.log, fmt: spec.fmt, cur: r.scores.final, curLabel: finLabel, curX: curX, lo: 0, hi: 100,
+      w: dims.w, h: dims.h2, score: true, bands: [{ v: 70, label: 'RESPALDADA 70', hi: true }, { v: 30, label: 'DÉBIL 30' }],
+      title: 'PUNTAJE FINAL (0-100) vs ' + spec.label, aria: 'Sensibilidad del puntaje' }) : '';
   }
+  var roPending = false;
+  function rerenderCharts() {
+    if (roPending || !state.last) return; roPending = true;
+    requestAnimationFrame(function () { roPending = false; renderSensitivity(state.last.input, state.last.result); });
+  }
+  if (window.ResizeObserver) new ResizeObserver(rerenderCharts).observe($('sens-chart').parentElement);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(rerenderCharts);
 
   // ── Render monitor ──────────────────────────────────────────────────────
   var renderSeq = 0, liveTimer = null;
@@ -967,7 +1122,7 @@ var CODE = /*__CODE_INDEX__*/null;
   }
   function paint(d, r) {
     state.last = { input: d, result: r };
-    var s = r.strategy, sc = r.scores, fin = Math.floor(sc.final), st = r.stats;
+    var s = r.strategy, sc = r.scores, fin = Math.floor(sc.final), st = r.stats, eng = engineName(r);
     $('q-name').innerHTML = esc(TICK[s.id]) + ' &lt;' + FAM[s.family][0] + '&gt; ' + esc(s.name);
     $('q-score').innerHTML = fin + '<small>/100</small>';
     $('q-verdict').innerHTML = '<span class="tag ' + r.verdict.code + '">' + VERDICT_SHORT[r.verdict.code] + '</span> ' +
@@ -981,18 +1136,20 @@ var CODE = /*__CODE_INDEX__*/null;
     $('q-stats').innerHTML = stats.map(function (x) { return '<span>' + x + '</span>'; }).join('');
     var subs = [['EVIDENCIA', 'prior'], ['ESTADÍSTICA', 'statistical'], ['IMPLEMENTACIÓN', 'implementability'], ['CONTEXTO', 'context']];
     $('q-subs').innerHTML = subs.map(function (p) {
-      var v = sc[p[1]], w = r.weights[p[1]];
-      return '<div style="border-top-color:' + (v == null ? 'var(--line-2)' : v >= 70 ? 'var(--green)' : v >= 30 ? 'var(--yellow)' : 'var(--red)') + '"><span>' + p[0] + '</span><b>' +
+      var v = sc[p[1]], w = r.weights[p[1]], bnd = v == null ? null : (p[1] === 'prior' ? priorBand(v) : band(v));
+      var col = bnd == null ? 'var(--line-2)' : bnd === 'up' ? 'var(--green)' : bnd === 'ye' ? 'var(--yellow)' : 'var(--red)';
+      return '<div style="border-top-color:' + col + '"><span>' + p[0] + '</span><b>' +
         (v == null ? '—' : Math.floor(v)) + '<small>' + (w ? Math.round(w * 100) + '%' : 'SIN DATOS') + '</small></b></div>';
     }).join('');
-    $('p1-foot').textContent = (r.caps || []).length ? r.caps.join(' ') : 'PESOS ' + Object.keys(r.weights).map(function (k) { return Math.round(r.weights[k] * 100); }).join('/') + ' · ' + (state.live ? 'MOTOR PYTHON' : 'MOTOR JS');
+    $('p1-foot').textContent = (r.caps || []).length ? r.caps.join(' ') : 'PESOS ' + Object.keys(r.weights).map(function (k) { return Math.round(r.weights[k] * 100); }).join('/') + ' · ' + eng;
     renderSensitivity(d, r);
 
     $('p2-strat').textContent = TICK[s.id];
-    $('pr-l').textContent = 'RESPALDO: ' + sc.final.toFixed(1) + '%';
-    $('pr-r').textContent = 'RIESGO: ' + (100 - sc.final).toFixed(1) + '%';
-    $('pr-bar').style.width = Math.max(0, Math.min(100, sc.final)) + '%';
-    $('casc-src').innerHTML = 'STATUS: <span class="up">' + (state.live ? 'MOTOR PYTHON' : 'MOTOR JS') + '</span>';
+    $('pr-l').textContent = 'PUNTAJE ' + fin + '/100';
+    $('pr-r').textContent = VERDICT_SHORT[r.verdict.code];
+    $('pr-r').className = 'tag ' + r.verdict.code;
+    $('pr-bar').style.width = Math.max(0, Math.min(100, fin)) + '%';
+    $('casc-src').innerHTML = 'ESTADO: <span class="up">' + eng + '</span>';
     $('cascade').innerHTML = r.cascade && r.cascade.length
       ? '<thead><tr><th>ETAPA</th><th class="n">PB/MES</th><th>NOTA</th></tr></thead><tbody>' + r.cascade.map(function (c) {
         return '<tr><td>' + esc(c.stage.toUpperCase()) + '</td><td class="n ' + cls(c.monthly_bps) + '">' + f2(c.monthly_bps, 1) + '</td><td class="mu wrap">' + esc(c.note || '') + '</td></tr>';
@@ -1010,34 +1167,47 @@ var CODE = /*__CODE_INDEX__*/null;
   function renderChecks(r) {
     var counts = { fail: 0, warn: 0, pass: 0, info: 0 };
     r.checks.forEach(function (c) { counts[c.status]++; });
-    var opts = [['todos', 'TODOS ' + r.checks.length], ['fail', 'FALLA ' + counts.fail], ['warn', 'OJO ' + counts.warn], ['pass', 'PASA ' + counts.pass]];
+    if (state.chk === 'info' && !counts.info) state.chk = 'todos';
+    var opts = [['todos', 'TODOS ' + r.checks.length], ['fail', 'FALLA ' + counts.fail], ['warn', 'OJO ' + counts.warn], ['pass', 'PASA ' + counts.pass]]
+      .concat(counts.info ? [['info', 'NOTA ' + counts.info]] : []);
     $('chk-filter').innerHTML = opts.map(function (o) { return '<button type="button" data-cf="' + o[0] + '" aria-pressed="' + (state.chk === o[0]) + '">' + o[1] + '</button>'; }).join('');
     var list = r.checks.filter(function (c) { return state.chk === 'todos' || c.status === state.chk; });
-    $('checks').innerHTML = list.map(function (c, i) {
+    $('checks').innerHTML = list.map(function (c) {
       return '<div class="story"><div class="ts">CHK ' + String(r.checks.indexOf(c) + 1).padStart(2, '0') + '<br><span class="tag ' + c.status + '">' + STATUS[c.status] + '</span></div>' +
         '<div><div class="hl"><i>*</i>' + esc(c.label) + '</div><div class="bd">' + esc(c.detail) + '</div>' +
         (c.source ? '<div class="rel">FUENTE: ' + srcLink(c.source) + '</div>' : '') + '</div><div class="no">' + esc(TICK[r.strategy.id]) + '<br>' + esc(c.id.toUpperCase()) + '</div></div>';
     }).join('') || '<p class="mu">SIN CHEQUEOS EN ESTE FILTRO.</p>';
-    $('chk-foot').textContent = counts.fail + ' EN ROJO · ' + counts.warn + ' CON ADVERTENCIA · ' + counts.pass + ' PASAN';
-    $('chk-status').textContent = counts.fail ? 'ALERTA' : 'EN LÍNEA';
+    $('chk-foot').textContent = counts.fail + ' EN ROJO · ' + counts.warn + ' CON ADVERTENCIA · ' + counts.pass + ' PASAN' + (counts.info ? ' · ' + counts.info + ' NOTA' : '');
+    $('chk-status').textContent = counts.fail ? 'CON FALLAS' : 'SIN FALLAS';
     $('chk-status').className = counts.fail ? 'dn' : 'ok';
   }
   $('chk-filter').addEventListener('click', function (ev) { var b = ev.target.closest('[data-cf]'); if (b) { state.chk = b.getAttribute('data-cf'); if (state.last) renderChecks(state.last.result); } });
 
   // ── Strategy matrix ─────────────────────────────────────────────────────
+  function focusedKey(containerId, attr) {
+    var ae = document.activeElement;
+    return ae && ae.closest && ae.closest('#' + containerId) && ae.getAttribute ? ae.getAttribute(attr) : null;
+  }
+  function restoreFocus(containerId, attr, key) {
+    if (!key) return;
+    var n = $(containerId).querySelector('[' + attr + '="' + key + '"]'); if (n) n.focus();
+  }
   function renderMatrix() {
-    var rows = '<thead><tr><th>CÓDIGO</th><th>ESTRATEGIA</th><th class="n">VAL.</th><th class="n">NETO PB</th><th class="n">ROT%</th><th>REQ.</th></tr></thead><tbody>';
+    var fk = focusedKey('matrix', 'data-load');
+    var rows = '<thead><tr><th>CÓDIGO</th><th>ESTRATEGIA</th><th class="n" title="' + esc(KB.meta.prior_note) + '">VAL.*</th><th class="n">NETO PB</th><th class="n">ROT%</th><th title="C = cortos, A = apalancamiento, μ = microcaps">REQ.</th></tr></thead><tbody>';
     FAMILIES.forEach(function (fam, fi) {
       var list = KB.strategies.filter(function (s) { return s.family === fam; }).sort(function (a, b) { return b.prior.score - a.prior.score; });
       rows += '<tr class="sec"><td colspan="6">' + (fi + 1) + ') ' + FAM[fam][1] + '</td></tr>';
       list.forEach(function (s) {
-        var ev = s.evidence, net = ev.net_monthly_bps, req = (ev.requires_short ? 'S' : '·') + (ev.requires_leverage ? 'L' : '·') + (ev.microcap_dependence === 'alta' ? 'μ' : '·');
-        rows += '<tr class="click' + (s.id === current ? ' on' : '') + '" data-load="' + esc(s.id) + '"><td class="code-cell">' + TICK[s.id] + '</td><td>' + esc(s.name.length > 46 ? s.name.slice(0, 45) + '…' : s.name) + '</td>' +
-          '<td class="n ' + band(s.prior.score) + '">' + s.prior.score + '</td><td class="n ' + cls(net) + '">' + (net == null ? '—' : sgn(net, 0)) + '</td>' +
-          '<td class="n">' + (ev.typical_turnover_monthly == null ? '—' : Math.round(ev.typical_turnover_monthly * 100)) + '</td><td class="mu" title="S = cortos, L = apalancamiento, μ = microcaps">' + req + '</td></tr>';
+        var ev = s.evidence, net = ev.net_monthly_bps, req = (ev.requires_short ? 'C' : '·') + (ev.requires_leverage ? 'A' : '·') + (ev.microcap_dependence === 'alta' ? 'μ' : '·');
+        var on = s.id === current;
+        rows += '<tr class="click' + (on ? ' on' : '') + '" tabindex="0"' + (on ? ' aria-current="true"' : '') + ' data-load="' + esc(s.id) + '"><td class="code-cell">' + TICK[s.id] + '</td><td title="' + esc(s.name) + '">' + esc(s.name) + '</td>' +
+          '<td class="n ' + priorBand(s.prior.score) + '">' + s.prior.score + '</td><td class="n ' + cls(net) + '">' + (net == null ? '—' : sgn(net, 0)) + '</td>' +
+          '<td class="n">' + (ev.typical_turnover_monthly == null ? '—' : Math.round(ev.typical_turnover_monthly * 100)) + '</td><td class="mu" title="C = cortos, A = apalancamiento, μ = microcaps">' + req + '</td></tr>';
       });
     });
     $('matrix').innerHTML = rows + '</tbody>';
+    restoreFocus('matrix', 'data-load', fk);
   }
   $('matrix').addEventListener('click', function (ev) { var t = ev.target.closest('[data-load]'); if (t) loadStrategy(t.getAttribute('data-load')); });
 
@@ -1053,7 +1223,7 @@ var CODE = /*__CODE_INDEX__*/null;
     if (!rows.length) { $('hist').innerHTML = '<tbody><tr><td class="mu wrap">SIN DECISIONES GUARDADAS. AJUSTA EL MONITOR Y ESCRIBE SAVE &lt;GO&gt; O PULSA F8.</td></tr></tbody>'; return; }
     $('hist').innerHTML = '<thead><tr><th>CÓDIGO</th><th>DICTAMEN</th><th class="n">PUNT.</th><th class="n">NETO PB</th><th></th></tr></thead><tbody>' + rows.map(function (x, i) {
       var code = VERDICT_CODES.test(x.code) ? x.code : '';
-      return '<tr class="click" data-hload="' + i + '"><td class="code-cell">' + esc(TICK[x.input.strategy_id] || x.input.strategy_id) + '</td><td><span class="tag ' + code + '">' + esc(VERDICT_SHORT[code] || x.label) + '</span></td>' +
+      return '<tr class="click" tabindex="0" data-hload="' + i + '"><td class="code-cell">' + esc(TICK[x.input.strategy_id] || x.input.strategy_id) + '</td><td><span class="tag ' + code + '">' + esc(VERDICT_SHORT[code] || x.label) + '</span></td>' +
         '<td class="n">' + (isFinite(x.score) ? Math.floor(x.score) : '—') + '</td><td class="n ' + cls(x.net) + '">' + (x.net == null ? '—' : f2(x.net, 1)) + '</td>' +
         '<td class="n"><button type="button" class="tbtn" style="padding:0 5px" data-hdel="' + i + '" aria-label="Borrar ' + esc(x.name) + '">BORRAR</button></td></tr>';
     }).join('') + '</tbody>';
@@ -1094,12 +1264,13 @@ var CODE = /*__CODE_INDEX__*/null;
     });
     var order = { alta: 0, media: 1, baja: 2 };
     (REPO.gaps || []).filter(function (g) { return typeof g === 'object'; }).sort(function (a, b) { return order[a.severity] - order[b.severity]; }).forEach(function (g, i) {
-      items.push({ key: 'g:' + i, kind: 'gap', fam: 'brechas', tag: 'GAP', g: g, no: 'GAP-' + String(i + 1).padStart(2, '0') });
+      items.push({ key: 'g:' + i, kind: 'gap', fam: 'brechas', tag: 'BRECHA', g: g, no: 'BRECHA-' + String(i + 1).padStart(2, '0') });
     });
     return items;
   }
   var WIRE = [];
   function renderWire() {
+    var fk = focusedKey('wire', 'data-ws');
     WIRE = wireItems();
     var opts = [['todas', 'TODAS']].concat(FAMILIES.map(function (f) { return [f, FAM[f][1]]; })).concat([['brechas', 'BRECHAS']]);
     $('wire-filter').innerHTML = opts.map(function (o) { return '<button type="button" data-wf="' + esc(o[0]) + '" aria-pressed="' + (state.wireF === o[0]) + '">' + esc(o[1]) + '</button>'; }).join('');
@@ -1107,18 +1278,22 @@ var CODE = /*__CODE_INDEX__*/null;
     $('wire').innerHTML = list.map(function (it) {
       if (it.kind === 'gap') {
         var g = it.g;
-        return '<div class="story click' + (state.wireSel === it.key ? ' on' : '') + '" data-ws="' + it.key + '"><div class="ts">' + esc(it.no) + '<br><span class="tag ' + esc(g.severity) + '">' + esc(g.severity.toUpperCase()) + '</span></div>' +
-          '<div><div class="hl"><i>*</i>BRECHA EN ' + esc((CAT[g.category] ? CAT[g.category].name : g.category)) + '</div><div class="bd">' + esc(g.text) + '</div></div><div class="no">[GAP]</div></div>';
+        return '<div class="story click' + (state.wireSel === it.key ? ' on" aria-current="true' : '') + '" tabindex="0" data-ws="' + it.key + '"><div class="ts">' + esc(it.no) + '<br><span class="tag ' + esc(g.severity) + '">' + esc(g.severity.toUpperCase()) + '</span></div>' +
+          '<div><div class="hl"><i>*</i>BRECHA EN ' + esc((CAT[g.category] ? CAT[g.category].name : g.category)) + '</div><div class="bd">' + esc(g.text) + '</div></div><div class="no">[BRECHA]</div></div>';
       }
       var s = it.s;
-      return '<div class="story click' + (state.wireSel === it.key ? ' on' : '') + '" data-ws="' + it.key + '"><div class="ts">' + esc(TICK[s.id]) + '<br><span class="tag fam">' + it.tag + '</span></div>' +
+      return '<div class="story click' + (state.wireSel === it.key ? ' on" aria-current="true' : '') + '" tabindex="0" data-ws="' + it.key + '"><div class="ts">' + esc(TICK[s.id]) + '<br><span class="tag fam">' + it.tag + '</span></div>' +
         '<div><div class="hl"><i>*</i>' + esc(s.name) + ': ' + esc(s.survives) + '</div><div class="bd">' + esc(s.key_figure) + marks(s.marks) + '</div>' +
-        '<div class="rel">VALORACIÓN <span class="' + band(s.prior.score) + '">' + s.prior.score + '</span> · ' + s.sources.length + ' FUENTES · [EVAL ' + esc(TICK[s.id]) + ' &lt;GO&gt;]</div></div><div class="no">' + esc(it.no) + '</div></div>';
+        '<div class="rel">VALORACIÓN <span class="' + priorBand(s.prior.score) + '">' + s.prior.score + '</span> · ' + s.sources.length + ' FUENTES · [EVAL ' + esc(TICK[s.id]) + ' &lt;GO&gt;]</div></div><div class="no">' + esc(it.no) + '</div></div>';
     }).join('');
     $('wire-foot').textContent = list.length + ' HISTORIAS · FILTRO ' + (state.wireF === 'todas' ? 'TODAS' : (FAM[state.wireF] ? FAM[state.wireF][1] : 'BRECHAS'));
+    restoreFocus('wire', 'data-ws', fk);
   }
   function selectWire(key) {
+    var sel = wireItems().filter(function (x) { return x.key === key; })[0];
+    if (sel && state.wireF !== 'todas' && sel.fam !== state.wireF) state.wireF = 'todas';
     state.wireSel = key; renderWire();
+    var row = document.querySelector('[data-ws="' + key + '"]'); if (row) row.scrollIntoView({ block: 'nearest' });
     var it = WIRE.filter(function (x) { return x.key === key; })[0];
     if (!it) return;
     var h;
@@ -1129,7 +1304,7 @@ var CODE = /*__CODE_INDEX__*/null;
         (g.covered_by ? '<p class="up">CUBIERTO AQUÍ: ' + esc(g.covered_by) + '</p>' : '<p class="mu">SIN COBERTURA EN EL PAQUETE NUEVO.</p>');
     } else {
       var s = it.s, mods = (REPO.modules || []).filter(function (m) { return (m.categories || []).some(function (c) { return s.categories.indexOf(c) >= 0; }); });
-      h = '<h2>' + esc(TICK[s.id]) + ' · ' + esc(s.name) + '</h2><span class="tag fam">' + FAM[s.family][1] + '</span> <span class="tag ' + (s.prior.score >= 60 ? 'pass' : s.prior.score >= 30 ? 'warn' : 'fail') + '">VALORACIÓN ' + s.prior.score + '/100</span>' +
+      h = '<h2>' + esc(TICK[s.id]) + ' · ' + esc(s.name) + '</h2><span class="tag fam">' + FAM[s.family][1] + '</span> <span class="tag ' + { up: 'pass', ye: 'warn', dn: 'fail' }[priorBand(s.prior.score)] + '">VALORACIÓN ' + s.prior.score + '/100</span>' +
         '<dl class="kv"><dt>AFIRMA</dt><dd>' + esc(s.claim) + '</dd><dt>CIFRA CLAVE</dt><dd>' + esc(s.key_figure) + marks(s.marks) + '</dd><dt>CRÍTICA</dt><dd>' + esc(s.critique) + '</dd>' +
         '<dt>SOBREVIVE</dt><dd>' + esc(s.survives) + '</dd><dt>VALORACIÓN</dt><dd>' + esc(s.prior.rationale) + '</dd><dt>CATEGORÍAS</dt><dd>' + s.categories.map(function (c) { return esc(CAT[c].name); }).join(' · ') + '</dd>' +
         '<dt>EN EL REPO</dt><dd>' + mods.length + ' MÓDULOS</dd></dl><div class="sect"><b>FUENTES</b></div><ul>' + s.sources.map(function (x) { return '<li>' + srcLink(x) + '</li>'; }).join('') + '</ul>' +
@@ -1140,8 +1315,8 @@ var CODE = /*__CODE_INDEX__*/null;
   function moveWire(dir) {
     var list = WIRE.filter(function (it) { return state.wireF === 'todas' || it.fam === state.wireF; });
     var i = list.map(function (x) { return x.key; }).indexOf(state.wireSel);
-    var n = list[Math.max(0, Math.min(list.length - 1, i + dir))];
-    if (n) { selectWire(n.key); var el = document.querySelector('[data-ws="' + n.key + '"]'); if (el) el.scrollIntoView({ block: 'nearest' }); }
+    var n = list[Math.max(0, Math.min(list.length - 1, i + dir))], hadFocus = !!focusedKey('wire', 'data-ws');
+    if (n) { selectWire(n.key); var el = document.querySelector('[data-ws="' + n.key + '"]'); if (el && hadFocus) el.focus(); }
   }
   $('wire-filter').addEventListener('click', function (ev) { var b = ev.target.closest('[data-wf]'); if (b) { state.wireF = b.getAttribute('data-wf'); renderWire(); } });
   $('wire').addEventListener('click', function (ev) { var b = ev.target.closest('[data-ws]'); if (b) selectWire(b.getAttribute('data-ws')); });
@@ -1172,7 +1347,7 @@ var CODE = /*__CODE_INDEX__*/null;
     var match = function (p) { return !q || p.toLowerCase().indexOf(q) >= 0; };
     if (state.codeView === 'nuevo') {
       var mine = (CODE || []).filter(function (c) { return c.group === 'nuevo' && match(c.path); });
-      html = '<details open><summary><span>QUANT_EVIDENCE</span><em>' + mine.length + '</em></summary>' + mine.map(function (c) { return fbtn(c.path, c.path.replace('fincept-qt/scripts/Analytics/', '')); }).join('') + '</details>';
+      html = mine.length ? '<details open><summary><span>QUANT_EVIDENCE</span><em>' + mine.length + '</em></summary>' + mine.map(function (c) { return fbtn(c.path, c.path.replace('fincept-qt/scripts/Analytics/', '')); }).join('') + '</details>' : '';
     } else if (state.codeView === 'evidencia') {
       KB.categories.forEach(function (c) {
         var files = (REPO.modules || []).filter(function (m) { return (m.categories || []).indexOf(c.key) >= 0 && match(m.path) && (BY_PATH[m.path] || state.live); });
@@ -1185,22 +1360,33 @@ var CODE = /*__CODE_INDEX__*/null;
     $('tree').innerHTML = html || '<p class="mu">NINGÚN ARCHIVO COINCIDE.</p>';
     if (state.codeView === 'todo') loadDir('fincept-qt', $('fulltree'));
   }
-  function loadDir(path, el) {
+  function filterFiles(scope) {
+    var q = $('codeq').value.trim().toLowerCase();
+    scope.querySelectorAll('[data-file]').forEach(function (b) { b.hidden = !!q && b.getAttribute('data-file').toLowerCase().indexOf(q) < 0; });
+  }
+  // Lists a repo folder (local app only). Files that miss the filter are hidden, not dropped,
+  // so clearing the filter brings them back without collapsing the tree.
+  function loadDir(path, el, noFilter) {
     el.innerHTML = '<p class="mu" style="padding-left:16px">CARGANDO…</p>';
     fetch('/api/repo/tree?path=' + encodeURIComponent(path)).then(function (r) { return r.json(); }).then(function (j) {
       if (!j.success) throw new Error(j.error);
-      var q = $('codeq').value.trim().toLowerCase();
       el.innerHTML = j.data.dirs.map(function (d) { return '<details data-dir="' + esc(d.path) + '"><summary><span>' + esc(d.name) + '/</span></summary><div style="padding-left:10px"></div></details>'; }).join('') +
-        j.data.files.filter(function (f) { return !q || f.path.toLowerCase().indexOf(q) >= 0; }).map(function (f) { return fbtn(f.path, f.name); }).join('');
+        j.data.files.map(function (f) { return fbtn(f.path, f.name); }).join('') || '<p class="mu" style="padding-left:16px">CARPETA VACÍA.</p>';
+      if (!noFilter) filterFiles(el);
     }).catch(function (e) { el.innerHTML = '<p class="dn">' + esc(e.message) + '</p>'; });
   }
-  $('tree').addEventListener('toggle', function (ev) {
-    var d = ev.target;
-    if (d.tagName === 'DETAILS' && d.open && d.getAttribute('data-dir') && d.lastElementChild && !d.lastElementChild.childElementCount) loadDir(d.getAttribute('data-dir'), d.lastElementChild);
-  }, true);
-  $('tree').addEventListener('click', function (ev) { var b = ev.target.closest('[data-file]'); if (b) openCode(b.getAttribute('data-file')); });
+  ['tree', 'src'].forEach(function (id) {
+    $(id).addEventListener('toggle', function (ev) {
+      var d = ev.target;
+      if (d.tagName === 'DETAILS' && d.open && d.getAttribute('data-dir') && d.lastElementChild && !d.lastElementChild.childElementCount) loadDir(d.getAttribute('data-dir'), d.lastElementChild, id === 'src');
+    }, true);
+    $(id).addEventListener('click', function (ev) { var b = ev.target.closest('[data-file]'); if (b) openCode(b.getAttribute('data-file')); });
+  });
   $('codeview').addEventListener('click', function (ev) { var b = ev.target.closest('[data-cv]'); if (b) { state.codeView = b.getAttribute('data-cv'); renderCodeView(); renderTree(); } });
-  $('codeq').addEventListener('input', function () { renderTree(); });
+  $('codeq').addEventListener('input', function () {
+    if (state.codeView === 'todo' && $('fulltree')) { filterFiles($('fulltree')); return; }
+    renderTree();
+  });
   function showCategoryInCode(cat) {
     state.codeView = 'evidencia'; $('codeq').value = ''; renderCodeView(); renderTree(cat); showScreen('codigo');
     var first = (REPO.modules || []).filter(function (m) { return (m.categories || []).indexOf(cat) >= 0 && (BY_PATH[m.path] || state.live); })[0];
@@ -1213,37 +1399,60 @@ var CODE = /*__CODE_INDEX__*/null;
     else if (BY_PATH[path]) url = 'code/' + BY_PATH[path].id + '.txt';
     else return Promise.reject(new Error('ESTE ARCHIVO NO VIENE EN LA VERSIÓN WEB. ÁBRELO CON LA APP LOCAL: python quant_studio.py'));
     return fetch(url).then(function (r) {
+      // The local API explains its refusals (binary file, too large…) in the JSON body.
+      if (state.live) return r.json().then(function (j) { if (!j.success) throw new Error(j.error || 'HTTP ' + r.status); return j.data.text; });
       if (!r.ok) throw new Error('NO SE PUDO CARGAR EL ARCHIVO (HTTP ' + r.status + ')');
-      return state.live ? r.json().then(function (j) { if (!j.success) throw new Error(j.error); return j.data.text; }) : r.text();
+      return r.text();
     }).then(function (t) { state.codeCache[path] = t; return t; });
   }
   function openCode(path) {
     state.codeSel = path;
     document.querySelectorAll('#tree [data-file]').forEach(function (b) { if (b.getAttribute('data-file') === path) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current'); });
-    var c = BY_PATH[path], m = MOD_BY_PATH[path];
-    $('src-title').innerHTML = 'SRC &lt;GO&gt; - <em>' + esc(path.replace('fincept-qt/', '')) + '</em>';
-    $('src-meta').textContent = langOf(path).toUpperCase() + (c ? ' · ' + c.lines.toLocaleString('es-MX') + ' LÍN · ' + (c.size / 1024).toFixed(1) + ' KB' : '');
+    var c = BY_PATH[path], m = MOD_BY_PATH[path], isDir = !!m && m.kind === 'directory';
+    $('src-title').innerHTML = 'SRC &lt;GO&gt; - <em>' + esc(path.split('/').pop()) + '</em>';
+    $('src-title').title = path;
+    $('src-meta').textContent = isDir ? 'CARPETA' : langOf(path).toUpperCase() + (c ? ' · ' + c.lines.toLocaleString('es-MX') + ' LÍN · ' + (c.size / 1024).toFixed(1) + ' KB' : '');
     renderDes(path);
+    $('copycode').textContent = 'COPIAR';
+    var showDir = function () { $('src').innerHTML = '<div class="ftree" style="padding:6px 8px"></div>'; loadDir(path, $('src').firstChild, true); };
+    if (!state.live && !c && (isDir || !/\.[A-Za-z0-9]+$/.test(path.split('/').pop()))) {
+      $('src').innerHTML = '<p class="mu" style="padding:8px">ES UNA CARPETA: EXPLÓRALA EN TODO EL REPO CON LA APP LOCAL (python quant_studio.py).</p>'; return;
+    }
+    if (state.live && isDir) { showDir(); return; }
     $('src').innerHTML = '<p class="mu" style="padding:8px">CARGANDO…</p>';
     fetchSource(path).then(function (txt) {
       if (state.codeSel !== path) return;
-      var n = txt.split('\n').length, gut = '';
+      var n = txt.split('\n').length - (/\n$/.test(txt) ? 1 : 0), gut = '';
       for (var i = 1; i <= n; i++) gut += i + '\n';
       var body = esc(txt), lang = langOf(path);
       if (window.hljs && txt.length < 160000 && lang !== 'plaintext') { try { body = window.hljs.highlight(txt, { language: lang, ignoreIllegals: true }).value; } catch (e) { body = esc(txt); } }
       $('src').innerHTML = '<div class="src"><pre class="gut" aria-hidden="true">' + gut + '</pre><pre class="code"><code>' + body + '</code></pre></div>';
       $('src').scrollTop = 0;
-    }, function (e) { if (state.codeSel === path) $('src').innerHTML = '<p class="dn" style="padding:8px">' + esc(e.message) + '</p>'; });
+    }, function (e) {
+      if (state.codeSel !== path) return;
+      var fail = function () { $('src').innerHTML = '<p class="dn" style="padding:8px">' + esc(e.message) + '</p>'; };
+      // Folders named in the gap list are not modules: if the path lists as a folder, show it.
+      if (state.live && !c) {
+        fetch('/api/repo/tree?path=' + encodeURIComponent(path)).then(function (r) { return r.json(); }).then(function (j) {
+          if (state.codeSel !== path) return;
+          if (j.success) { $('src-meta').textContent = 'CARPETA'; showDir(); } else fail();
+        }).catch(fail);
+        return;
+      }
+      fail();
+    });
   }
   function renderDes(path) {
     var c = BY_PATH[path], m = MOD_BY_PATH[path], h = '<dl>';
     h += '<dt>RUTA</dt><dd>' + esc(path) + '</dd>';
     if (m) {
       h += '<dt>RESUMEN</dt><dd>' + esc(m.summary_es || m.summary) + '</dd>';
+      h += '<dt>TIPO</dt><dd>' + esc(KIND[m.kind] || (m.kind || '').toUpperCase()) + '</dd>';
       h += '<dt>CATEGORÍAS</dt><dd>' + m.categories.map(function (k) { return esc(CAT[k] ? CAT[k].name : k); }).join(' · ') + '</dd>';
       if (m.key_functions && m.key_functions.length) h += '<dt>FUNCIONES CLAVE</dt><dd>' + m.key_functions.map(esc).join(', ') + '</dd>';
       if (m.cli_entry) h += '<dt>CLI</dt><dd>' + esc(m.cli_entry) + '</dd>';
-      if (m.relevance_note_es || m.relevance_note) h += '<dt>FRENTE A LA EVIDENCIA</dt><dd>' + esc(m.relevance_note_es || m.relevance_note) + '</dd>';
+      if (m.relevance_note_es) h += '<dt>FRENTE A LA EVIDENCIA</dt><dd>' + esc(m.relevance_note_es) + '</dd>';
+      else if (m.relevance_note) h += '<dt>FRENTE A LA EVIDENCIA (EN INGLÉS)</dt><dd lang="en">' + esc(m.relevance_note) + '</dd>';
       var rel = KB.strategies.filter(function (s) { return s.categories.some(function (k) { return m.categories.indexOf(k) >= 0; }); });
       if (rel.length) h += '<dt>ESTRATEGIAS RELACIONADAS</dt><dd class="codes">' + rel.map(function (s) { return '<button type="button" data-load-mon="' + esc(s.id) + '" title="' + esc(s.name) + '">' + TICK[s.id] + '</button>'; }).join('') + '</dd>';
     } else if (c && c.summary) {
@@ -1258,7 +1467,10 @@ var CODE = /*__CODE_INDEX__*/null;
   });
 
   // ── Repo screen ─────────────────────────────────────────────────────────
+  var KIND = { python_module: 'MÓDULO PY', python_cli: 'CLI PY', directory: 'CARPETA', cpp_service: 'SERVICIO C++', cpp_screen: 'PANTALLA C++',
+    data_source: 'FUENTE DE DATOS', text: 'TEXTO' };
   function renderRepo() {
+    var fk = focusedKey('cats', 'data-cat');
     var mods = REPO.modules || [], auto = REPO.auto_index, gaps = (REPO.gaps || []).filter(function (g) { return typeof g === 'object'; });
     $('cat-meta').textContent = mods.length + ' MÓDULOS · ' + KB.categories.length + ' CATEGORÍAS';
     var rows = '<thead><tr><th>#</th><th>CATEGORÍA</th><th>FAM</th><th class="n">MÓD</th><th class="n">VOC</th><th class="n">EST</th><th class="n">MEJOR</th><th class="n">BRECHAS</th></tr></thead><tbody>';
@@ -1268,14 +1480,15 @@ var CODE = /*__CODE_INDEX__*/null;
       var best = ss.reduce(function (a, s) { return Math.max(a, s.prior.score); }, -1);
       var ng = gaps.filter(function (g) { return g.category === c.key; }).length;
       var v = auto && auto.categories[c.key] ? auto.categories[c.key].file_count : null;
-      rows += '<tr class="click' + (state.cat === c.key ? ' on' : '') + '" data-cat="' + c.key + '"><td class="mu">' + (i + 1) + '</td><td class="am">' + esc(c.name.toUpperCase()) + '</td><td class="mu">' + esc(c.family.toUpperCase()) + '</td>' +
-        '<td class="n wh">' + n + '</td><td class="n">' + (v == null ? '—' : v) + '</td><td class="n">' + ss.length + '</td><td class="n ' + (best >= 0 ? band(best) : '') + '">' + (best >= 0 ? best : '—') + '</td>' +
+      rows += '<tr class="click' + (state.cat === c.key ? ' on" aria-current="true' : '') + '" tabindex="0" data-cat="' + c.key + '"><td class="mu">' + (i + 1) + '</td><td class="am">' + esc(c.name.toUpperCase()) + '</td><td class="mu">' + esc(c.family.toUpperCase()) + '</td>' +
+        '<td class="n wh">' + n + '</td><td class="n">' + (v == null ? '—' : v) + '</td><td class="n">' + ss.length + '</td><td class="n ' + (best >= 0 ? priorBand(best) : '') + '">' + (best >= 0 ? best : '—') + '</td>' +
         '<td class="n ' + (ng ? 'dn' : 'mu') + '">' + ng + '</td></tr>';
     });
     $('cats').innerHTML = rows + '</tbody>';
+    restoreFocus('cats', 'data-cat', fk);
     var order = { alta: 0, media: 1, baja: 2 };
     $('gaps').innerHTML = gaps.slice().sort(function (a, b) { return order[a.severity] - order[b.severity]; }).map(function (g, i) {
-      return '<div class="story"><div class="ts">GAP ' + String(i + 1).padStart(2, '0') + '<br><span class="tag ' + esc(g.severity) + '">' + esc(g.severity.toUpperCase()) + '</span></div><div>' +
+      return '<div class="story"><div class="ts">BRECHA-' + String(i + 1).padStart(2, '0') + '<br><span class="tag ' + esc(g.severity) + '">' + esc(g.severity.toUpperCase()) + '</span></div><div>' +
         '<div class="hl"><i>*</i>' + esc(CAT[g.category] ? CAT[g.category].name : g.category) + '</div><div class="bd">' + esc(g.text) + '</div>' +
         (g.covered_by ? '<div class="rel up">CUBIERTO: ' + esc(g.covered_by) + '</div>' : '') + '</div><div class="no">[' + esc(g.category.split('_')[0].toUpperCase()) + ']</div></div>';
     }).join('');
@@ -1285,7 +1498,7 @@ var CODE = /*__CODE_INDEX__*/null;
     var c = CAT[state.cat], mods = (REPO.modules || []).filter(function (m) { return (m.categories || []).indexOf(state.cat) >= 0; });
     $('mods-title').innerHTML = 'MOD &lt;GO&gt; - <em>' + esc(c.name.toUpperCase()) + '</em> · ' + mods.length + ' MÓDULOS';
     $('mods').innerHTML = '<thead><tr><th>ARCHIVO</th><th>TIPO</th><th>RESUMEN</th></tr></thead><tbody>' + mods.map(function (m) {
-      return '<tr class="click" data-open="' + esc(m.path) + '"><td class="am">' + esc(m.path.split('/').pop()) + '</td><td class="mu">' + esc((m.kind || '').toUpperCase()) + '</td><td class="wrap">' + esc(m.summary_es || m.summary) + '</td></tr>';
+      return '<tr class="click" tabindex="0" data-open="' + esc(m.path) + '"><td class="am" title="' + esc(m.path) + '">' + esc(m.path.split('/').pop()) + '</td><td class="mu">' + esc(KIND[m.kind] || (m.kind || '').toUpperCase()) + '</td><td class="wrap">' + esc(m.summary_es || m.summary) + '</td></tr>';
     }).join('') + '</tbody>';
   }
   $('cats').addEventListener('click', function (ev) { var t = ev.target.closest('[data-cat]'); if (t) { state.cat = t.getAttribute('data-cat'); renderRepo(); } });
@@ -1305,9 +1518,9 @@ var CODE = /*__CODE_INDEX__*/null;
       run: function (p) { var ls = !!Number(p.ls), cost = E.monthlyCostBps(p.t / 100, p.c, ls); return [['COSTO MENSUAL PB', f2(cost, 1), 1], ['NETO PB/MES', f2(p.g - cost, 1)], ['COSTO QUE ANULA LA VENTAJA', f2(E.breakevenRoundtripCostBps(p.g, p.t / 100, ls), 1) + ' PB'], ['REGLA DE 50%', p.t <= 50 ? 'SOBREVIVE' : 'SUELE NO SOBREVIVIR']]; },
       note: 'NOVY-MARX Y VELIKOV 2016: CON ROTACIÓN MENSUAL MENOR A 50% LAS ESTRATEGIAS SUELEN SEGUIR RENTABLES TRAS COSTOS.' },
     bodie: { n: 17, t: 'BODIE &lt;GO&gt; - RIESGO DE LARGO PLAZO', f: [['s', 'VOLATILIDAD ANUAL %', 20], ['y', 'AÑOS', 30], ['mu', 'RENDIMIENTO REAL %', 5]],
-      run: function (p) { return [['COSTO DEL SEGURO', f2(E.bodieShortfallPutCost(p.s / 100, p.y) * 100, 2) + '%', 1], ['P(PÉRDIDA REAL) MODELO', f2(E.probRealLossLognormal(p.mu / 100, p.s / 100, p.y) * 100, 1) + '%'], ['39 PAÍSES, 30 AÑOS (EMPÍRICO)', '12%']]; },
-      note: 'BODIE: CON σ = 20% EL SEGURO CUESTA 7.98% A 1 AÑO, 24.84% A 10 Y 41.61% A 30. EL PLAZO NO ELIMINA EL RIESGO.' },
-    kelly: { n: 18, t: 'KELLY &lt;GO&gt; - TAMAÑO DE LA APUESTA', f: [['mu', 'RENDIMIENTO ESPERADO %', 8], ['r', 'TASA LIBRE %', 2], ['s', 'VOLATILIDAD %', 20], ['x', 'MÚLTIPLO DE KELLY', 0.5]],
+      run: function (p) { if (p.s < 0 || p.y < 0) return [['ERROR', 'σ Y AÑOS DEBEN SER ≥ 0']]; return [['COSTO DEL SEGURO', f2(E.bodieShortfallPutCost(p.s / 100, p.y) * 100, 2) + '%', 1], ['P(PÉRDIDA REAL) MODELO', f2(E.probRealLossLognormal(p.mu / 100, p.s / 100, p.y) * 100, 1) + '%'], ['39 PAÍSES, 30 AÑOS (EMPÍRICO)', '12%']]; },
+      note: 'BODIE: CON σ = 20% ESTA FÓRMULA DA 7.97% A 1 AÑO, 24.82% A 10 Y 41.61% A 30 (EL INFORME CITA 7.98% Y 24.84%). EL PLAZO NO ELIMINA EL RIESGO.' },
+    kelly: { n: 18, t: 'KELLY &lt;GO&gt; - TAMAÑO DE LA APUESTA', f: [['mu', 'RENDIMIENTO ESPERADO %', 8], ['r', 'TASA LIBRE DE RIESGO %', 2], ['s', 'VOLATILIDAD %', 20], ['x', 'MÚLTIPLO DE KELLY', 0.5]],
       run: function (p) { var f = E.kellyFraction(p.mu / 100, p.r / 100, p.s / 100); return [['FRACCIÓN DE KELLY f*', f2(f, 3), 1], ['TU FRACCIÓN', f2(f * p.x, 3)], ['CRECIMIENTO CONSERVADO', f2(E.kellyGrowthShare(p.x) * 100, 1) + '%'], ['CRECIMIENTO LOG ANUAL', f2(E.growthRate(f * p.x, p.mu / 100, p.r / 100, p.s / 100) * 100, 2) + '%']]; },
       note: 'MACLEAN, THORP Y ZIEMBA 2010: MEDIO KELLY CONSERVA 75% DEL CRECIMIENTO; EL DOBLE DE KELLY LO DEJA EN CERO.' }
   };
@@ -1320,39 +1533,56 @@ var CODE = /*__CODE_INDEX__*/null;
         }).join('') + '</form><div class="out" id="out-' + k + '"></div><p class="note">' + esc(c.note) + '</p></div></div>';
     }).join('');
     html += '<div class="panel p-formulas" data-pid="21"><div class="ph"><span class="n">21</span><span class="t">FX &lt;GO&gt; - FÓRMULAS Y PESOS DEL DICTAMEN</span><span class="r"><span class="wc"><button data-wc="min" aria-label="Minimizar">_</button><button data-wc="max" aria-label="Maximizar">[ ]</button><button data-wc="close" class="x" aria-label="Cerrar">X</button></span></span></div>' +
-      '<div class="pb"><pre class="formula">E[max_N] ≈ (1 − γ)·Z⁻¹[1 − 1/N] + γ·Z⁻¹[1 − 1/(N·e)]          γ ≈ 0.5772\nMinBTL   ≈ (E[max_N] / SR)²                                     AÑOS\nSR0      = √V[SR_n] · E[max_N]\nDSR      = Z[(SR − SR0)·√(T − 1) / √(1 − γ3·SR + (γ4 − 1)/4·SR²)]\nt        = SR·√AÑOS          p_aj = min(M·p, 1)                 BONFERRONI\nCOSTO    = ROTACIÓN × IDA Y VUELTA × PATAS                       PB/MES\nP/S      = 2·N(σ·√T / 2) − 1                                     BODIE\ng(x·f*)  = (2x − x²)·g(f*)                                       KELLY\n\nPUNTAJE  = 35% EVIDENCIA + 25% ESTADÍSTICA + 25% IMPLEMENTACIÓN + 15% CONTEXTO\n           SIN BACKTEST: 50 / 30 / 20.  NETO ≤ 0 → MÁX 29.  DSR &lt; 0.5 O NAN → MÁX 40.\nCASCADA  = BRUTO × (SR*/SR) × 0.42 SI PUBLICADA (O 0.74 SIN VALIDAR) × (1 − MICROCAPS) − COSTOS</pre>' +
+      '<div class="pb"><pre class="formula">E[max_N] ≈ (1 − γ)·Z⁻¹[1 − 1/N] + γ·Z⁻¹[1 − 1/(N·e)]             γ ≈ 0.5772\nMinBTL   ≈ (E[max_N] / SR)²                                      AÑOS\nSR0      = √V[SR_n] · E[max_N]\nDSR      = Z[(SR − SR0)·√(T − 1) / √(1 − γ3·SR + (γ4 − 1)/4·SR²)]\nt        = SR·√AÑOS          p_aj = min(M·p, 1)                  BONFERRONI\nCOSTO    = ROTACIÓN × IDA Y VUELTA × PATAS                       PB/MES\nP/S      = 2·N(σ·√T / 2) − 1                                     BODIE\ng(x·f*)  = (2x − x²)·g(f*)                                       KELLY\n\nPUNTAJE  = 35% EVIDENCIA + 25% ESTADÍSTICA + 25% IMPLEMENTACIÓN + 15% CONTEXTO\n           SIN BACKTEST: 50 / 30 / 20.  NETO ≤ 0 → MÁX 29.  DSR &lt; 0.5 O NAN → MÁX 40.\nCASCADA  = BRUTO × (SR*/SR) × 0.42 SI PUBLICADA (O 0.74 SIN VALIDAR) × (1 − MICROCAPS) − COSTOS\n           FACTORES/ML QUE REQUIEREN CORTOS, HECHOS SOLO-LARGO → NETO MÁX 0 (CHEN Y WELCH).</pre>' +
       '<div class="sect"><b>HÁBITOS QUE SÍ SE TRANSFIEREN</b></div><div>' + KB.habits.map(function (h, i) { return '<div>' + (i + 1) + ') ' + esc(h.toUpperCase()) + '</div>'; }).join('') + '</div>' +
-      '<div class="sect"><b>MARCAS DE FIABILIDAD</b></div><div>' + Object.keys(KB.meta.marks).map(function (k) { return '<div><span class="mk" style="margin:0 6px 0 0">' + esc(MARK_LABEL[k] || k) + '</span>' + esc(KB.meta.marks[k]) + '</div>'; }).join('') + '</div></div></div>';
+      '<div class="sect"><b>MARCAS DE FIABILIDAD</b></div><div>' + Object.keys(KB.meta.marks).map(function (k) { return '<div><span class="mk" style="margin:0 6px 0 0">' + esc(MARK_LABEL[k] || k) + '</span>' + esc(KB.meta.marks[k]) + '</div>'; }).join('') + '</div>' +
+      '<div class="sect"><b>NOTAS DE LA BASE</b></div><p class="note">' + esc(KB.meta.prior_note) + ' ' + esc(KB.meta.evidence_note) + ' ' + esc(KB.meta.disclaimer) + '</p></div></div>';
     $('screen-calc').innerHTML = html;
+    if (window.innerHeight < 820 && window.innerWidth > 900) {
+      // Short screens: the formula sheet starts minimized so every calculator keeps its result in view.
+      var p21 = $('screen-calc').querySelector('[data-pid="21"]');
+      p21.classList.add('min'); p21.querySelector('[data-wc="min"]').setAttribute('aria-pressed', 'true');
+    }
     Object.keys(CALC).forEach(runCalc);
   }
   function runCalc(k) {
     var form = document.querySelector('[data-calc="' + k + '"]'); if (!form) return;
-    var p = {};
-    form.querySelectorAll('input').forEach(function (i) { var v = i.value; p[i.getAttribute('data-k')] = v === '' ? '' : Number(v); });
+    // Empty optional fields take the paper's defaults; any other empty field is reported, never read as 0.
+    var OPT = { dsr: { v: '', sk: 0, ku: 3, ppy: 252 } }[k] || {}, p = {}, missing = [];
+    form.querySelectorAll('input').forEach(function (i) {
+      var key = i.getAttribute('data-k'), v = i.value;
+      if (v !== '' && isFinite(Number(v))) p[key] = Number(v);
+      else if (key in OPT) p[key] = OPT[key];
+      else missing.push(i.closest('.fld').querySelector('label').textContent);
+    });
     var rows;
-    try { rows = CALC[k].run(p); } catch (e) { rows = [['ERROR', e.message]]; }
+    if (missing.length) rows = [['FALTA', missing.join(', ')]];
+    else try { rows = CALC[k].run(p); } catch (e) { rows = [['ERROR', e.message]]; }
     $('out-' + k).innerHTML = rows.map(function (r) { return '<div><span>' + esc(r[0]) + '</span><b class="' + (r[2] ? 'big' : '') + '">' + esc(r[1]) + '</b></div>'; }).join('');
   }
   function setCalc(k, vals) {
-    var map = { dsr: { sr: 'sr', n: 'n', y: 'y', ppy: 'ppy' }, hc: { sr: 'sr', y: 'y', n: 'n' }, minbtl: { n: 'n', sr: 'sr' }, cost: { t: 't', c: 'c' }, bodie: { s: 's', y: 'y' }, kelly: { mu: 'mu', r: 'r', s: 's', x: 'x' } }[k];
+    var map = { dsr: { sr: 'sr', n: 'n', y: 'y', ppy: 'ppy', v: 'v', sk: 'sk', ku: 'ku' }, hc: { sr: 'sr', y: 'y', n: 'n' }, minbtl: { n: 'n', sr: 'sr' }, cost: { t: 't', c: 'c' }, bodie: { s: 's', y: 'y' }, kelly: { mu: 'mu', r: 'r', s: 's', x: 'x' } }[k];
     Object.keys(map).forEach(function (f) { var el = $('c-' + k + '-' + map[f]); if (el && vals[f] != null) el.value = vals[f]; });
     if (k === 'cost') { var ls = $('c-cost-ls'); if (ls) ls.value = vals.ls ? 1 : 0; }
     runCalc(k);
   }
   $('screen-calc').addEventListener('input', function (ev) { var f = ev.target.closest('[data-calc]'); if (f) runCalc(f.getAttribute('data-calc')); });
   $('screen-calc').addEventListener('submit', function (ev) { ev.preventDefault(); });
-  $('clearlog').addEventListener('click', function () { logLines = []; $('log').innerHTML = ''; });
+  $('clearlog').addEventListener('click', clearLog);
 
   // ── Boot ────────────────────────────────────────────────────────────────
   function setLive(live) {
     state.live = live;
-    $('engine-label').textContent = live ? 'MOTOR: PYTHON · ' + location.host : 'MOTOR: JS · PARIDAD PYTHON';
     $('session-label').textContent = live ? 'LOCAL · ' + location.host : 'LOCAL · NAVEGADOR';
     $('run-hint').textContent = live ? 'RUN <PROGRAMA> <COMANDO> [JSON] · PROGRAMAS: quant_evidence cfa_quant statsmodels financial_analysis' : 'RUN DISPONIBLE CON LA APP LOCAL: python quant_studio.py';
     renderCodeView(); renderStatus();
   }
-  renderTicker(); renderWire(); renderRepo(); renderCalcScreen(); renderHist(); setLive(false); renderTree('backtest_overfitting');
+  $('kb-version').textContent = 'KB ' + KB.meta.version;
+  $('p4-count').textContent = KB.strategies.length + ' ESTRATEGIAS';
+  $('p5-count').textContent = KB.strategies.length + ' ESTRATEGIAS · ' + (REPO.gaps || []).filter(function (g) { return typeof g === 'object'; }).length + ' BRECHAS';
+  renderTicker(); renderWire(); renderRepo(); renderCalcScreen(); labelWindowControls();
+  document.querySelectorAll('.ph .t').forEach(function (t) { t.setAttribute('role', 'heading'); t.setAttribute('aria-level', '2'); });
+  renderHist(); setLive(false); renderTree('backtest_overfitting');
   writeForm(EXAMPLE);
   openCode('fincept-qt/scripts/Analytics/quant_evidence/evaluator.py');
   selectWire('s:buy_hold_global');

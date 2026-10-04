@@ -12,12 +12,20 @@ Everything here is educational. It is not personalized financial advice and it m
 
 ## Fincept Quant Studio (app)
 
-`app/` packages everything above, plus the repository source, as an Apple-style single-page app:
+`app/` packages everything above, plus the repository source, as a single-page app with two interfaces over the same engine and data.
 
-- **Evaluar**: a buy-flow configurator (strategy tiles, backtest fields, implementation switches, context choices) with a sticky preview of four activity rings (evidence, statistics, implementability, context) and bento result tiles (net-edge cascade, credibility, checks, literature, related modules, history).
-- **Estrategias**: the 44 strategies as cards, with a detail sheet.
-- **Código**: a code explorer grouped by evidence category, plus the new package, with summaries and syntax highlighting.
-- **Repositorio** and **Método**: category tiles, the 19 gaps, formulas, reliability marks.
+The default interface (`terminal.html`, *Fincept Quant Terminal*) is a financial-terminal layout. A command line with autocomplete (`MOM <GO>`, `DSR 2.5 100 5`, `CODE stats.py`, `HELP`), function keys and dense panels that can be minimized, maximized, closed and restored. It has six screens:
+
+- **MONITOR**: the decision analyzer with live sensitivity charts (net edge and score against cost, turnover, trials or years), the parameter sheet with the net-edge cascade, the checks wire, and the matrix of the 44 strategies.
+- **CABLE**: the evidence wire (every strategy and repository gap as a story) and a reader with claims, critiques and sources.
+- **CÓDIGO**: a code explorer grouped by evidence category, plus the new package, with syntax highlighting and a description of each module.
+- **REPOSITORIO**: the category matrix (curated modules, keyword-scan hits, strategies, gaps), the 19 gaps and the modules per category.
+- **CÁLCULO**: Deflated Sharpe, Harvey-Liu haircut, MinBTL, cost drag, Bodie and Kelly calculators, plus the formulas and score weights.
+- **CONSOLA**: the command log, saved decisions and `RUN` (local app only).
+
+The scores and curves are computed by the evaluator; the ticker shows the knowledge base's 0-100 evidence ratings. No market prices or quotes are shown.
+
+`--studio` builds the alternative product-page interface (`template.html`): a configurator with activity rings, strategy cards, the code explorer and the method page. The local server also serves it at `/studio`.
 
 Run it locally (stdlib only; the page then uses the Python engine, can browse every file under `fincept-qt/` and can run the Analytics CLIs `quant_evidence_cli.py`, `quant_analytics_cli.py`, `statsmodels_cli.py` and `financial_analysis_cli.py`):
 
@@ -27,7 +35,7 @@ python quant_studio.py                 # http://127.0.0.1:8765
 python quant_studio.py --port 9000 --no-browser --no-scan
 ```
 
-The server binds to 127.0.0.1, accepts only localhost `Host` headers and JSON POST bodies, and refuses any path outside `fincept-qt/`. To produce a static copy (page plus `code/<id>.txt` sources) run `python -m quant_evidence.app.build_app [out_dir] [--fragment]`; without the local server it runs the JavaScript engine and shows the curated files only.
+The server binds to 127.0.0.1, accepts only localhost `Host` headers and JSON POST bodies, and refuses any path outside `fincept-qt/`. To produce a static copy (page plus `code/<id>.txt` sources) run `python -m quant_evidence.app.build_app [out_dir] [--fragment] [--studio]`; without the local server it runs the JavaScript engine and shows the curated files only.
 
 ## Usage
 
