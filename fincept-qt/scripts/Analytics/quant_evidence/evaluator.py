@@ -363,7 +363,7 @@ def evaluate_decision(raw: dict, kb: dict | None = None, repo_map: dict | None =
         cats = set(strategy['categories'])
         for m in repo_map.get('modules', []):
             if cats.intersection(m.get('categories', [])):
-                modules.append({'path': m['path'], 'summary': m.get('summary', ''),
+                modules.append({'path': m['path'], 'summary': m.get('summary_es') or m.get('summary', ''),
                                 'categories': [c for c in m.get('categories', []) if c in cats]})
         modules.sort(key=lambda m: (-len(m['categories']), m['path']))
 

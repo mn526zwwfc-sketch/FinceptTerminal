@@ -773,7 +773,7 @@ var REPO = /*__REPO__*/null;
         '<div class="counts"><span><b>' + ms.length + '</b> módulos curados</span>' + (autoN != null ? '<span><b>' + autoN + '</b> archivos con su vocabulario</span>' : '') +
         '<span><b>' + ss.length + '</b> estrategias</span></div>' +
         (ss.length ? '<p class="small"><span class="muted">Mejor valorada:</span> ' + esc(ss[0].name) + ' <span class="num">(' + ss[0].prior.score + ')</span></p>' : '') +
-        (ms.length ? '<ul class="mods">' + ms.slice(0, 8).map(function (m) { return '<li><code>' + esc(m.path) + '</code><span>' + esc(m.summary) + '</span></li>'; }).join('') + '</ul>' +
+        (ms.length ? '<ul class="mods">' + ms.slice(0, 8).map(function (m) { return '<li><code>' + esc(m.path) + '</code><span>' + esc(m.summary_es || m.summary) + '</span></li>'; }).join('') + '</ul>' +
           (ms.length > 8 ? '<p class="small muted">y ' + (ms.length - 8) + ' más</p>' : '')
           : '<p class="small muted">Ningún módulo curado cubre esta categoría.</p>') + '</article>';
     }).join('');

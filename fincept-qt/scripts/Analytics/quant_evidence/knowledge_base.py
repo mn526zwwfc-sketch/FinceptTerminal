@@ -80,7 +80,7 @@ def organize(kb: dict | None = None, repo_map: dict | None = None) -> dict:
         for c in m.get('categories', []):
             if c in groups:
                 groups[c]['modules'].append({'path': m['path'], 'kind': m.get('kind', ''),
-                                             'summary': m.get('summary', '')})
+                                             'summary': m.get('summary_es') or m.get('summary', '')})
                 hit = True
         if not hit:
             uncategorized.append(m['path'])

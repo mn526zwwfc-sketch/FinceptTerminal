@@ -480,7 +480,7 @@
     if (repoMap && repoMap.modules) {
       repoMap.modules.forEach(function (m) {
         var cs = (m.categories || []).filter(function (c) { return s.categories.indexOf(c) >= 0; });
-        if (cs.length) modules.push({ path: m.path, summary: m.summary || '', categories: cs });
+        if (cs.length) modules.push({ path: m.path, summary: m.summary_es || m.summary || '', categories: cs });
       });
       modules.sort(function (a, b) {
         return (b.categories.length - a.categories.length) || (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
