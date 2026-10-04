@@ -1,0 +1,790 @@
+<title>Árbitro Quant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a referee's report. Decision sheet on the left, verdict on the right; library, repo map and method as tabs. */
+:root {
+  --bg: #f3f5f7;
+  --surface: #ffffff;
+  --sunken: #eaeef2;
+  --ink: #15202b;
+  --ink-2: #485664;
+  --muted: #74828f;
+  --line: #d9e0e6;
+  --accent: #2446a6;
+  --accent-ink: #ffffff;
+  --accent-soft: #e5ebf9;
+  --mark: #8a6300;
+  --good: #1d7349;
+  --good-soft: #e1f2e8;
+  --warn: #996000;
+  --warn-soft: #fbf0d9;
+  --bad: #b03a30;
+  --bad-soft: #f9e3e0;
+  --bar: #2446a6;
+  --font-display: "Spectral", "Iowan Old Style", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f151b; --surface: #161f28; --sunken: #1c2731; --ink: #e6ebf0; --ink-2: #a9b5c0;
+    --muted: #7d8a96; --line: #2a3642; --accent: #8aa4ee; --accent-ink: #0f151b; --accent-soft: #1d2b4b;
+    --mark: #e2b04a; --good: #5cc28f; --good-soft: #143424; --warn: #e3a944; --warn-soft: #3a2c10;
+    --bad: #f07d72; --bad-soft: #3d1d1a; --bar: #8aa4ee; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f151b; --surface: #161f28; --sunken: #1c2731; --ink: #e6ebf0; --ink-2: #a9b5c0;
+  --muted: #7d8a96; --line: #2a3642; --accent: #8aa4ee; --accent-ink: #0f151b; --accent-soft: #1d2b4b;
+  --mark: #e2b04a; --good: #5cc28f; --good-soft: #143424; --warn: #e3a944; --warn-soft: #3a2c10;
+  --bad: #f07d72; --bad-soft: #3d1d1a; --bar: #8aa4ee; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-body); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 48px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.3rem; font-weight: 600; }
+h3 { font-size: 1.05rem; font-weight: 600; }
+p { margin: 0; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num, .mono { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.eyebrow { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.muted { color: var(--muted); }
+.small { font-size: 0.85rem; }
+
+header.top { display: grid; gap: 6px; padding-block: 8px 16px; border-bottom: 1px solid var(--line); }
+header.top .lede { color: var(--ink-2); max-width: 72ch; }
+header.top .disc { font-size: 0.8rem; color: var(--muted); max-width: 90ch; }
+
+nav.tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-block: 16px 20px; }
+nav.tabs button { font: 600 0.92rem var(--font-body); color: var(--ink-2); background: transparent; border: 1px solid transparent; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+nav.tabs button:hover { background: var(--sunken); }
+nav.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); }
+
+.grid-eval { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 900px) { .grid-eval { grid-template-columns: minmax(0, 1fr); } }
+
+form.sheet { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 18px; }
+fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 10px; min-width: 0; }
+legend { font-family: var(--font-display); font-weight: 600; font-size: 1.02rem; padding: 0; margin-bottom: 4px; }
+legend .opt { font-family: var(--font-body); font-weight: 400; font-size: 0.8rem; color: var(--muted); margin-left: 6px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
+label.f { display: grid; align-content: start; gap: 3px; font-size: 0.83rem; color: var(--ink-2); min-width: 0; }
+label.f > span.h { font-size: 0.74rem; color: var(--muted); }
+input[type="number"], input[type="search"], select {
+  font: 0.95rem var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 4px; padding: 6px 8px; width: 100%; min-width: 0;
+}
+input[type="number"] { font-family: var(--font-data); font-size: 0.9rem; }
+label.chk { display: flex; gap: 8px; align-items: flex-start; font-size: 0.88rem; color: var(--ink-2); }
+label.chk input { margin-top: 3px; accent-color: var(--accent); }
+.claim { font-size: 0.85rem; color: var(--ink-2); background: var(--sunken); border-radius: 4px; padding: 8px 10px; }
+.presets { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn { font: 600 0.85rem var(--font-body); border-radius: 4px; padding: 6px 10px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.ghost { background: transparent; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.verdict { display: grid; gap: 18px; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 12px; min-width: 0; }
+.scorehead { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: center; }
+.dial { width: 120px; height: 120px; position: relative; }
+@media (max-width: 520px) { .scorehead { grid-template-columns: minmax(0, 1fr); justify-items: start; } .dial { width: 96px; height: 96px; } }
+.dial svg { width: 100%; height: 100%; display: block; }
+.dial .val { position: absolute; inset: 0; display: grid; place-items: center; font: 600 2.1rem var(--font-data); }
+.dial .val small { display: block; font-size: 0.7rem; color: var(--muted); text-align: center; margin-top: -6px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 3px 10px; }
+.pill.respaldada { background: var(--good-soft); color: var(--good); }
+.pill.condicionada { background: var(--accent-soft); color: var(--accent); }
+.pill.debil { background: var(--warn-soft); color: var(--warn); }
+.pill.no_respaldada { background: var(--bad-soft); color: var(--bad); }
+.summary { color: var(--ink-2); }
+.caps { font-size: 0.83rem; color: var(--bad); }
+
+.meters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 640px) { .meters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.meter { display: grid; gap: 4px; }
+.meter .lab { font-size: 0.78rem; color: var(--ink-2); display: flex; justify-content: space-between; gap: 6px; }
+.meter .track { height: 6px; background: var(--sunken); border-radius: 3px; overflow: hidden; }
+.meter .fill { height: 100%; background: var(--bar); border-radius: 3px; }
+.meter .v { font: 500 1.1rem var(--font-data); }
+.meter.na .v { color: var(--muted); font-size: 0.85rem; font-family: var(--font-body); }
+
+.chart { overflow-x: auto; }
+.chart svg { display: block; width: 100%; min-width: 520px; height: auto; }
+.chart text { font-family: var(--font-body); fill: var(--ink-2); font-size: 12px; }
+.chart text.v { font-family: var(--font-data); fill: var(--ink); font-size: 12px; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .zero { stroke: var(--muted); stroke-width: 1; }
+.chart rect.b { fill: var(--bar); }
+.chart rect.b.neg { fill: var(--bad); }
+.chart rect.b.lit { fill: var(--muted); }
+.chart g.step:hover rect.b { opacity: 0.8; }
+.chart g.step rect.hit { fill: transparent; }
+
+table.kv { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+table.kv td { padding: 5px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.kv td:last-child { text-align: right; font-family: var(--font-data); font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 12px; }
+.stats-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
+@media (max-width: 640px) { .stats-grid { grid-template-columns: minmax(0, 1fr); } }
+
+ul.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+ul.checks li { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+ul.checks li:last-child { border-bottom: 0; }
+.chip { display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 4px; padding: 2px 6px; height: fit-content; }
+.chip.pass { background: var(--good-soft); color: var(--good); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.fail { background: var(--bad-soft); color: var(--bad); }
+.chip.info { background: var(--sunken); color: var(--ink-2); }
+ul.checks .t { font-weight: 600; }
+ul.checks .d { font-size: 0.87rem; color: var(--ink-2); }
+ul.checks .s { font-size: 0.78rem; }
+
+.mark { font-family: var(--font-data); font-size: 0.72rem; color: var(--mark); border: 1px solid currentColor; border-radius: 3px; padding: 0 4px; margin-left: 4px; white-space: nowrap; }
+dl.facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin: 0; font-size: 0.88rem; }
+dl.facts dt { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; padding-top: 2px; }
+dl.facts dd { margin: 0; }
+@media (max-width: 520px) { dl.facts { grid-template-columns: minmax(0, 1fr); } dl.facts dt { padding-top: 6px; } }
+
+ul.mods { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+ul.mods li { display: grid; gap: 2px; min-width: 0; }
+ul.mods code { font-family: var(--font-data); font-size: 0.8rem; color: var(--ink); overflow-wrap: anywhere; }
+ul.mods span { font-size: 0.83rem; color: var(--ink-2); }
+ul.src { margin: 0; padding-left: 18px; font-size: 0.85rem; display: grid; gap: 3px; }
+ol.habits { margin: 0; padding-left: 20px; font-size: 0.9rem; color: var(--ink-2); display: grid; gap: 4px; }
+
+table.hist { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+table.hist th { text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 4px 6px; border-bottom: 1px solid var(--line); }
+table.hist td { padding: 6px; border-bottom: 1px solid var(--line); }
+table.hist td.n { font-family: var(--font-data); text-align: right; }
+.tablewrap { overflow-x: auto; }
+.toast { font-size: 0.83rem; color: var(--good); min-height: 1.2em; }
+textarea.json { width: 100%; min-height: 120px; font: 0.78rem var(--font-data); background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 8px; }
+
+/* Library */
+.libbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.libbar input { max-width: 280px; }
+.fam { display: flex; gap: 6px; flex-wrap: wrap; }
+.fam button { font: 600 0.8rem var(--font-body); border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+.fam button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.lib { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.card .head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: start; }
+.card .prior { font: 600 1.25rem var(--font-data); text-align: right; }
+.card .prior small { display: block; font: 0.68rem var(--font-body); color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.card .bar { height: 4px; background: var(--sunken); border-radius: 2px; overflow: hidden; }
+.card .bar i { display: block; height: 100%; background: var(--bar); border-radius: 2px; }
+.card .fam-tag { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+.card p { font-size: 0.88rem; color: var(--ink-2); }
+.card p b { color: var(--ink); font-weight: 600; }
+.card details summary { cursor: pointer; font-size: 0.83rem; color: var(--accent); }
+
+/* Repo */
+.repo { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 14px; }
+.repo .card .counts { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.8rem; color: var(--muted); }
+.repo .card .counts b { font-family: var(--font-data); color: var(--ink); font-weight: 500; }
+.gaps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.gaps li { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.gaps li:last-child { border-bottom: 0; }
+.gaps .g-text { font-size: 0.9rem; color: var(--ink); }
+.gaps .g-meta { font-size: 0.8rem; color: var(--muted); }
+.gaps .g-meta code { font-family: var(--font-data); font-size: 0.76rem; overflow-wrap: anywhere; }
+.gaps .g-cov { font-size: 0.82rem; color: var(--good); }
+.chip.alta { background: var(--bad-soft); color: var(--bad); }
+.chip.media { background: var(--warn-soft); color: var(--warn); }
+.chip.baja { background: var(--sunken); color: var(--ink-2); }
+
+/* Method */
+.method { display: grid; gap: 16px; max-width: 860px; }
+.method pre { background: var(--sunken); border-radius: 4px; padding: 10px 12px; overflow-x: auto; font: 0.82rem/1.5 var(--font-data); margin: 0; }
+.method p, .method li { color: var(--ink-2); max-width: 75ch; }
+@media (prefers-reduced-motion: no-preference) { .meter .fill, .card .bar i { transition: width 0.25s ease; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">Evidencia académica · FinceptTerminal</span>
+    <h1>Árbitro Quant</h1>
+    <p class="lede">Describe una decisión de inversión o un backtest y recibe un dictamen basado en la literatura quant universitaria: pruebas múltiples, sobreajuste, decaimiento tras la publicación, microcaps y costos.</p>
+    <p class="disc" id="disclaimer"></p>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Secciones">
+    <button role="tab" id="tab-evaluar" aria-selected="true" data-tab="evaluar">Evaluar decisión</button>
+    <button role="tab" id="tab-biblioteca" aria-selected="false" data-tab="biblioteca">Biblioteca de estrategias</button>
+    <button role="tab" id="tab-repo" aria-selected="false" data-tab="repo">Mapa del repositorio</button>
+    <button role="tab" id="tab-metodo" aria-selected="false" data-tab="metodo">Método</button>
+  </nav>
+
+  <section id="view-evaluar" role="tabpanel" aria-labelledby="tab-evaluar">
+    <div class="grid-eval">
+      <form class="sheet" id="sheet" autocomplete="off">
+        <div class="presets" aria-label="Ejemplos">
+          <button type="button" class="btn ghost" data-preset="momentum">Ejemplo: backtest de momentum</button>
+          <button type="button" class="btn ghost" data-preset="global">Ejemplo: índice global</button>
+          <button type="button" class="btn ghost" data-preset="ipc">Ejemplo: calendario del IPC</button>
+        </div>
+
+        <fieldset>
+          <legend>Decisión</legend>
+          <label class="f" for="strategy_id">Estrategia o regla
+            <select id="strategy_id" name="strategy_id"></select>
+          </label>
+          <p class="claim" id="claim"></p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Tu backtest <span class="opt">opcional</span></legend>
+          <div class="row2">
+            <label class="f" for="sharpe_annual">Sharpe anual
+              <input type="number" id="sharpe_annual" step="0.01" inputmode="decimal">
+            </label>
+            <label class="f" for="years">Años de datos
+              <input type="number" id="years" step="0.5" min="0" inputmode="decimal">
+            </label>
+          </div>
+          <div class="row2">
+            <label class="f" for="n_trials">Variantes probadas
+              <input type="number" id="n_trials" step="1" min="1" value="1" inputmode="numeric">
+              <span class="h">parámetros, reglas o modelos que se compararon</span>
+            </label>
+            <label class="f" for="periods_per_year">Frecuencia de los datos
+              <select id="periods_per_year">
+                <option value="252">Diaria</option>
+                <option value="52">Semanal</option>
+                <option value="12">Mensual</option>
+              </select>
+            </label>
+          </div>
+          <div class="row2">
+            <label class="f" for="skew">Asimetría
+              <input type="number" id="skew" step="0.1" value="0" inputmode="decimal">
+            </label>
+            <label class="f" for="kurtosis">Curtosis
+              <input type="number" id="kurtosis" step="0.1" value="3" inputmode="decimal">
+              <span class="h">3 = normal</span>
+            </label>
+          </div>
+          <label class="f" for="var_trials_sr">Varianza del Sharpe entre variantes
+            <input type="number" id="var_trials_sr" step="0.01" min="0" placeholder="si no la sabes: 1 / años" inputmode="decimal">
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Implementación</legend>
+          <div class="row2">
+            <label class="f" for="gross_alpha_monthly_bps">Alfa bruta mensual (pb)
+              <input type="number" id="gross_alpha_monthly_bps" step="1" placeholder="desde el Sharpe" inputmode="decimal">
+            </label>
+            <label class="f" for="volatility_annual">Volatilidad anual (%)
+              <input type="number" id="volatility_annual" step="1" min="0" value="15" inputmode="decimal">
+            </label>
+          </div>
+          <div class="row2">
+            <label class="f" for="turnover_monthly">Rotación mensual (%)
+              <input type="number" id="turnover_monthly" step="5" min="0" inputmode="decimal">
+            </label>
+            <label class="f" for="roundtrip_cost_bps">Costo ida y vuelta (pb)
+              <input type="number" id="roundtrip_cost_bps" step="1" min="0" inputmode="decimal">
+            </label>
+          </div>
+          <div class="row2">
+            <label class="f" for="microcap_share">Alfa en microcaps (%)
+              <input type="number" id="microcap_share" step="5" min="0" max="100" inputmode="decimal">
+            </label>
+            <label class="f" for="live_months">Meses operando en vivo
+              <input type="number" id="live_months" step="1" min="0" value="0" inputmode="numeric">
+            </label>
+          </div>
+          <label class="chk"><input type="checkbox" id="long_short"> Vende en corto (cartera largo-corto)</label>
+          <label class="chk"><input type="checkbox" id="uses_leverage"> Usa apalancamiento</label>
+          <label class="chk"><input type="checkbox" id="published" checked> La idea viene de un paper, libro o internet</label>
+          <label class="chk"><input type="checkbox" id="out_of_sample"> Se validó con datos que no se usaron para diseñarla</label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Contexto</legend>
+          <div class="row2">
+            <label class="f" for="investor">Inversionista
+              <select id="investor">
+                <option value="retail">Minorista</option>
+                <option value="institutional">Institucional</option>
+              </select>
+            </label>
+            <label class="f" for="market">Mercado
+              <select id="market">
+                <option value="global">Global diversificado</option>
+                <option value="us">Estados Unidos</option>
+                <option value="mx">México (BMV)</option>
+                <option value="other">Otro país</option>
+              </select>
+            </label>
+          </div>
+          <div class="row2">
+            <label class="f" for="horizon_years">Horizonte (años)
+              <input type="number" id="horizon_years" step="1" min="0" value="10" inputmode="decimal">
+            </label>
+            <label class="f" for="kelly_multiple">Múltiplo de Kelly
+              <input type="number" id="kelly_multiple" step="0.05" min="0" placeholder="opcional" inputmode="decimal">
+            </label>
+          </div>
+        </fieldset>
+
+        <div class="actions">
+          <button type="button" class="btn primary" id="save">Guardar en el historial</button>
+          <button type="button" class="btn" id="copyjson">Copiar JSON para el CLI</button>
+        </div>
+        <p class="toast" id="toast" role="status" aria-live="polite"></p>
+      </form>
+
+      <div class="verdict" id="verdict" aria-live="polite"></div>
+    </div>
+
+    <section class="panel" style="margin-top:24px" aria-labelledby="hist-h">
+      <h2 id="hist-h">Historial de decisiones</h2>
+      <p class="small muted">Se guarda solo en este navegador. Haz clic en una fila para volver a cargarla.</p>
+      <div class="tablewrap"><table class="hist" id="hist"></table></div>
+    </section>
+  </section>
+
+  <section id="view-biblioteca" role="tabpanel" aria-labelledby="tab-biblioteca" hidden>
+    <div class="panel" style="margin-bottom:18px">
+      <h2>Cascada de la anomalía promedio</h2>
+      <p class="small muted" id="cascade-src"></p>
+      <div class="chart" id="cascade-chart"></div>
+    </div>
+    <div class="libbar">
+      <input type="search" id="libq" placeholder="Buscar estrategia, autor o cifra" aria-label="Buscar en la biblioteca">
+      <div class="fam" id="famfilter"></div>
+    </div>
+    <div class="lib" id="lib"></div>
+  </section>
+
+  <section id="view-repo" role="tabpanel" aria-labelledby="tab-repo" hidden>
+    <div class="panel" style="margin-bottom:18px">
+      <h2>Qué le falta al repositorio frente a la evidencia</h2>
+      <ul class="gaps" id="gaps"></ul>
+      <p class="small muted" id="scaninfo"></p>
+    </div>
+    <div class="repo" id="repo"></div>
+  </section>
+
+  <section id="view-metodo" role="tabpanel" aria-labelledby="tab-metodo" hidden>
+    <div class="method">
+      <div class="panel">
+        <h2>Cómo se calcula el dictamen</h2>
+        <p>El puntaje de 0 a 100 combina cuatro bloques. Con datos de backtest pesan 35% evidencia, 25% estadística, 25% implementación y 15% contexto; sin backtest, 50%, 30% y 20%. Si la ventaja neta esperada es nula o negativa el puntaje se limita a 29, y si el Deflated Sharpe Ratio es menor que 0.5, a 40. Los pesos son una heurística construida sobre las conclusiones del informe, no un modelo publicado.</p>
+        <ul>
+          <li><b>Evidencia</b>: valoración sintética de cada familia según lo que sobrevive en la práctica.</li>
+          <li><b>Estadística</b>: 40% Deflated Sharpe Ratio, 30% Sharpe con recorte por pruebas múltiples, 30% años de datos frente a la longitud mínima del backtest.</li>
+          <li><b>Implementación</b>: ventaja neta tras la cascada (20 pb mensuales = puntaje completo), rotación frente a la frontera de 50% y acceso de un minorista a cortos y apalancamiento.</li>
+          <li><b>Contexto</b>: mercado, horizonte, meses operando en vivo y tamaño de la apuesta.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Fórmulas</h3>
+<pre>E[max_N]  ≈ (1 − γ)·Z⁻¹[1 − 1/N] + γ·Z⁻¹[1 − 1/(N·e)]        γ ≈ 0.5772
+MinBTL    ≈ (E[max_N] / SR)²                                   años
+SR0       = √V[SR_n] · E[max_N]
+DSR       = Z[(SR − SR0)·√(T − 1) / √(1 − γ3·SR + (γ4 − 1)/4·SR²)]
+t         = SR·√años     p_ajustado = min(M·p, 1)    (Bonferroni)
+costo     = rotación × costo ida y vuelta × patas         pb al mes
+P/S       = 2·N(σ·√T / 2) − 1                             (Bodie)
+g(x·f*)   = (2x − x²)·g(f*)                               (Kelly fraccionario)</pre>
+      </div>
+      <div class="panel">
+        <h3>Cascada de la ventaja neta</h3>
+        <p>Bruto (del Sharpe × volatilidad, o la alfa que captures) → × Sharpe con recorte / Sharpe → × 0.42 si la idea está publicada (−58%) o × 0.74 si no se validó fuera de muestra (−26%) → × (1 − alfa en microcaps) → − costos. Si la familia exige vender en corto y la aplicas solo-largo, la ventaja neta queda en cero como máximo.</p>
+      </div>
+      <div class="panel">
+        <h3>Usar el mismo motor desde FinceptTerminal</h3>
+<pre>cd fincept-qt/scripts/Analytics
+python quant_evidence_cli.py evaluate '{"strategy_id":"momentum","sharpe_annual":1.2,"years":8,"n_trials":50}'
+python quant_evidence_cli.py evaluate decision.json      # el JSON copiado de esta página
+python quant_evidence_cli.py deflated_sharpe '{"sharpe_annual":2.5,"n_trials":100,"years":5,"periods_per_year":250,"var_trials_sr":0.5,"skew":-3,"kurtosis":10}'
+python quant_evidence_cli.py categories                  # estrategias + módulos por categoría
+python quant_evidence_cli.py repo_scan                   # escaneo en vivo del repositorio</pre>
+        <p class="small muted">La página y el CLI comparten el mismo motor (engine.js es un port línea a línea de evaluator.py, con prueba de paridad).</p>
+      </div>
+      <div class="panel">
+        <h3>Cuatro hábitos transferibles</h3>
+        <ol class="habits" id="habits-m"></ol>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+/*__ENGINE__*/
+</script>
+<script>
+var KB = /*__KB__*/null;
+var REPO = /*__REPO__*/null;
+</script>
+<script>
+(function () {
+  'use strict';
+  var E = window.QuantEvidence;
+  var $ = function (id) { return document.getElementById(id); };
+  var FAMILY_ORDER = ['base', 'cartera', 'factores', 'machine learning', 'timing', 'calendario', 'comportamiento'];
+  var FAMILY_LABEL = { base: 'Referencia', cartera: 'Cartera', factores: 'Factores', 'machine learning': 'Machine learning',
+    timing: 'Timing', calendario: 'Calendario', comportamiento: 'Comportamiento' };
+  var STATUS_LABEL = { pass: 'Pasa', warn: 'Ojo', fail: 'Falla', info: 'Nota' };
+  var CAT_NAME = {};
+  KB.categories.forEach(function (c) { CAT_NAME[c.key] = c.name; });
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function f2(x, n) { return x == null || !isFinite(x) ? '—' : Number(x).toFixed(n == null ? 2 : n); }
+  function marks(arr) { return (arr || []).map(function (m) { return '<span class="mark" title="' + esc(KB.meta.marks[m] || '') + '">' + esc(m) + '</span>'; }).join(''); }
+  function srcLink(s) { return s ? '<a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.label) + '</a>' : ''; }
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } return null; }
+
+  $('disclaimer').textContent = KB.meta.disclaimer + ' ' + KB.meta.prior_note;
+
+  // ── Tabs ────────────────────────────────────────────────────────────────
+  var tabs = document.querySelectorAll('nav.tabs button');
+  function showTab(name) {
+    tabs.forEach(function (b) {
+      var on = b.getAttribute('data-tab') === name;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      $('view-' + b.getAttribute('data-tab')).hidden = !on;
+    });
+    store('qe.tab', name);
+  }
+  tabs.forEach(function (b) { b.addEventListener('click', function () { showTab(b.getAttribute('data-tab')); }); });
+
+  // ── Strategy select ─────────────────────────────────────────────────────
+  var sel = $('strategy_id');
+  FAMILY_ORDER.forEach(function (fam) {
+    var items = KB.strategies.filter(function (s) { return s.family === fam; });
+    if (!items.length) return;
+    var og = document.createElement('optgroup');
+    og.label = FAMILY_LABEL[fam] || fam;
+    items.forEach(function (s) {
+      var o = document.createElement('option');
+      o.value = s.id; o.textContent = s.name;
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+
+  var NUM_FIELDS = ['sharpe_annual', 'years', 'n_trials', 'skew', 'kurtosis', 'var_trials_sr', 'gross_alpha_monthly_bps',
+    'volatility_annual', 'turnover_monthly', 'roundtrip_cost_bps', 'microcap_share', 'live_months', 'horizon_years', 'kelly_multiple'];
+  var PCT_FIELDS = { volatility_annual: 1, turnover_monthly: 1, microcap_share: 1 };
+  var BOOL_FIELDS = ['long_short', 'uses_leverage', 'published', 'out_of_sample'];
+  var FORM_DEFAULTS = { n_trials: 1, skew: 0, kurtosis: 3, volatility_annual: 15, live_months: 0, horizon_years: 10 };
+
+  function strategyDefaults(s) {
+    var ev = s.evidence;
+    var share = { alta: 0.6, media: 0.3, baja: 0.05 }[ev.microcap_dependence];
+    $('turnover_monthly').value = Math.round((ev.typical_turnover_monthly || 0) * 100);
+    $('microcap_share').value = Math.round((share == null ? 0.05 : share) * 100);
+    $('long_short').checked = !!ev.requires_short;
+    $('uses_leverage').checked = !!ev.requires_leverage;
+  }
+  function updateClaim() {
+    var s = E.getStrategy(KB, sel.value);
+    $('claim').innerHTML = esc(s.claim) + ' <span class="muted">Cifra clave:</span> ' + esc(s.key_figure) + marks(s.marks);
+  }
+  function costPlaceholder() {
+    var base = $('investor').value === 'institutional' ? 15 : 40;
+    if ($('market').value === 'mx') base *= 1.5;
+    $('roundtrip_cost_bps').placeholder = 'por defecto ' + base;
+  }
+
+  function readForm() {
+    var d = { strategy_id: sel.value };
+    NUM_FIELDS.forEach(function (k) {
+      var v = $(k).value;
+      if (v === '' || v == null) return;
+      var x = Number(v);
+      if (!isFinite(x)) return;
+      d[k] = PCT_FIELDS[k] ? x / 100 : x;
+    });
+    BOOL_FIELDS.forEach(function (k) { d[k] = $(k).checked; });
+    d.periods_per_year = Number($('periods_per_year').value);
+    d.investor = $('investor').value;
+    d.market = $('market').value;
+    return d;
+  }
+  function writeForm(d) {
+    if (d.strategy_id && E.getStrategy(KB, d.strategy_id)) sel.value = d.strategy_id;
+    var s = E.getStrategy(KB, sel.value);
+    strategyDefaults(s);
+    NUM_FIELDS.forEach(function (k) {
+      var v = d[k];
+      if (v == null) {
+        if (k === 'turnover_monthly' || k === 'microcap_share') return;  // keep the strategy's defaults
+        $(k).value = k in FORM_DEFAULTS ? FORM_DEFAULTS[k] : '';
+        return;
+      }
+      $(k).value = PCT_FIELDS[k] ? Math.round(v * 10000) / 100 : v;
+    });
+    BOOL_FIELDS.forEach(function (k) {
+      if (d[k] != null) $(k).checked = !!d[k];
+      else if (k === 'published') $(k).checked = true;
+      else if (k === 'out_of_sample') $(k).checked = false;
+    });
+    $('periods_per_year').value = String(d.periods_per_year || 252);
+    $('investor').value = d.investor || 'retail';
+    $('market').value = d.market || 'global';
+    updateClaim(); costPlaceholder(); render();
+  }
+
+  var PRESETS = {
+    momentum: { strategy_id: 'momentum', sharpe_annual: 1.2, years: 8, n_trials: 50, periods_per_year: 12, skew: -1.5, kurtosis: 8,
+      volatility_annual: 0.15, investor: 'retail', market: 'us', horizon_years: 10, published: true, live_months: 0 },
+    global: { strategy_id: 'buy_hold_global', investor: 'retail', market: 'global', horizon_years: 25 },
+    ipc: { strategy_id: 'ipc_calendar', sharpe_annual: 0.9, years: 10, n_trials: 30, periods_per_year: 252, investor: 'retail',
+      market: 'mx', horizon_years: 5, published: true }
+  };
+  document.querySelectorAll('[data-preset]').forEach(function (b) {
+    b.addEventListener('click', function () { writeForm(PRESETS[b.getAttribute('data-preset')]); });
+  });
+
+  // ── Verdict rendering ───────────────────────────────────────────────────
+  function dial(score, code) {
+    var r = 50, c = 2 * Math.PI * r, frac = Math.max(0, Math.min(1, score / 100));
+    var col = { respaldada: 'var(--good)', condicionada: 'var(--accent)', debil: 'var(--warn)', no_respaldada: 'var(--bad)' }[code];
+    return '<div class="dial" role="img" aria-label="Puntaje ' + Math.round(score) + ' de 100">' +
+      '<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="' + r + '" fill="none" stroke="var(--sunken)" stroke-width="9"/>' +
+      '<circle cx="60" cy="60" r="' + r + '" fill="none" stroke="' + col + '" stroke-width="9" stroke-linecap="round" ' +
+      'stroke-dasharray="' + (c * frac).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 60 60)"/></svg>' +
+      '<div class="val"><div>' + Math.round(score) + '<small>de 100</small></div></div></div>';
+  }
+
+  function meter(label, val, weight) {
+    if (val == null) return '<div class="meter na"><div class="lab"><span>' + label + '</span><span>—</span></div>' +
+      '<div class="track"></div><div class="v">sin backtest</div></div>';
+    return '<div class="meter"><div class="lab"><span>' + label + '</span><span class="num">' + Math.round(weight * 100) + '%</span></div>' +
+      '<div class="track"><div class="fill" style="width:' + Math.max(0, Math.min(100, val)).toFixed(1) + '%"></div></div>' +
+      '<div class="v">' + Math.round(val) + '</div></div>';
+  }
+
+  // Horizontal level chart: each stage drawn from a shared zero baseline.
+  function levelChart(steps, opts) {
+    opts = opts || {};
+    var W = 640, labW = 190, valW = 64, rowH = opts.rowH || 34, pad = 22;
+    var H = steps.length * rowH + pad + 8;
+    var vals = steps.map(function (s) { return s.v; });
+    var lo = Math.min(0, Math.min.apply(null, vals)), hi = Math.max(0, Math.max.apply(null, vals));
+    if (hi === lo) hi = lo + 1;
+    var x0 = labW, x1 = W - valW;
+    function X(v) { return x0 + (v - lo) / (hi - lo) * (x1 - x0); }
+    var step = niceStep((hi - lo) / 4), ticks = [];
+    for (var t = Math.ceil(lo / step) * step; t <= hi + 1e-9; t += step) ticks.push(Math.round(t * 1000) / 1000);
+    var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(opts.aria || 'Cascada') + '">';
+    ticks.forEach(function (t) {
+      out += '<line class="' + (t === 0 ? 'zero' : 'grid') + '" x1="' + X(t).toFixed(1) + '" x2="' + X(t).toFixed(1) + '" y1="4" y2="' + (H - pad + 2) + '"/>';
+      out += '<text x="' + X(t).toFixed(1) + '" y="' + (H - 4) + '" text-anchor="middle">' + t + '</text>';
+    });
+    steps.forEach(function (s, i) {
+      var y = 6 + i * rowH, bh = Math.min(16, rowH - 12), xa = X(Math.min(0, s.v)), xb = X(Math.max(0, s.v));
+      var w = Math.max(1, xb - xa), cls = 'b' + (s.v <= 0 ? ' neg' : '') + (s.lit ? ' lit' : '');
+      out += '<g class="step"><title>' + esc(s.label + ': ' + f2(s.v, 1) + ' pb' + (s.note ? ' — ' + s.note : '')) + '</title>';
+      out += '<rect class="hit" x="0" y="' + (y - 4) + '" width="' + W + '" height="' + rowH + '"/>';
+      out += '<text x="0" y="' + (y + bh / 2 + 4) + '">' + esc(s.label) + '</text>';
+      out += '<rect class="' + cls + '" x="' + xa.toFixed(1) + '" y="' + y + '" width="' + w.toFixed(1) + '" height="' + bh + '" rx="3"/>';
+      var tx = s.v >= 0 ? xb + 6 : xa - 6;
+      out += '<text class="v" x="' + tx.toFixed(1) + '" y="' + (y + bh / 2 + 4) + '" text-anchor="' + (s.v >= 0 ? 'start' : 'end') + '">' + f2(s.v, 1) + '</text></g>';
+    });
+    return out + '</svg>';
+  }
+  function niceStep(raw) {
+    var p = Math.pow(10, Math.floor(Math.log10(raw || 1))), n = raw / p;
+    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p;
+  }
+
+  var last = null;
+  function render() {
+    var d = readForm(), r;
+    try { r = E.evaluateDecision(d, KB, REPO); } catch (e) {
+      $('verdict').innerHTML = '<div class="panel"><p class="caps">No se pudo evaluar: ' + esc(e.message) + '</p></div>';
+      return;
+    }
+    last = { input: d, result: r };
+    var sc = r.scores, w = r.weights, s = r.strategy, h = '';
+
+    h += '<div class="panel"><div class="scorehead">' + dial(sc.final, r.verdict.code) + '<div style="display:grid;gap:8px;min-width:0">' +
+      '<span class="pill ' + r.verdict.code + '">' + esc(r.verdict.label) + '</span>' +
+      '<h2>' + esc(s.name) + '</h2><p class="summary">' + esc(r.verdict.summary) + '</p>' +
+      r.caps.map(function (c) { return '<p class="caps">' + esc(c) + '</p>'; }).join('') + '</div></div>' +
+      '<div class="meters">' + meter('Evidencia', sc.prior, w.prior) + meter('Estadística', sc.statistical, w.statistical || 0) +
+      meter('Implementación', sc.implementability, w.implementability) + meter('Contexto', sc.context, w.context) + '</div></div>';
+
+    if (r.cascade.length) {
+      var steps = r.cascade.map(function (c) { return { label: c.stage, v: c.monthly_bps, note: c.note }; });
+      h += '<div class="panel"><div><h3>De la ventaja bruta a la neta</h3><p class="small muted">Puntos base al mes. ' +
+        (r.net_sharpe_estimate != null ? 'Sharpe neto aproximado: <span class="num">' + f2(r.net_sharpe_estimate) + '</span>.' : '') + '</p></div>' +
+        '<div class="chart">' + levelChart(steps, { aria: 'Cascada de la ventaja en pb al mes' }) + '</div>' +
+        '<table class="kv">' + r.cascade.map(function (c) { return '<tr><td><b>' + esc(c.stage) + '</b> <span class="muted small">' + esc(c.note || '') + '</span></td><td>' + f2(c.monthly_bps, 1) + ' pb</td></tr>'; }).join('') + '</table></div>';
+    }
+
+    if (r.stats) {
+      var st = r.stats;
+      h += '<div class="panel"><h3>Credibilidad estadística del backtest</h3><div class="stats-grid">' +
+        '<table class="kv"><tr><td>Estadístico t</td><td>' + f2(st.t_stat) + '</td></tr>' +
+        '<tr><td>p-valor / ajustado (Bonferroni)</td><td>' + f2(st.p_value, 4) + ' / ' + f2(st.p_adjusted, 3) + '</td></tr>' +
+        '<tr><td>Umbral t para el mejor de N</td><td>' + f2(st.bonferroni_t_threshold) + '</td></tr>' +
+        '<tr><td>Sharpe con recorte</td><td>' + f2(st.sharpe_haircut) + ' (−' + f2(st.haircut_pct * 100, 0) + '%)</td></tr></table>' +
+        '<table class="kv"><tr><td>Deflated Sharpe Ratio</td><td>' + f2(st.dsr, 3) + '</td></tr>' +
+        '<tr><td>Sharpe esperable del mejor sin habilidad</td><td>' + f2(st.sr0_annual) + '</td></tr>' +
+        '<tr><td>Longitud mínima (años)</td><td>' + f2(st.min_backtest_years, 1) + '</td></tr>' +
+        '<tr><td>Máximo de variantes para estos años</td><td>' + (st.max_trials_for_length == null ? '—' : st.max_trials_for_length) + '</td></tr></table>' +
+        '</div></div>';
+    }
+
+    h += '<div class="panel"><h3>Chequeos</h3><ul class="checks">' + r.checks.map(function (c) {
+      return '<li><span class="chip ' + c.status + '">' + STATUS_LABEL[c.status] + '</span><div style="display:grid;gap:2px;min-width:0">' +
+        '<span class="t">' + esc(c.label) + '</span><span class="d">' + esc(c.detail) + '</span>' +
+        (c.source ? '<span class="s">' + srcLink(c.source) + '</span>' : '') + '</div></li>';
+    }).join('') + '</ul></div>';
+
+    h += '<div class="panel"><h3>Lo que dice la literatura</h3><dl class="facts">' +
+      '<dt>Afirma</dt><dd>' + esc(s.claim) + '</dd><dt>Cifra clave</dt><dd>' + esc(s.key_figure) + marks(s.marks) + '</dd>' +
+      '<dt>Crítica</dt><dd>' + esc(s.critique) + '</dd><dt>Sobrevive</dt><dd>' + esc(s.survives) + '</dd></dl>' +
+      '<ul class="src">' + r.sources.map(function (x) { return '<li>' + srcLink(x) + '</li>'; }).join('') + '</ul></div>';
+
+    if (r.related_modules.length) {
+      h += '<div class="panel"><h3>Dónde está en FinceptTerminal</h3><ul class="mods">' + r.related_modules.map(function (m) {
+        return '<li><code>' + esc(m.path) + '</code><span>' + esc(m.summary) + '</span></li>';
+      }).join('') + '</ul></div>';
+    }
+    $('verdict').innerHTML = h;
+  }
+
+  // ── History & export ────────────────────────────────────────────────────
+  function loadHist() { try { return JSON.parse(store('qe.hist') || '[]'); } catch (e) { return []; } }
+  function renderHist() {
+    var rows = loadHist();
+    if (!rows.length) { $('hist').innerHTML = '<tr><td class="muted">Aún no hay decisiones guardadas. Ajusta la ficha y pulsa “Guardar en el historial”.</td></tr>'; return; }
+    $('hist').innerHTML = '<thead><tr><th>Estrategia</th><th>Dictamen</th><th style="text-align:right">Puntaje</th><th style="text-align:right">Neto pb/mes</th><th></th></tr></thead><tbody>' +
+      rows.map(function (x, i) {
+        return '<tr data-i="' + i + '" style="cursor:pointer"><td>' + esc(x.name) + '</td><td><span class="pill ' + x.code + '">' + esc(x.label) + '</span></td>' +
+          '<td class="n">' + Math.round(x.score) + '</td><td class="n">' + (x.net == null ? '—' : f2(x.net, 1)) + '</td>' +
+          '<td class="n"><button type="button" class="btn ghost" data-del="' + i + '" aria-label="Borrar">Borrar</button></td></tr>';
+      }).join('') + '</tbody>';
+  }
+  $('hist').addEventListener('click', function (ev) {
+    var rows = loadHist(), del = ev.target.closest('[data-del]');
+    if (del) { rows.splice(Number(del.getAttribute('data-del')), 1); store('qe.hist', JSON.stringify(rows)); renderHist(); return; }
+    var tr = ev.target.closest('tr[data-i]');
+    if (tr) { writeForm(rows[Number(tr.getAttribute('data-i'))].input); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  });
+  function toast(msg) { $('toast').textContent = msg; setTimeout(function () { $('toast').textContent = ''; }, 3500); }
+  $('save').addEventListener('click', function () {
+    if (!last) return;
+    var rows = loadHist();
+    rows.unshift({ input: last.input, name: last.result.strategy.name, code: last.result.verdict.code, label: last.result.verdict.label,
+      score: last.result.scores.final, net: last.result.net_monthly_bps });
+    store('qe.hist', JSON.stringify(rows.slice(0, 30)));
+    renderHist(); toast('Guardado en el historial de este navegador.');
+  });
+  $('copyjson').addEventListener('click', function () {
+    var txt = JSON.stringify(readForm(), null, 2);
+    var done = function () { toast('JSON copiado. Guárdalo como decision.json y ejecuta: python quant_evidence_cli.py evaluate decision.json'); };
+    var fallback = function () {
+      var ta = document.createElement('textarea'); ta.className = 'json'; ta.value = txt; ta.readOnly = true;
+      $('toast').textContent = 'Selecciona y copia el JSON:'; $('toast').after(ta); ta.select();
+    };
+    try { navigator.clipboard.writeText(txt).then(done, fallback); } catch (e) { fallback(); }
+  });
+
+  $('sheet').addEventListener('input', function (ev) {
+    if (ev.target === sel) return;
+    if (ev.target.id === 'investor' || ev.target.id === 'market') costPlaceholder();
+    render();
+  });
+  sel.addEventListener('change', function () { strategyDefaults(E.getStrategy(KB, sel.value)); updateClaim(); render(); });
+  $('sheet').addEventListener('submit', function (ev) { ev.preventDefault(); });
+
+  // ── Library ─────────────────────────────────────────────────────────────
+  var famOn = 'todas';
+  function renderFam() {
+    var fams = ['todas'].concat(FAMILY_ORDER);
+    $('famfilter').innerHTML = fams.map(function (f) {
+      return '<button type="button" data-fam="' + esc(f) + '" aria-pressed="' + (f === famOn) + '">' + esc(f === 'todas' ? 'Todas' : FAMILY_LABEL[f]) + '</button>';
+    }).join('');
+  }
+  $('famfilter').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-fam]'); if (!b) return;
+    famOn = b.getAttribute('data-fam'); renderFam(); renderLib();
+  });
+  $('libq').addEventListener('input', renderLib);
+  function renderLib() {
+    var q = $('libq').value.trim().toLowerCase();
+    var list = KB.strategies.filter(function (s) {
+      if (famOn !== 'todas' && s.family !== famOn) return false;
+      if (!q) return true;
+      return JSON.stringify(s).toLowerCase().indexOf(q) >= 0;
+    }).sort(function (a, b) { return b.prior.score - a.prior.score; });
+    $('lib').innerHTML = list.length ? list.map(function (s) {
+      return '<article class="card"><div class="head"><div style="display:grid;gap:4px;min-width:0"><span class="fam-tag">' + esc(FAMILY_LABEL[s.family]) +
+        ' · ' + s.categories.map(function (c) { return esc(CAT_NAME[c]); }).join(', ') + '</span><h3>' + esc(s.name) + '</h3></div>' +
+        '<div class="prior">' + s.prior.score + '<small>valoración</small></div></div>' +
+        '<div class="bar"><i style="width:' + s.prior.score + '%"></i></div>' +
+        '<p><b>Afirma:</b> ' + esc(s.claim) + '</p><p><b>Cifra clave:</b> ' + esc(s.key_figure) + marks(s.marks) + '</p>' +
+        '<p><b>Sobrevive:</b> ' + esc(s.survives) + '</p>' +
+        '<details><summary>Crítica y fuentes</summary><p style="margin-block:8px">' + esc(s.critique) + '</p><ul class="src">' +
+        s.sources.map(function (x) { return '<li>' + srcLink(x) + '</li>'; }).join('') + '</ul></details>' +
+        '<div><button type="button" class="btn" data-eval="' + esc(s.id) + '">Evaluar esta estrategia</button></div></article>';
+    }).join('') : '<p class="muted">Ninguna estrategia coincide con la búsqueda.</p>';
+  }
+  $('lib').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-eval]'); if (!b) return;
+    writeForm({ strategy_id: b.getAttribute('data-eval'), investor: $('investor').value, market: $('market').value });
+    showTab('evaluar'); window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  function renderCascade() {
+    var c = KB.cascade;
+    $('cascade-src').innerHTML = esc(c.label) + '. Puntos base al mes. ' + c.sources.map(srcLink).join(' · ');
+    $('cascade-chart').innerHTML = levelChart(c.steps.map(function (s) {
+      return { label: s.stage, v: s.monthly_bps, note: s.mark ? '[' + s.mark + ']' : '' };
+    }), { aria: 'Cascada de la anomalía promedio', rowH: 32 });
+  }
+
+  // ── Repo map ────────────────────────────────────────────────────────────
+  function renderRepo() {
+    var mods = (REPO && REPO.modules) || [], auto = (REPO && REPO.auto_index) || null;
+    $('gaps').innerHTML = ((REPO && REPO.gaps) || []).map(function (g) {
+      if (typeof g === 'string') return '<li><span class="chip info">Nota</span><span class="g-text">' + esc(g) + '</span></li>';
+      return '<li><span class="chip ' + esc(g.severity) + '">' + esc(g.severity) + '</span><div style="display:grid;gap:3px;min-width:0">' +
+        '<span class="g-meta">' + esc(CAT_NAME[g.category] || g.category) + '</span><span class="g-text">' + esc(g.text) + '</span>' +
+        (g.files && g.files.length ? '<span class="g-meta">' + g.files.map(function (f) { return '<code>' + esc(f) + '</code>'; }).join(' · ') + '</span>' : '') +
+        (g.covered_by ? '<span class="g-cov">Cubierto aquí: ' + esc(g.covered_by) + '</span>' : '') + '</div></li>';
+    }).join('') || '<li class="muted">Sin brechas registradas.</li>';
+    $('scaninfo').textContent = auto ? 'Escaneo de vocabulario: ' + auto.files_scanned + ' archivos de fincept-qt/scripts y fincept-qt/src. ' +
+      'Las cuentas indican dónde aparece el vocabulario de cada categoría, no lo que hace cada archivo; las listas curadas sí se verificaron leyendo el código.' : '';
+    $('repo').innerHTML = KB.categories.map(function (c) {
+      var ms = mods.filter(function (m) { return (m.categories || []).indexOf(c.key) >= 0; });
+      var ss = KB.strategies.filter(function (s) { return s.categories.indexOf(c.key) >= 0; }).sort(function (a, b) { return b.prior.score - a.prior.score; });
+      var autoN = auto && auto.categories[c.key] ? auto.categories[c.key].file_count : null;
+      return '<article class="card"><span class="fam-tag">' + esc(c.family) + '</span><h3>' + esc(c.name) + '</h3>' +
+        '<div class="counts"><span><b>' + ms.length + '</b> módulos curados</span>' + (autoN != null ? '<span><b>' + autoN + '</b> archivos con su vocabulario</span>' : '') +
+        '<span><b>' + ss.length + '</b> estrategias</span></div>' +
+        (ss.length ? '<p class="small"><span class="muted">Mejor valorada:</span> ' + esc(ss[0].name) + ' <span class="num">(' + ss[0].prior.score + ')</span></p>' : '') +
+        (ms.length ? '<ul class="mods">' + ms.slice(0, 8).map(function (m) { return '<li><code>' + esc(m.path) + '</code><span>' + esc(m.summary) + '</span></li>'; }).join('') + '</ul>' +
+          (ms.length > 8 ? '<p class="small muted">y ' + (ms.length - 8) + ' más</p>' : '')
+          : '<p class="small muted">Ningún módulo curado cubre esta categoría.</p>') + '</article>';
+    }).join('');
+  }
+
+  $('habits-m').innerHTML = KB.habits.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('');
+  renderFam(); renderLib(); renderCascade(); renderRepo(); renderHist();
+  writeForm(PRESETS.momentum);
+  var t = store('qe.tab');
+  var hash = (location.hash || '').replace('#', '');
+  if (['evaluar', 'biblioteca', 'repo', 'metodo'].indexOf(hash) >= 0) showTab(hash);
+  else if (t && ['evaluar', 'biblioteca', 'repo', 'metodo'].indexOf(t) >= 0) showTab(t);
+})();
+</script>
