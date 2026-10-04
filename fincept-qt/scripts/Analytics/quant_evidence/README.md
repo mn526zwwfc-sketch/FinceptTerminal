@@ -10,6 +10,25 @@ The literature review "La academia quant desinfla sus propias estrategias" (Mode
 
 Everything here is educational. It is not personalized financial advice and it makes no market predictions.
 
+## Fincept Quant Studio (app)
+
+`app/` packages everything above, plus the repository source, as an Apple-style single-page app:
+
+- **Evaluar**: a buy-flow configurator (strategy tiles, backtest fields, implementation switches, context choices) with a sticky preview of four activity rings (evidence, statistics, implementability, context) and bento result tiles (net-edge cascade, credibility, checks, literature, related modules, history).
+- **Estrategias**: the 44 strategies as cards, with a detail sheet.
+- **Código**: a code explorer grouped by evidence category, plus the new package, with summaries and syntax highlighting.
+- **Repositorio** and **Método**: category tiles, the 19 gaps, formulas, reliability marks.
+
+Run it locally (stdlib only; the page then uses the Python engine, can browse every file under `fincept-qt/` and can run the Analytics CLIs `quant_evidence_cli.py`, `quant_analytics_cli.py`, `statsmodels_cli.py` and `financial_analysis_cli.py`):
+
+```bash
+cd fincept-qt/scripts/Analytics
+python quant_studio.py                 # http://127.0.0.1:8765
+python quant_studio.py --port 9000 --no-browser --no-scan
+```
+
+The server binds to 127.0.0.1, accepts only localhost `Host` headers and JSON POST bodies, and refuses any path outside `fincept-qt/`. To produce a static copy (page plus `code/<id>.txt` sources) run `python -m quant_evidence.app.build_app [out_dir] [--fragment]`; without the local server it runs the JavaScript engine and shows the curated files only.
+
 ## Usage
 
 ```bash
