@@ -128,7 +128,7 @@
     ppy = ppy || 252;
     skew = skew == null ? 0 : skew;
     kurt = kurt == null ? 3 : kurt;
-    var nObs = Math.round(years * ppy);
+    var nObs = Math.floor(years * ppy + 0.5);
     if (varTrials == null) varTrials = years > 0 ? 1 / years : 1;
     var em = expectedMaxSharpeZ(nTrials);
     var sr0 = Math.sqrt(Math.max(varTrials, 0)) * em;
@@ -141,12 +141,13 @@
   }
 
   function sharpeToT(sr, years) { return sr * Math.sqrt(Math.max(years, 0)); }
-  function tToPvalue(t) { return 2 * (1 - normCdf(Math.abs(t))); }
-  function pvalueToT(p) { return normPpf(1 - Math.min(Math.max(p, 0), 1) / 2); }
+  function tToPvalue(t) { return 2 * normCdf(-Math.abs(t)); }
+  function pvalueToT(p) { return -normPpf(Math.min(Math.max(p, 0), 1) / 2); }
 
   function adjustPvalue(p, m, method) {
     m = Math.max(Math.floor(m), 1);
-    if (method === 'sidak') return 1 - Math.pow(1 - p, m);
+    p = Math.min(Math.max(p, 0), 1);
+    if (method === 'sidak') return p < 1 ? -Math.expm1(m * Math.log1p(-p)) : 1;
     return Math.min(m * p, 1);
   }
 
@@ -154,6 +155,7 @@
     method = method || 'bonferroni';
     var t = sharpeToT(sr, years), p = tToPvalue(t), pa = adjustPvalue(p, nTests, method);
     var ta = pa < 1 ? pvalueToT(pa) : 0;
+    if (!isFinite(ta)) ta = Math.abs(t);  // p underflowed: the haircut is negligible
     var sra = years > 0 ? ta / Math.sqrt(years) : 0;
     if (sr < 0) sra = -sra;
     return {
@@ -187,7 +189,7 @@
   }
 
   function kellyFraction(mu, r, sigma, gamma) {
-    if (sigma <= 0) return Infinity;
+    if (sigma <= 0) return mu === r ? 0 : (mu > r ? Infinity : -Infinity);
     return (mu - r) / ((gamma == null ? 1 : gamma) * sigma * sigma);
   }
   function growthRate(f, mu, r, sigma) { return r + f * (mu - r) - 0.5 * f * f * sigma * sigma; }
@@ -204,6 +206,7 @@
   var MX_COST_MULTIPLIER = 1.5;
   var MARKET_SCORE = { global: 1.0, us: 0.8, other: 0.7, mx: 0.6 };
   var EDGE_FAMILIES = ['factores', 'machine learning', 'timing', 'calendario'];
+  var DSR_NAN_TEXT = 'No se puede calcular el DSR: hacen falta al menos 2 observaciones y que la asimetría y la curtosis den una varianza positiva del estimador del Sharpe. Revisa años, frecuencia, asimetría y curtosis.';
   var VERDICTS = [
     [70, 'respaldada', 'Respaldada por la evidencia'],
     [50, 'condicionada', 'Condicionada: depende de supuestos'],
@@ -232,14 +235,20 @@
     if (x !== x) return lo;
     return Math.max(lo, Math.min(hi, x));
   }
+  function own(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+  // Same coercion rules as evaluator._num / _bool.
   function num(v, d) {
-    if (v === null || v === undefined || v === '') return d === undefined ? null : d;
+    var dflt = d === undefined ? null : d;
+    if (v === null || v === undefined || typeof v === 'object') return dflt;
+    if (typeof v === 'string' && v.trim() === '') return dflt;
     var x = Number(v);
-    return isFinite(x) ? x : (d === undefined ? null : d);
+    return isFinite(x) ? x : dflt;
   }
   function bool(v, d) {
     if (v === null || v === undefined || v === '') return d;
     if (typeof v === 'string') return ['1', 'true', 'si', 'sí', 'yes', 'y'].indexOf(v.trim().toLowerCase()) >= 0;
+    if (Array.isArray(v)) return v.length > 0;
+    if (typeof v === 'object') return Object.keys(v).length > 0;
     return !!v;
   }
   function fmt(x, nd) { return Number(x).toFixed(nd == null ? 2 : nd); }
@@ -255,9 +264,9 @@
   function resolveInputs(raw, s) {
     var ev = s.evidence;
     var investor = raw.investor || 'retail';
-    if (!(investor in DEFAULT_ROUNDTRIP_BPS)) investor = 'retail';
+    if (!own(DEFAULT_ROUNDTRIP_BPS, investor)) investor = 'retail';
     var market = raw.market || 'global';
-    if (!(market in MARKET_SCORE)) market = 'other';
+    if (!own(MARKET_SCORE, market)) market = 'other';
     var defCost = DEFAULT_ROUNDTRIP_BPS[investor] * (market === 'mx' ? MX_COST_MULTIPLIER : 1);
     var sharpe = num(raw.sharpe_annual), years = num(raw.years);
     var hasBt = sharpe !== null && years !== null && years > 0;
@@ -310,7 +319,7 @@
       var minbtl = sr > 0 ? minBacktestLength(n, sr) : Infinity;
       var maxTr = sr > 0 ? maxTrialsForLength(years, sr) : 1;
       var sDsr = d.dsr === d.dsr ? clamp((d.dsr - 0.5) / 0.45) : 0;
-      var sHair = clamp(hl.t_adjusted / 1.96);
+      var sHair = sr > 0 ? clamp(hl.t_adjusted / 1.96) : 0;
       var sLen = isFinite(minbtl) && minbtl > 0 ? clamp(years / minbtl) : (n <= 1 && sr > 0 ? 1 : 0);
       scores.statistical = 100 * (0.4 * sDsr + 0.3 * sHair + 0.3 * sLen);
       st = {
@@ -325,12 +334,13 @@
         't = ' + fmt(hl.t_stat) + ' con ' + n + ' prueba(s); el mejor de ' + n + ' debe superar t = ' +
         fmt(st.bonferroni_t_threshold) + ' (Bonferroni, 5%).', SRC.hlz));
       checks.push(check('haircut', 'Sharpe con recorte por pruebas múltiples',
-        hl.t_adjusted >= 1.96 ? 'pass' : hl.sharpe_haircut > 0 ? 'warn' : 'fail',
+        sr > 0 && hl.t_adjusted >= 1.96 ? 'pass' : hl.sharpe_haircut > 0 ? 'warn' : 'fail',
         'Sharpe ' + fmt(sr) + ' → ' + fmt(hl.sharpe_haircut) + ' tras ajustar por ' + n +
         ' prueba(s) (recorte de ' + pct0(hl.haircut_pct) + '%).', SRC.hl));
+      var dsrOk = d.dsr === d.dsr;
       checks.push(check('dsr', 'Deflated Sharpe Ratio ≥ 0.95',
-        d.dsr >= 0.95 ? 'pass' : d.dsr >= 0.5 ? 'warn' : 'fail',
-        'DSR = ' + fmt(d.dsr, 3) + ': probabilidad de que el Sharpe verdadero sea positivo descontando ' + n +
+        !dsrOk ? 'info' : d.dsr >= 0.95 ? 'pass' : d.dsr >= 0.5 ? 'warn' : 'fail',
+        !dsrOk ? DSR_NAN_TEXT : 'DSR = ' + fmt(d.dsr, 3) + ': probabilidad de que el Sharpe verdadero sea positivo descontando ' + n +
         ' intento(s), asimetría ' + fmt(inp.skew, 1) + ' y curtosis ' + fmt(inp.kurtosis, 1) +
         '. Sharpe esperable del mejor intento sin habilidad: ' + fmt(d.sr0_annual) + '.', SRC.dsr));
       if (sr > 0) {
@@ -467,9 +477,9 @@
       fin = Math.min(fin, 29);
       caps.push('La ventaja neta esperada es nula o negativa: el puntaje se limita a 29.');
     }
-    if (st && st.dsr === st.dsr && st.dsr < 0.5) {
+    if (st && !(st.dsr >= 0.5)) {
       fin = Math.min(fin, 40);
-      caps.push('El Deflated Sharpe Ratio es menor que 0.5: el puntaje se limita a 40.');
+      caps.push('El Deflated Sharpe Ratio es menor que 0.5 o no se puede calcular: el puntaje se limita a 40.');
     }
     scores.final = fin;
     var v = VERDICTS.filter(function (x) { return fin >= x[0]; })[0];
@@ -498,7 +508,7 @@
       scores: scores,
       weights: weights,
       caps: caps,
-      verdict: { code: v[1], label: v[2], summary: v[2] + ' (' + fin.toFixed(0) + '/100). ' + nFail +
+      verdict: { code: v[1], label: v[2], summary: v[2] + ' (' + Math.floor(fin) + '/100). ' + nFail +
         ' chequeo(s) en rojo y ' + nWarn + ' con advertencia. ' + s.survives },
       checks: checks,
       sources: s.sources,

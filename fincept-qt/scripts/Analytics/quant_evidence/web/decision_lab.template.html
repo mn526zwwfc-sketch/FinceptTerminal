@@ -10,7 +10,7 @@
   --sunken: #eaeef2;
   --ink: #15202b;
   --ink-2: #485664;
-  --muted: #74828f;
+  --muted: #5e6b78;
   --line: #d9e0e6;
   --accent: #2446a6;
   --accent-ink: #ffffff;
@@ -134,7 +134,8 @@ table.kv td:last-child { text-align: right; font-family: var(--font-data); font-
 .stats-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
 @media (max-width: 640px) { .stats-grid { grid-template-columns: minmax(0, 1fr); } }
 
-ul.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+ul.checks { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+ul.checks .d { overflow-wrap: anywhere; }
 ul.checks li { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
 ul.checks li:last-child { border-bottom: 0; }
 .chip { display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 4px; padding: 2px 6px; height: fit-content; }
@@ -165,6 +166,9 @@ table.hist td { padding: 6px; border-bottom: 1px solid var(--line); }
 table.hist td.n { font-family: var(--font-data); text-align: right; }
 .tablewrap { overflow-x: auto; }
 .toast { font-size: 0.83rem; color: var(--good); min-height: 1.2em; }
+input::placeholder { font-family: var(--font-body); }
+table.hist .pill { white-space: nowrap; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 textarea.json { width: 100%; min-height: 120px; font: 0.78rem var(--font-data); background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 8px; }
 
 /* Library */
@@ -189,10 +193,11 @@ textarea.json { width: 100%; min-height: 120px; font: 0.78rem var(--font-data); 
 .repo { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 14px; }
 .repo .card .counts { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.8rem; color: var(--muted); }
 .repo .card .counts b { font-family: var(--font-data); color: var(--ink); font-weight: 500; }
-.gaps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.gaps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+.gaps .g-meta, .gaps .g-cov { min-width: 0; overflow-wrap: anywhere; }
 .gaps li { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
 .gaps li:last-child { border-bottom: 0; }
-.gaps .g-text { font-size: 0.9rem; color: var(--ink); }
+.gaps .g-text { font-size: 0.9rem; color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
 .gaps .g-meta { font-size: 0.8rem; color: var(--muted); }
 .gaps .g-meta code { font-family: var(--font-data); font-size: 0.76rem; overflow-wrap: anywhere; }
 .gaps .g-cov { font-size: 0.82rem; color: var(--good); }
@@ -216,16 +221,16 @@ textarea.json { width: 100%; min-height: 120px; font: 0.78rem var(--font-data); 
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Secciones">
-    <button role="tab" id="tab-evaluar" aria-selected="true" data-tab="evaluar">Evaluar decisión</button>
-    <button role="tab" id="tab-biblioteca" aria-selected="false" data-tab="biblioteca">Biblioteca de estrategias</button>
-    <button role="tab" id="tab-repo" aria-selected="false" data-tab="repo">Mapa del repositorio</button>
-    <button role="tab" id="tab-metodo" aria-selected="false" data-tab="metodo">Método</button>
+    <button role="tab" id="tab-evaluar" aria-controls="view-evaluar" aria-selected="true" data-tab="evaluar">Evaluar decisión</button>
+    <button role="tab" id="tab-biblioteca" aria-controls="view-biblioteca" aria-selected="false" data-tab="biblioteca">Biblioteca de estrategias</button>
+    <button role="tab" id="tab-repo" aria-controls="view-repo" aria-selected="false" data-tab="repo">Mapa del repositorio</button>
+    <button role="tab" id="tab-metodo" aria-controls="view-metodo" aria-selected="false" data-tab="metodo">Método</button>
   </nav>
 
   <section id="view-evaluar" role="tabpanel" aria-labelledby="tab-evaluar">
     <div class="grid-eval">
       <form class="sheet" id="sheet" autocomplete="off">
-        <div class="presets" aria-label="Ejemplos">
+        <div class="presets" role="group" aria-label="Ejemplos">
           <button type="button" class="btn ghost" data-preset="momentum">Ejemplo: backtest de momentum</button>
           <button type="button" class="btn ghost" data-preset="global">Ejemplo: índice global</button>
           <button type="button" class="btn ghost" data-preset="ipc">Ejemplo: calendario del IPC</button>
@@ -280,7 +285,7 @@ textarea.json { width: 100%; min-height: 120px; font: 0.78rem var(--font-data); 
           <legend>Implementación</legend>
           <div class="row2">
             <label class="f" for="gross_alpha_monthly_bps">Alfa bruta mensual (pb)
-              <input type="number" id="gross_alpha_monthly_bps" step="1" placeholder="desde el Sharpe" inputmode="decimal">
+              <input type="number" id="gross_alpha_monthly_bps" step="1" placeholder="automática" inputmode="decimal">
             </label>
             <label class="f" for="volatility_annual">Volatilidad anual (%)
               <input type="number" id="volatility_annual" step="1" min="0" value="15" inputmode="decimal">
@@ -305,7 +310,7 @@ textarea.json { width: 100%; min-height: 120px; font: 0.78rem var(--font-data); 
           <label class="chk"><input type="checkbox" id="long_short"> Vende en corto (cartera largo-corto)</label>
           <label class="chk"><input type="checkbox" id="uses_leverage"> Usa apalancamiento</label>
           <label class="chk"><input type="checkbox" id="published" checked> La idea viene de un paper, libro o internet</label>
-          <label class="chk"><input type="checkbox" id="out_of_sample"> Se validó con datos que no se usaron para diseñarla</label>
+          <label class="chk"><input type="checkbox" id="out_of_sample"> <span>Se validó con datos que no se usaron para diseñarla <span class="muted small">(cuenta solo si la idea no está publicada; 12 meses o más en vivo también cuentan)</span></span></label>
         </fieldset>
 
         <fieldset>
@@ -343,7 +348,8 @@ textarea.json { width: 100%; min-height: 120px; font: 0.78rem var(--font-data); 
         <p class="toast" id="toast" role="status" aria-live="polite"></p>
       </form>
 
-      <div class="verdict" id="verdict" aria-live="polite"></div>
+      <div class="verdict" id="verdict"></div>
+      <p id="verdict-live" class="sr-only" role="status" aria-live="polite"></p>
     </div>
 
     <section class="panel" style="margin-top:24px" aria-labelledby="hist-h">
@@ -400,7 +406,7 @@ g(x·f*)   = (2x − x²)·g(f*)                               (Kelly fraccionar
       </div>
       <div class="panel">
         <h3>Cascada de la ventaja neta</h3>
-        <p>Bruto (del Sharpe × volatilidad, o la alfa que captures) → × Sharpe con recorte / Sharpe → × 0.42 si la idea está publicada (−58%) o × 0.74 si no se validó fuera de muestra (−26%) → × (1 − alfa en microcaps) → − costos. Si la familia exige vender en corto y la aplicas solo-largo, la ventaja neta queda en cero como máximo.</p>
+        <p>Bruto (del Sharpe × volatilidad, o la alfa que captures) → × Sharpe con recorte / Sharpe → × 0.42 si la idea está publicada (−58%) o × 0.74 si no se validó fuera de muestra (−26%) → × (1 − alfa en microcaps) → − costos. Si la estrategia es de factores o de machine learning, exige vender en corto y la aplicas solo-largo, la ventaja neta queda en cero como máximo.</p>
       </div>
       <div class="panel">
         <h3>Usar el mismo motor desde FinceptTerminal</h3>
@@ -411,6 +417,10 @@ python quant_evidence_cli.py deflated_sharpe '{"sharpe_annual":2.5,"n_trials":10
 python quant_evidence_cli.py categories                  # estrategias + módulos por categoría
 python quant_evidence_cli.py repo_scan                   # escaneo en vivo del repositorio</pre>
         <p class="small muted">La página y el CLI comparten el mismo motor (engine.js es un port línea a línea de evaluator.py, con prueba de paridad).</p>
+      </div>
+      <div class="panel">
+        <h3>Marcas de fiabilidad</h3>
+        <dl class="facts" id="marks-legend"></dl>
       </div>
       <div class="panel">
         <h3>Cuatro hábitos transferibles</h3>
@@ -430,6 +440,7 @@ var REPO = /*__REPO__*/null;
 <script>
 (function () {
   'use strict';
+  document.documentElement.lang = 'es';
   var E = window.QuantEvidence;
   var $ = function (id) { return document.getElementById(id); };
   var FAMILY_ORDER = ['base', 'cartera', 'factores', 'machine learning', 'timing', 'calendario', 'comportamiento'];
@@ -445,23 +456,46 @@ var REPO = /*__REPO__*/null;
     });
   }
   function f2(x, n) { return x == null || !isFinite(x) ? '—' : Number(x).toFixed(n == null ? 2 : n); }
-  function marks(arr) { return (arr || []).map(function (m) { return '<span class="mark" title="' + esc(KB.meta.marks[m] || '') + '">' + esc(m) + '</span>'; }).join(''); }
+  var MARK_LABEL = { '1p': 'sin reverificar' };
+  function marks(arr) {
+    return (arr || []).map(function (m) {
+      return '<span class="mark" title="' + esc(KB.meta.marks[m] || '') + '">' + esc(MARK_LABEL[m] || m) + '</span>';
+    }).join('');
+  }
   function srcLink(s) { return s ? '<a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.label) + '</a>' : ''; }
-  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } return null; }
+  // Read: store(k) -> value or null. Write: store(k, v) -> true when saved.
+  function store(k, v) {
+    try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); return true; }
+    catch (e) { return v === undefined ? null : false; }
+  }
 
   $('disclaimer').textContent = KB.meta.disclaimer + ' ' + KB.meta.prior_note;
 
   // ── Tabs ────────────────────────────────────────────────────────────────
   var tabs = document.querySelectorAll('nav.tabs button');
+  var TAB_NAMES = ['evaluar', 'biblioteca', 'repo', 'metodo'];
   function showTab(name) {
     tabs.forEach(function (b) {
       var on = b.getAttribute('data-tab') === name;
       b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.tabIndex = on ? 0 : -1;
       $('view-' + b.getAttribute('data-tab')).hidden = !on;
     });
     store('qe.tab', name);
+    try { if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name); } catch (e) { /* sandboxed */ }
   }
   tabs.forEach(function (b) { b.addEventListener('click', function () { showTab(b.getAttribute('data-tab')); }); });
+  document.querySelector('nav.tabs').addEventListener('keydown', function (ev) {
+    if (ev.key !== 'ArrowRight' && ev.key !== 'ArrowLeft') return;
+    var list = Array.prototype.slice.call(tabs), i = list.indexOf(document.activeElement);
+    if (i < 0) return;
+    var n = list[(i + (ev.key === 'ArrowRight' ? 1 : list.length - 1)) % list.length];
+    n.focus(); showTab(n.getAttribute('data-tab')); ev.preventDefault();
+  });
+  window.addEventListener('hashchange', function () {
+    var h = location.hash.slice(1);
+    if (TAB_NAMES.indexOf(h) >= 0) showTab(h);
+  });
 
   // ── Strategy select ─────────────────────────────────────────────────────
   var sel = $('strategy_id');
@@ -556,11 +590,11 @@ var REPO = /*__REPO__*/null;
   function dial(score, code) {
     var r = 50, c = 2 * Math.PI * r, frac = Math.max(0, Math.min(1, score / 100));
     var col = { respaldada: 'var(--good)', condicionada: 'var(--accent)', debil: 'var(--warn)', no_respaldada: 'var(--bad)' }[code];
-    return '<div class="dial" role="img" aria-label="Puntaje ' + Math.round(score) + ' de 100">' +
+    return '<div class="dial" role="img" aria-label="Puntaje ' + Math.floor(score) + ' de 100">' +
       '<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="' + r + '" fill="none" stroke="var(--sunken)" stroke-width="9"/>' +
       '<circle cx="60" cy="60" r="' + r + '" fill="none" stroke="' + col + '" stroke-width="9" stroke-linecap="round" ' +
       'stroke-dasharray="' + (c * frac).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 60 60)"/></svg>' +
-      '<div class="val"><div>' + Math.round(score) + '<small>de 100</small></div></div></div>';
+      '<div class="val"><div>' + Math.floor(score) + '<small>de 100</small></div></div></div>';
   }
 
   function meter(label, val, weight) {
@@ -574,7 +608,8 @@ var REPO = /*__REPO__*/null;
   // Horizontal level chart: each stage drawn from a shared zero baseline.
   function levelChart(steps, opts) {
     opts = opts || {};
-    var W = 640, labW = 190, valW = 64, rowH = opts.rowH || 34, pad = 22;
+    var maxLen = Math.max.apply(null, steps.map(function (s) { return String(s.label).length; }));
+    var W = 640, labW = Math.min(300, Math.max(150, Math.round(maxLen * 6.4) + 14)), valW = 64, rowH = opts.rowH || 34, pad = 22;
     var H = steps.length * rowH + pad + 8;
     var vals = steps.map(function (s) { return s.v; });
     var lo = Math.min(0, Math.min.apply(null, vals)), hi = Math.max(0, Math.max.apply(null, vals));
@@ -605,7 +640,7 @@ var REPO = /*__REPO__*/null;
     return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p;
   }
 
-  var last = null;
+  var last = null, liveTimer = null;
   function render() {
     var d = readForm(), r;
     try { r = E.evaluateDecision(d, KB, REPO); } catch (e) {
@@ -661,41 +696,68 @@ var REPO = /*__REPO__*/null;
       }).join('') + '</ul></div>';
     }
     $('verdict').innerHTML = h;
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(function () { $('verdict-live').textContent = r.verdict.label + ': ' + Math.floor(sc.final) + ' de 100'; }, 600);
   }
 
   // ── History & export ────────────────────────────────────────────────────
-  function loadHist() { try { return JSON.parse(store('qe.hist') || '[]'); } catch (e) { return []; } }
+  var VERDICT_CODES = /^(respaldada|condicionada|debil|no_respaldada)$/;
+  function loadHist() {
+    try {
+      var v = JSON.parse(store('qe.hist') || '[]');
+      return Array.isArray(v) ? v.filter(function (x) { return x && typeof x === 'object' && x.input && typeof x.input === 'object'; }) : [];
+    } catch (e) { return []; }
+  }
   function renderHist() {
     var rows = loadHist();
     if (!rows.length) { $('hist').innerHTML = '<tr><td class="muted">Aún no hay decisiones guardadas. Ajusta la ficha y pulsa “Guardar en el historial”.</td></tr>'; return; }
     $('hist').innerHTML = '<thead><tr><th>Estrategia</th><th>Dictamen</th><th style="text-align:right">Puntaje</th><th style="text-align:right">Neto pb/mes</th><th></th></tr></thead><tbody>' +
       rows.map(function (x, i) {
-        return '<tr data-i="' + i + '" style="cursor:pointer"><td>' + esc(x.name) + '</td><td><span class="pill ' + x.code + '">' + esc(x.label) + '</span></td>' +
-          '<td class="n">' + Math.round(x.score) + '</td><td class="n">' + (x.net == null ? '—' : f2(x.net, 1)) + '</td>' +
-          '<td class="n"><button type="button" class="btn ghost" data-del="' + i + '" aria-label="Borrar">Borrar</button></td></tr>';
+        var code = VERDICT_CODES.test(x.code) ? x.code : '';
+        return '<tr><td><button type="button" class="btn ghost" data-load="' + i + '">' + esc(x.name) + '</button></td>' +
+          '<td><span class="pill ' + code + '">' + esc(x.label) + '</span></td>' +
+          '<td class="n">' + (isFinite(x.score) ? Math.floor(x.score) : '—') + '</td><td class="n">' + (x.net == null ? '—' : f2(x.net, 1)) + '</td>' +
+          '<td class="n"><button type="button" class="btn ghost" data-del="' + i + '" aria-label="Borrar ' + esc(x.name) + '">Borrar</button></td></tr>';
       }).join('') + '</tbody>';
   }
   $('hist').addEventListener('click', function (ev) {
-    var rows = loadHist(), del = ev.target.closest('[data-del]');
-    if (del) { rows.splice(Number(del.getAttribute('data-del')), 1); store('qe.hist', JSON.stringify(rows)); renderHist(); return; }
-    var tr = ev.target.closest('tr[data-i]');
-    if (tr) { writeForm(rows[Number(tr.getAttribute('data-i'))].input); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    var rows = loadHist(), del = ev.target.closest('[data-del]'), ld = ev.target.closest('[data-load]');
+    if (del) {
+      rows.splice(Number(del.getAttribute('data-del')), 1);
+      if (!store('qe.hist', JSON.stringify(rows))) toast('No se pudo borrar: el almacenamiento local de este navegador está bloqueado.');
+      renderHist(); return;
+    }
+    if (ld) {
+      var row = rows[Number(ld.getAttribute('data-load'))];
+      if (row) { writeForm(row.input); sel.focus(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    }
   });
-  function toast(msg) { $('toast').textContent = msg; setTimeout(function () { $('toast').textContent = ''; }, 3500); }
+  var toastTimer = null;
+  function toast(msg) {
+    clearTimeout(toastTimer);
+    $('toast').textContent = msg;
+    toastTimer = setTimeout(function () { $('toast').textContent = ''; }, 3500);
+  }
   $('save').addEventListener('click', function () {
     if (!last) return;
     var rows = loadHist();
     rows.unshift({ input: last.input, name: last.result.strategy.name, code: last.result.verdict.code, label: last.result.verdict.label,
       score: last.result.scores.final, net: last.result.net_monthly_bps });
-    store('qe.hist', JSON.stringify(rows.slice(0, 30)));
-    renderHist(); toast('Guardado en el historial de este navegador.');
+    var ok = store('qe.hist', JSON.stringify(rows.slice(0, 30)));
+    renderHist();
+    toast(ok ? 'Guardado en el historial de este navegador.' : 'No se pudo guardar: el almacenamiento local de este navegador está bloqueado o lleno.');
   });
   $('copyjson').addEventListener('click', function () {
     var txt = JSON.stringify(readForm(), null, 2);
     var done = function () { toast('JSON copiado. Guárdalo como decision.json y ejecuta: python quant_evidence_cli.py evaluate decision.json'); };
     var fallback = function () {
-      var ta = document.createElement('textarea'); ta.className = 'json'; ta.value = txt; ta.readOnly = true;
-      $('toast').textContent = 'Selecciona y copia el JSON:'; $('toast').after(ta); ta.select();
+      var ta = $('jsonout');
+      if (!ta) {
+        ta = document.createElement('textarea'); ta.id = 'jsonout'; ta.className = 'json'; ta.readOnly = true;
+        ta.setAttribute('aria-label', 'JSON de la decisión'); $('toast').after(ta);
+      }
+      ta.value = txt; ta.focus(); ta.select();
+      clearTimeout(toastTimer); $('toast').textContent = 'Selecciona y copia el JSON de abajo:';
     };
     try { navigator.clipboard.writeText(txt).then(done, fallback); } catch (e) { fallback(); }
   });
@@ -779,12 +841,16 @@ var REPO = /*__REPO__*/null;
     }).join('');
   }
 
+  $('marks-legend').innerHTML = Object.keys(KB.meta.marks).map(function (k) {
+    return '<dt><span class="mark">' + esc(MARK_LABEL[k] || k) + '</span></dt><dd>' + esc(KB.meta.marks[k]) + '</dd>';
+  }).join('');
   $('habits-m').innerHTML = KB.habits.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('');
   renderFam(); renderLib(); renderCascade(); renderRepo(); renderHist();
   writeForm(PRESETS.momentum);
   var t = store('qe.tab');
   var hash = (location.hash || '').replace('#', '');
-  if (['evaluar', 'biblioteca', 'repo', 'metodo'].indexOf(hash) >= 0) showTab(hash);
-  else if (t && ['evaluar', 'biblioteca', 'repo', 'metodo'].indexOf(t) >= 0) showTab(t);
+  if (TAB_NAMES.indexOf(hash) >= 0) showTab(hash);
+  else if (t && TAB_NAMES.indexOf(t) >= 0) showTab(t);
+  else showTab('evaluar');
 })();
 </script>

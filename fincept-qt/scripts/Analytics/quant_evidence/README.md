@@ -2,7 +2,7 @@
 
 The literature review "La academia quant desinfla sus propias estrategias" (Modelos quant académicos de inversión, 2026) turned into code. The report itself is not tracked (the repository only tracks README.md files), so every figure in the knowledge base keeps a link to its primary source:
 
-1. **Structured evidence** (`data/evidence_kb.json`): 44 strategies or decisions, from buy-and-hold to LLM news signals. Each one carries the paper's claim, its key figure, the main critique, what survives in practice, the reliability marks (`WP`, `ext.`, `sec.`) and links to its sources. They are grouped into 22 evidence categories.
+1. **Structured evidence** (`data/evidence_kb.json`): 44 strategies or decisions, from buy-and-hold to LLM news signals. Each one carries the paper's claim, its key figure, the main critique, what survives in practice, the reliability marks (`WP` working paper, `ext.` machine-extracted table, `sec.` secondary source, `1p` from the report's single-pass portfolio section) and links to its sources. They are grouped into 22 evidence categories.
 2. **Repository map** (`data/repo_map.json` + `repo_indexer.py`): the FinceptTerminal modules that implement each category, with summaries verified by reading the code, plus the gaps where the repo has nothing comparable to the evidence. There is also a live keyword scan of `fincept-qt/scripts` and `fincept-qt/src`.
 3. **Statistics** (`stats.py`, stdlib only): Deflated Sharpe Ratio, Probabilistic Sharpe Ratio, expected maximum Sharpe of N trials, minimum backtest length, Harvey-Liu multiple-testing haircut, cost drag and break-even cost, Bodie shortfall put, Kelly and fractional Kelly, Campbell-Thompson utility gain, and McLean-Pontiff decay.
 4. **Decision evaluator** (`evaluator.py`): scores a proposed decision from 0 to 100, with itemized checks and the net-edge cascade.
@@ -61,9 +61,11 @@ r["verdict"], r["scores"], r["cascade"], r["checks"]
 
 ## Scoring
 
-The final score is a weighted blend: evidence 35%, statistics 25%, implementability 25%, context 15%. Without a backtest the weights are 50 / 30 / 20 and there is no statistics block. The verdict thresholds are 70 (*respaldada*), 50 (*condicionada*), 30 (*débil*) and below that *no respaldada*. A net edge of zero or less caps the score at 29, and a DSR below 0.5 caps it at 40.
+The final score is a weighted blend: evidence 35%, statistics 25%, implementability 25%, context 15%. Without a backtest the weights are 50 / 30 / 20 and there is no statistics block. The verdict thresholds are 70 (*respaldada*), 50 (*condicionada*), 30 (*débil*) and below that *no respaldada*. A net edge of zero or less caps the score at 29.
 
 The net-edge cascade is: gross → × (haircut Sharpe / Sharpe) → × 0.42 if published (−58%) or × 0.74 if not validated out of sample (−26%) → × (1 − microcap share) → − turnover × round-trip cost × legs. A long-short factor or ML strategy implemented long-only is capped at zero (Chen & Welch).
+
+The displayed score is floored, so it never contradicts the verdict band. A DSR below 0.5, or one that cannot be computed, caps the score at 40.
 
 The weights, thresholds and the `prior.score` of each strategy are a transparent heuristic built on the report's conclusions. They are not a published model. Change them in `evaluator.py` **and** `web/engine.js`; the parity test fails if the two drift apart.
 
@@ -71,7 +73,7 @@ The weights, thresholds and the `prior.score` of each strategy are a transparent
 
 - **Add or edit a strategy**: edit `data/evidence_kb.json`. Use only figures from the report or its sources, and keep the reliability marks. Run the tests (they check ids, categories, marks and source URLs).
 - **Refresh the repo map**: `data/repo_map.json` is curated (each module was read). For a quick refresh of where each category's vocabulary appears, run `repo_scan`.
-- **Rebuild the page**: `python -m quant_evidence.build_web` (or `quant_evidence_cli.py export_web`).
+- **Rebuild the page**: `python -m quant_evidence.build_web` (or `quant_evidence_cli.py export_web`). The default output is a standalone HTML document; `--fragment` omits the `<!doctype>`/`<html>` wrapper for hosts that add their own (such as a claude.ai artifact).
 
 ## Tests
 

@@ -47,6 +47,17 @@ PARITY_CASES = [
     {'strategy_id': 'value', 'sharpe_annual': -0.2, 'years': 15, 'n_trials': 3},
     {'strategy_id': 'kelly_full', 'kelly_multiple': 1.0, 'market': 'other'},
     {'strategy_id': 'turn_of_month', 'roundtrip_cost_bps': '5', 'turnover_monthly': '1', 'published': 'false'},
+    # Regression cases from the adversarial review
+    {'strategy_id': 'llm_news', 'sharpe_annual': 4.29, 'years': 5, 'n_trials': 1000},       # |t| > 8.3
+    {'strategy_id': 'momentum', 'sharpe_annual': 3.43, 'years': 5.8, 'n_trials': 10},
+    {'strategy_id': 'value', 'sharpe_annual': -1.0, 'years': 20},                            # significant loser
+    {'strategy_id': 'momentum', 'sharpe_annual': 1.0, 'years': 1.375, 'n_trials': 5},        # n_obs ends in .5
+    {'strategy_id': 'naive_1n', 'sharpe_annual': 1.0, 'years': 0.05, 'periods_per_year': 12},  # NaN DSR
+    {'strategy_id': 'momentum', 'sharpe_annual': 1.2, 'years': 8, 'skew': 5},                # NaN DSR (variance < 0)
+    {'strategy_id': 'cape_timing', 'market': 'constructor', 'investor': 'toString'},
+    {'strategy_id': 'cape_timing', 'volatility_annual': ' ', 'horizon_years': ' ', 'live_months': [24],
+     'kelly_multiple': ' ', 'published': []},
+    {'strategy_id': 'value_momentum_combo', 'horizon_years': 3, 'market': 'us'},             # final 49.75
 ]
 
 
@@ -98,6 +109,25 @@ class TestFormulasAgainstReport(unittest.TestCase):
         self.assertAlmostEqual(stats.monthly_cost_bps(0.5, 20, False), 10.0)
         self.assertAlmostEqual(stats.monthly_cost_bps(0.5, 20, True), 20.0)
         self.assertAlmostEqual(stats.breakeven_roundtrip_cost_bps(10, 0.5, False), 20.0)
+
+    def test_haircut_stays_finite_for_large_t(self):
+        r = stats.haircut_sharpe(2.0, 20, 100)
+        self.assertTrue(math.isfinite(r['sharpe_haircut']))
+        self.assertLess(r['sharpe_haircut'], 2.0)
+        self.assertGreater(r['p_value'], 0.0)
+        r = stats.haircut_sharpe(30.0, 10, 5)  # p underflows to 0 even with erfc
+        self.assertTrue(math.isfinite(r['sharpe_haircut']))
+
+    def test_sidak_is_accurate_for_tiny_p(self):
+        self.assertAlmostEqual(stats.adjust_pvalue(1e-12, 1000, 'sidak'), 1e-9, delta=1e-15)
+
+    def test_kelly_zero_volatility(self):
+        self.assertEqual(stats.kelly_fraction(0.02, 0.02, 0.0), 0.0)
+        self.assertEqual(stats.kelly_fraction(0.01, 0.02, 0.0), -math.inf)
+        self.assertEqual(stats.kelly_fraction(0.03, 0.02, 0.0), math.inf)
+
+    def test_n_obs_rounds_half_up(self):
+        self.assertEqual(stats.deflated_sharpe_ratio(1.0, 1, 2.5, 1)['n_obs'], 3)
 
     def test_edge_cases(self):
         self.assertEqual(stats.expected_max_sharpe_z(1), 0.0)
@@ -172,6 +202,32 @@ class TestEvaluator(unittest.TestCase):
         self.assertEqual(r['inputs']['roundtrip_cost_bps'], 60.0)
         self.assertIn('market_mx', [c['id'] for c in r['checks']])
 
+    def test_negative_sharpe_gets_no_statistical_credit(self):
+        neg = evaluate_decision({'strategy_id': 'value', 'sharpe_annual': -1.0, 'years': 20}, repo_map={'modules': []})
+        zero = evaluate_decision({'strategy_id': 'value', 'sharpe_annual': 0.0, 'years': 20}, repo_map={'modules': []})
+        self.assertLessEqual(neg['scores']['statistical'], zero['scores']['statistical'])
+        self.assertNotEqual(dict((c['id'], c['status']) for c in neg['checks'])['haircut'], 'pass')
+
+    def test_strong_backtest_is_still_haircut(self):
+        r = evaluate_decision({'strategy_id': 'llm_news', 'sharpe_annual': 4.29, 'years': 5, 'n_trials': 1000},
+                              repo_map={'modules': []})
+        self.assertLess(r['stats']['sharpe_haircut'], 4.29)
+        step = next(c for c in r['cascade'] if c['stage'] == 'Tras pruebas múltiples')
+        self.assertLess(step['monthly_bps'], r['cascade'][0]['monthly_bps'])
+
+    def test_nan_dsr_is_capped(self):
+        r = evaluate_decision({'strategy_id': 'naive_1n', 'sharpe_annual': 1.0, 'years': 0.05,
+                               'periods_per_year': 12}, repo_map={'modules': []})
+        self.assertLessEqual(r['scores']['final'], 40)
+        self.assertEqual(dict((c['id'], c['status']) for c in r['checks'])['dsr'], 'info')
+
+    def test_summary_score_never_contradicts_verdict(self):
+        r = evaluate_decision({'strategy_id': 'value_momentum_combo', 'horizon_years': 3, 'market': 'us'},
+                              repo_map={'modules': []})
+        shown = int(r['verdict']['summary'].split('(')[1].split('/')[0])
+        self.assertEqual(r['verdict']['code'], 'debil')
+        self.assertLess(shown, 50)
+
     def test_unknown_strategy(self):
         with self.assertRaises(ValueError):
             evaluate_decision({'strategy_id': 'no_existe'})
@@ -210,7 +266,9 @@ def _close(a, b, path='$'):
     elif isinstance(a, bool) or isinstance(b, bool):
         assert a == b, f'{path}: {a!r} != {b!r}'
     elif isinstance(a, (int, float)) and isinstance(b, (int, float)):
-        if math.isinf(a) or math.isinf(b):
+        if math.isnan(a) or math.isnan(b):
+            assert math.isnan(a) and math.isnan(b), f'{path}: {a} != {b}'
+        elif math.isinf(a) or math.isinf(b):
             assert a == b, f'{path}: {a} != {b}'
         else:
             assert math.isclose(a, b, rel_tol=1e-9, abs_tol=1e-9), f'{path}: {a} != {b}'
@@ -226,7 +284,7 @@ class TestJavaScriptParity(unittest.TestCase):
         script = (
             "const E=require(process.argv[1]);const kb=require(process.argv[2]);"
             "const cases=JSON.parse(process.argv[3]);const repo=JSON.parse(process.argv[4]);"
-            "const inf=(k,v)=>(typeof v==='number'&&!isFinite(v))?(v>0?'Infinity':'-Infinity'):v;"
+            "const inf=(k,v)=>(typeof v==='number'&&!isFinite(v))?(v!==v?'NaN':v>0?'Infinity':'-Infinity'):v;"
             "const out={evals:cases.map(c=>E.evaluateDecision(c,kb,repo)),"
             "fx:{dsr:E.deflatedSharpeRatio(2.5,100,5,250,0.5,-3,10),hl:E.haircutSharpe(0.75,20,200),"
             "minbtl:E.minBacktestLength(45,1),maxn:E.maxTrialsForLength(5,1),ppf:[0.001,0.02,0.3,0.5,0.9,0.999999].map(E.normPpf),"
@@ -244,7 +302,7 @@ class TestJavaScriptParity(unittest.TestCase):
                 return {k: fix_inf(v) for k, v in o.items()}
             if isinstance(o, list):
                 return [fix_inf(v) for v in o]
-            if o in ('Infinity', '-Infinity'):
+            if o in ('Infinity', '-Infinity', 'NaN'):
                 return float(o)
             return o
         js = fix_inf(js)
@@ -270,6 +328,7 @@ class TestRepoIndexer(unittest.TestCase):
         self.assertEqual(_literal(r'\bmacd\b'), 'macd')
         self.assertEqual(_literal(r'anomal(y|ies)'), 'anomal')
         self.assertEqual(_literal(r'cross[_\s-]?sectional[_\s]?momentum'), 'sectional')
+        self.assertEqual(_literal(r'low[_\s]?vol(atility)?[_\s]?(anomaly|factor)'), 'low')
 
     def test_classify(self):
         cats = classify_text('scripts/x/deflated_sharpe.py',
@@ -295,7 +354,18 @@ class TestCliAndBuild(unittest.TestCase):
                                                      'skew': -3, 'kurtosis': 10}))
         self.assertAlmostEqual(r['data']['dsr'], 0.90, places=2)
         self.assertFalse(self._run('nope')['success'])
+        a = self._run('cost_drag', json.dumps({'turnover_monthly': 0.5, 'roundtrip_cost_bps': 40, 'long_short': 'false'}))
+        self.assertEqual(a['data']['monthly_cost_bps'], 20.0)
+        self.assertTrue(a['data']['survives_turnover_rule'])
         self.assertIn('evaluate', self._run('list')['data'])
+
+    def test_cli_bad_encoding_returns_json_error(self):
+        with tempfile.NamedTemporaryFile('wb', suffix='.json', delete=False) as f:
+            f.write(b'{"strategy_id": "s\xff"}')
+        try:
+            self.assertFalse(self._run('evaluate', f.name)['success'])
+        finally:
+            os.unlink(f.name)
 
     def test_cli_reads_json_file(self):
         with tempfile.NamedTemporaryFile('w', suffix='.json', delete=False) as f:
@@ -317,6 +387,7 @@ class TestCliAndBuild(unittest.TestCase):
         self.assertIn('window.QuantEvidence', html.replace('root.QuantEvidence', 'window.QuantEvidence'))
         self.assertIn('"buy_hold_global"', html)
         self.assertNotIn('</script>"', html)
+        self.assertTrue(html.startswith('<!doctype html>'))
 
 
 if __name__ == '__main__':

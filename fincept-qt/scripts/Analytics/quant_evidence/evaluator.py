@@ -29,6 +29,10 @@ MX_COST_MULTIPLIER = 1.5
 MARKET_SCORE = {'global': 1.0, 'us': 0.8, 'other': 0.7, 'mx': 0.6}
 EDGE_FAMILIES = ('factores', 'machine learning', 'timing', 'calendario')
 
+DSR_NAN_TEXT = ('No se puede calcular el DSR: hacen falta al menos 2 observaciones y que la asimetría y la '
+                'curtosis den una varianza positiva del estimador del Sharpe. Revisa años, frecuencia, '
+                'asimetría y curtosis.')
+
 VERDICTS = [
     (70, 'respaldada', 'Respaldada por la evidencia'),
     (50, 'condicionada', 'Condicionada: depende de supuestos'),
@@ -164,8 +168,9 @@ def evaluate_decision(raw: dict, kb: dict | None = None, repo_map: dict | None =
                                           inp['var_trials_sr'], inp['skew'], inp['kurtosis'])
         minbtl = stats.min_backtest_length(n, sr) if sr > 0 else math.inf
         max_trials = stats.max_trials_for_length(years, sr) if sr > 0 else 1
-        s_dsr = _clamp((dsr['dsr'] - 0.5) / 0.45) if dsr['dsr'] == dsr['dsr'] else 0.0
-        s_hair = _clamp(hl['t_adjusted'] / 1.96)
+        dsr_ok = dsr['dsr'] == dsr['dsr']  # False when NaN
+        s_dsr = _clamp((dsr['dsr'] - 0.5) / 0.45) if dsr_ok else 0.0
+        s_hair = _clamp(hl['t_adjusted'] / 1.96) if sr > 0 else 0.0
         s_len = _clamp(years / minbtl) if math.isfinite(minbtl) and minbtl > 0 else (1.0 if n <= 1 and sr > 0 else 0.0)
         scores['statistical'] = 100.0 * (0.4 * s_dsr + 0.3 * s_hair + 0.3 * s_len)
         stat_block = {
@@ -184,12 +189,13 @@ def evaluate_decision(raw: dict, kb: dict | None = None, repo_map: dict | None =
             f"{_fmt(stat_block['bonferroni_t_threshold'])} (Bonferroni, 5%).", HLZ_SOURCE))
         checks.append(_check(
             'haircut', 'Sharpe con recorte por pruebas múltiples',
-            'pass' if hl['t_adjusted'] >= 1.96 else 'warn' if hl['sharpe_haircut'] > 0 else 'fail',
+            'pass' if sr > 0 and hl['t_adjusted'] >= 1.96 else 'warn' if hl['sharpe_haircut'] > 0 else 'fail',
             f"Sharpe {_fmt(sr)} → {_fmt(hl['sharpe_haircut'])} tras ajustar por {n} prueba(s) "
             f"(recorte de {hl['haircut_pct'] * 100:.0f}%).", HL_SOURCE))
         checks.append(_check(
             'dsr', 'Deflated Sharpe Ratio ≥ 0.95',
-            'pass' if dsr['dsr'] >= 0.95 else 'warn' if dsr['dsr'] >= 0.5 else 'fail',
+            'info' if not dsr_ok else 'pass' if dsr['dsr'] >= 0.95 else 'warn' if dsr['dsr'] >= 0.5 else 'fail',
+            DSR_NAN_TEXT if not dsr_ok else
             f"DSR = {_fmt(dsr['dsr'], 3)}: probabilidad de que el Sharpe verdadero sea positivo "
             f"descontando {n} intento(s), asimetría {_fmt(inp['skew'], 1)} y curtosis "
             f"{_fmt(inp['kurtosis'], 1)}. Sharpe esperable del mejor intento sin habilidad: "
@@ -347,15 +353,15 @@ def evaluate_decision(raw: dict, kb: dict | None = None, repo_map: dict | None =
     if net_monthly is not None and net_monthly <= 0:
         final = min(final, 29.0)
         caps.append('La ventaja neta esperada es nula o negativa: el puntaje se limita a 29.')
-    if stat_block is not None and stat_block['dsr'] == stat_block['dsr'] and stat_block['dsr'] < 0.5:
+    if stat_block is not None and not (stat_block['dsr'] >= 0.5):  # also catches NaN
         final = min(final, 40.0)
-        caps.append('El Deflated Sharpe Ratio es menor que 0.5: el puntaje se limita a 40.')
+        caps.append('El Deflated Sharpe Ratio es menor que 0.5 o no se puede calcular: el puntaje se limita a 40.')
     scores['final'] = final
 
     code, label = next((c, lbl) for th, c, lbl in VERDICTS if final >= th)
     n_fail = sum(1 for c in checks if c['status'] == 'fail')
     n_warn = sum(1 for c in checks if c['status'] == 'warn')
-    summary = (f"{label} ({final:.0f}/100). {n_fail} chequeo(s) en rojo y {n_warn} con advertencia. "
+    summary = (f"{label} ({math.floor(final)}/100). {n_fail} chequeo(s) en rojo y {n_warn} con advertencia. "
                f"{strategy['survives']}")
 
     modules = []

@@ -18,7 +18,8 @@
    ],
    "cli_entry": "python alternateInvestment/cli.py hedge-funds --data '<json>' --method <metrics|performance|fees>",
    "relevance_note": "Alpha and betas come from np.linalg.lstsq without standard errors or t-stats. Survivorship bias appears only as verdict text, with no data correction.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "HedgeFundAnalyzer calcula métricas específicas por estrategia, el cálculo de comisiones 2/20, una regresión de mínimos cuadrados de un factor y multifactorial, y análisis de liquidez. HedgeFundPortfolio se encarga de la diversificación y la correlación."
   },
   {
    "path": "fincept-qt/scripts/Analytics/alternateInvestment/leveraged_funds.py",
@@ -34,7 +35,8 @@
    ],
    "cli_entry": "python alternateInvestment/cli.py leveraged-funds --data '<json>'",
    "relevance_note": "Illustrates the leverage and variance-drag mechanics behind Kelly sizing but computes no optimal leverage.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "LeveragedFundAnalyzer muestra el decaimiento por volatilidad de los ETFs 2x/3x con rebalanceo diario y emite un veredicto."
   },
   {
    "path": "fincept-qt/scripts/Analytics/alternateInvestment/managed_futures.py",
@@ -53,7 +55,8 @@
    ],
    "cli_entry": "python alternateInvestment/cli.py managed-futures --data '<json>' --method <trend_following|crisis_alpha|fee_impact>",
    "relevance_note": "A single-asset time-series trend rule evaluated gross of trading costs: only the 2/20 fee drag is modeled, and separately. It reports four lookbacks' Sharpe ratios side by side with no correction for picking the best one.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "ManagedFuturesAnalyzer cubre estadísticas de seguimiento de tendencia largo/corto basadas en el precio frente a la MA (20/50/100/200), el alfa en crisis a partir de periodos de crisis ingresados por el usuario, el lastre de comisiones 2/20, la correlación con acciones y bonos, y alternativas de replicación."
   },
   {
    "path": "fincept-qt/scripts/Analytics/alternateInvestment/market_neutral.py",
@@ -74,7 +77,8 @@
    ],
    "cli_entry": "python alternateInvestment/cli.py market-neutral --data '<json>' --method <beta_analysis|factor_exposure|leverage_risk>",
    "relevance_note": "Measures factor exposure with simple correlations against externally supplied factor series, not a joint regression with alpha t-stats. Short-squeeze risk is scenario-based and uses no short-interest data.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "MarketNeutralAnalyzer cubre la neutralidad de beta, la exposición basada en correlación a rendimientos de factores HML/SMB/UMD proporcionados por el usuario, escenarios de short squeeze y de apalancamiento, y el alfa frente a las expectativas."
   },
   {
    "path": "fincept-qt/scripts/Analytics/alternateInvestment/performance_metrics.py",
@@ -94,7 +98,8 @@
    ],
    "cli_entry": "python alternateInvestment/cli.py performance --data '<json>'",
    "relevance_note": "performance_persistence (rank correlation across periods) is the closest the area comes to fund-persistence research. It runs no significance or false-discovery test.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "PerformanceAnalyzer cubre TWR/MWR, rendimientos ajustados por riesgo, atribución, métricas de riesgo a la baja, desempeño móvil, regresión de exposición a factores, análisis contra benchmark y persistencia del desempeño mediante correlación de rangos. FeeAnalyzer cubre el impacto de las comisiones."
   },
   {
    "path": "fincept-qt/scripts/Analytics/alternateInvestment/risk_analyzer.py",
@@ -113,7 +118,8 @@
    ],
    "cli_entry": "python alternateInvestment/cli.py risk --data '<json>'",
    "relevance_note": "Classifies market impact only as Low/Medium/High from volume and market-cap ratios. It produces no basis-point cost model that a backtest could use.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "RiskAnalyzer cubre VaR histórico, paramétrico y Monte Carlo, escenarios de estrés, correlación móvil y su ruptura, un puntaje de liquidez con un proxy de impacto por volumen/capitalización de mercado, drawdown y recuperación, índice Ulcer y atribución de riesgo por factores."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/backtestingpy/backtestingpy_provider.py",
@@ -133,7 +139,8 @@
    ],
    "cli_entry": "python backtestingpy_provider.py <initialize|run_backtest|optimize|walk_forward|calculate_indicator|get_strategies|...> <json>",
    "relevance_note": "Proper train-optimize/test walk-forward. Commission defaults to 0.0 when not sent and there is no slippage model. Optimization results get no multiple-testing deflation.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Proveedor de Backtesting.py: run_backtest orientado a eventos con comisión y margen, optimize integrado (cuadrícula con max_tries) y walk_forward, que optimiza en cada tramo de entrenamiento y evalúa en el tramo de prueba. Reporta SQN y la estadística del Criterio de Kelly."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/backtestingpy/btp_optimize.py",
@@ -150,7 +157,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Parameter heatmaps support visual robustness checks, but there is no formal overfitting statistic (PBO/DSR).",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Optimización extendida de backtesting.py: búsqueda en cuadrícula con extracción del mapa de calor, compute_stats sobre las operaciones y un optimizador walk-forward."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/backtestingpy/btp_strategies.py",
@@ -169,7 +177,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "The same family of single-asset technical and trend rules re-implemented per engine, so the same hypothesis gets tested several times across providers.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Fábricas de clases de estrategia para backtesting.py (cruce de SMA/EMA, RSI, MACD, Bollinger, reversión a la media con z-score, momentum, ruptura de Donchian, ADX, Ichimoku, PSAR, momentum dual, trailing stop con ATR, tendencia-momentum)."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/base/advanced_metrics.py",
@@ -189,7 +198,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Describes a single backtest path only: CAPM alpha and beta come without standard errors or t-stats, and there is no Sharpe inference, trial-count deflation or factor-model (FF/q) alpha.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Analítica compartida posterior al backtest calculada a partir de una curva de capital: VaR/CVaR, Ulcer, Omega, tail ratio, asimetría y curtosis, una tabla de rendimientos mensuales, Sharpe/volatilidad/drawdown móviles, y alfa de Jensen, beta, information ratio, tracking error y R2 de índice único frente a un benchmark."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/base/fincept_strategy_runner.py",
@@ -207,7 +217,8 @@
    ],
    "cli_entry": "python fincept_strategy_runner.py (main)",
    "relevance_note": "Engine behind the 400+ strategy catalog, which is a large pool of candidate strategies. Results are gross and carry no record of how many strategies or parameter sets were tried.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Ejecutor universal que carga una clase de estrategia al estilo QuantConnect desde strategies/_registry (cerca de 400 archivos de algoritmos), obtiene el historial y lo reproduce barra por barra para generar desempeño, ejecuciones y curva de capital."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/bt/bt_provider.py",
@@ -227,7 +238,8 @@
    ],
    "cli_entry": "python bt_provider.py <run_backtest|optimize|walk_forward|generate_signals|analyze_returns|...> <json>",
    "relevance_note": "Commission defaults to 0.001 per dollar traded through bt. The numpy fallback charges commission on np.diff across assets within one day's signal vector rather than over time, so single-asset fallback runs are effectively cost-free.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Proveedor de la biblioteca bt para backtests a nivel portafolio (algos componibles), con una simulación de respaldo en numpy puro, optimize, walk_forward, signals/labels/splits y analyze_returns."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/bt/bt_risk.py",
@@ -248,7 +260,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "The real volatility-targeting implementation (bt.algos.TargetVol) and turnover throttling (LimitDeltas). Neither reports realised turnover or cost drag.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Estrategias de riesgo y restricciones de bt: escalamiento TargetVol, LimitWeights, LimitDeltas (limita el cambio de ponderación por rebalanceo), rebalanceo disparado por tracking error con PTE, flujos de capital, nocional, cobertura y margen/apalancamiento."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/bt/bt_strategies.py",
@@ -269,7 +282,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Holds the only cross-sectional momentum selection among the engines (monthly, 60-day lookback, no 12-1 skip). Two strategies are mislabelled: 'target_vol' ignores targetVol (plain equal weight) and 'min_var' uses WeighMeanVar (max-Sharpe), not minimum variance.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Registro de estrategias de bt: ponderación igual, volatilidad inversa, media-varianza, paridad de riesgo (WeighERC), 'target_vol', 'min_var', momentum top-N (SelectMomentum), momentum más volatilidad inversa, además de reglas SMA/EMA/MACD/RSI/Bollinger/ruptura."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/fasttrade",
@@ -289,7 +303,8 @@
    ],
    "cli_entry": "python fasttrade/fasttrade_provider.py <run_backtest|get_strategies|get_indicators|...> <json>",
    "relevance_note": "Single-run technical-rule backtests with per-trade commission. optimize() raises NotImplementedError, so there is no walk-forward or validation.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Proveedor Fast-Trade: backtests de reglas definidas en JSON sobre más de 90 indicadores de FINTA, con métricas resumen (riesgo, drawdown, calidad de las operaciones, rendimiento ajustado al mercado frente a comprar y mantener), entradas y salidas que consideran las comisiones, y evaluación de resultados basada en reglas."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/fincept/fincept_provider.py",
@@ -308,7 +323,8 @@
    ],
    "cli_entry": "python fincept_provider.py <run_backtest|optimize|walk_forward|get_strategies|get_indicators|get_command_options> <json>",
    "relevance_note": "Gross backtest: commission, slippage and total_fees are hard-coded to 0.0. The optimizer picks the in-sample best Sharpe with no trial-count haircut, and walk-forward does not re-optimize on each train window.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Proveedor que ejecuta estrategias del registro de Fincept Engine, con optimización de parámetros por cuadrícula o aleatoria y un walk-forward móvil con parámetros fijos que reporta el rendimiento y el Sharpe promedio OOS y un 'robustness_score' (fracción de pliegues positivos)."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/vectorbt/vbt_indicators.py",
@@ -326,7 +342,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Building blocks for technical-rule backtests and the indicator_param_sweep grid, which is another source of multiple testing.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Generadores de indicadores técnicos y señales (MA, MSTD, BBANDS, RSI, STOCH, MACD, ATR, OBV, ADX, Donchian, z-score, momentum, Williams %R, CCI, Keltner, VWAP) con constructores de señales de cruce, umbral, ruptura y reversión a la media, y un IndicatorFactory."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/vectorbt/vbt_labels.py",
@@ -345,7 +362,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Builds forward-looking targets for single-asset ML. labels_to_signals turns look-ahead labels into signals, which is an oracle and not a tradable backtest. There is no cross-sectional ML model here.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Generadores de etiquetas para ML supervisado (rendimiento futuro a horizonte fijo FIXLB, reversión a la media MEANLB, extremos locales LEXLB, tendencia TRENDLB, Bollinger BOLB) y labels_to_signals."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/vectorbt/vbt_metrics.py",
@@ -364,7 +382,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "'deflatedSharpe' is mislabelled. It is SR*sqrt(1 - skew*SR + (kurt-1)/4*SR^2), with no number-of-trials adjustment and no probability output. Kelly is estimated from realised trades.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Extracción completa de métricas de un portafolio: desempeño, análisis de operaciones, drawdowns, rendimientos y riesgo, además de estadísticas extendidas (SQN, Kelly, CAGR, 'deflatedSharpe', rachas)."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/vectorbt/vbt_optimization.py",
@@ -382,7 +401,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Has real walk-forward and a degradation ratio. The 'statisticalSignificance' block is a naive z-test of the best combo vs the tested distribution (best-of-N selection bias, not a data-snooping-robust test), and grid search truncates to max_iterations.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Búsqueda de parámetros por cuadrícula o aleatoria con sensibilidad (correlación parámetro-objetivo), optimización walk-forward (optimiza en entrenamiento y evalúa en prueba en cada ventana), razón de degradación de IS a OOS y una 'significance' por z-score de la mejor combinación frente a todas las combinaciones probadas."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/vectorbt/vbt_portfolio.py",
@@ -403,7 +423,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Nets proportional commission and slippage, but both default to 0.0 when absent from the request. Kelly f = p - (1-p)/(W/L) uses user-supplied winRate/avgWin/avgLoss clipped to [0,1]. Vol targeting is 20-day realised vol scaled to targetVol, clipped to 0.1-3x.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Simulador de portafolio en numpy/pandas puro (from_signals, from_orders, holding, señales aleatorias) con comisión y deslizamiento, stops y modos de dimensionamiento de posición fijo, kelly, objetivo de volatilidad y fraccional, además de un generador de benchmark de entradas aleatorias."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/vectorbt/vbt_returns.py",
@@ -421,7 +442,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Only true DSR in the repo, but simplified: E[max SR] = sqrt(2 ln N)(1 - gamma/(2 ln N)) is not scaled by the cross-trial SR variance, and an annualized SR is mixed with a per-observation SR variance.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Reimplementación del ReturnsAccessor de vectorbt: rendimiento y volatilidad anualizados, Sharpe, Sortino, Calmar, Omega, information ratio, razones de captura, métricas móviles y deflated_sharpe_ratio(n_trials)."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/vectorbt/vbt_splitters.py",
@@ -440,7 +462,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Leakage-aware validation splits (exposed through generate_splits). It does not implement CSCV/CPCV path combinations or PBO.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Divisores de CV para series de tiempo: Range, Rolling, Expanding y un PurgedKFoldSplitter al estilo de Lopez de Prado con purga y embargo."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/vectorbt/vbt_strategies.py",
@@ -459,7 +482,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Classic technical and trend rules of the Brock-Lakonishok-LeBaron type. 'Dual momentum' is really two-horizon absolute (time-series) momentum on one asset, with no cross-sectional relative leg.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Biblioteca de cerca de 25 estrategias de señales para un solo activo (cruces SMA/EMA/triple MA, MACD, ADX, rupturas de Keltner/Donchian/volatilidad, reversión a la media con RSI/BB/estocástico, momentum ROC, 'dual momentum', rebalanceo periódico, combinaciones personalizadas)."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/vectorbt/vectorbt_provider.py",
@@ -479,7 +503,8 @@
    ],
    "cli_entry": "python vectorbt_provider.py <run_backtest|optimize|walk_forward|generate_signals|generate_labels|generate_splits|analyze_returns|...> <json>",
    "relevance_note": "The only provider that exposes DSR (analyze_returns, n_trials defaults to 1) and a Monte Carlo random-signal p-value. Neither is fed by the optimizer's real number of tried combinations.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Orquestador de VectorBT (VectorBTProvider) que expone run_backtest, optimize, walk_forward, generate_signals/labels/splits, analyze_returns (incluida una estadística de Deflated Sharpe con n_trials definido por el usuario) y un valor p opcional contra un benchmark de entradas aleatorias."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/zipline/zipline_provider.py",
@@ -499,7 +524,8 @@
    ],
    "cli_entry": "python zipline_provider.py <run_backtest|optimize|walk_forward|generate_signals|analyze_returns|...> <json>",
    "relevance_note": "Richest cost model in the area (per-dollar commission default 0.001, volume-share price-impact slippage, max leverage). The default universe is a single symbol (SPY).",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Proveedor de Zipline-reloaded orientado a eventos con una API simulada completa (tipos de orden, comisión PerShare/PerTrade/PerDollar, deslizamiento Fixed/VolumeShare/FixedBasisPoints, controles de apalancamiento y de solo posiciones largas), además de optimize y walk_forward."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/zipline/zl_pipeline.py",
@@ -519,7 +545,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Holds the cross-sectional sort machinery (deciles, winsorize, a liquidity factor, beta) needed for anomaly, BAB and momentum portfolios and liquidity or microcap screens, but no strategy actually uses it on a multi-asset universe.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Simulación de la API Pipeline de Zipline: Factor/Filter/Classifier con rank, quantiles, deciles, zscore, winsorize y demean, además de elementos integrados como Returns, AverageDollarVolume, SimpleBeta, AnnualizedVolatility, RSI y regresiones móviles."
   },
   {
    "path": "fincept-qt/scripts/Analytics/backtesting/zipline/zl_strategies.py",
@@ -538,7 +565,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "The 'Custom Pipeline' strategy is advertised as factor-based ranking but is a single-asset 1-month time-series momentum switch. scheduled_rebalance is 63-day absolute momentum (TSMOM).",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Pares de estrategias de Zipline (initialize, handle_data): tendencia con SMA/EMA/MACD/ADX/triple MA/Keltner, reversión a la media con BB/RSI/z-score/estocástico/Williams/CCI, momentum ROC y dual, rupturas de Donchian y de volatilidad, 'pipeline' y 'scheduled_rebalance'."
   },
   {
    "path": "fincept-qt/scripts/Analytics/corporateFinance",
@@ -556,7 +584,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Mostly outside the literature-review categories: these are deal-level valuations, not return-predictive signals or portfolio backtests.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Kit de herramientas de M&A y finanzas corporativas con 57 archivos: DCF, football field, transacciones precedentes, LBO, modelos de fusión, sinergias, estructura de la transacción (earnouts, CVR, collars), fairness opinion, valuación de startups, una base de datos de transacciones, y analítica de Monte Carlo y de regresión para transacciones."
   },
   {
    "path": "fincept-qt/scripts/Analytics/corporateFinance/valuation/trading_comps.py",
@@ -574,7 +603,8 @@
    ],
    "cli_entry": "python trading_comps.py <service args>",
    "relevance_note": "Deal-oriented relative valuation with no link to value-factor return evidence.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "TradingCompsAnalyzer obtiene fundamentales de yfinance para empresas comparables, calcula EV/EBITDA, P/E y estadísticas de otros múltiplos, los aplica a una empresa objetivo y hace una regresión de un múltiplo sobre el margen."
   },
   {
    "path": "fincept-qt/scripts/Analytics/derivatives/utils.py",
@@ -592,7 +622,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "garch_volatility hard-codes omega/alpha/beta (1e-6, 0.10, 0.85) instead of estimating them. EWMA uses lambda=0.94. The forecasts never drive volatility-targeted exposure.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Utilidades para días hábiles, delta y gamma de Black-Scholes, interpolación, buscadores de raíces y StatisticalUtils (volatilidad móvil, volatilidad EWMA, GARCH(1,1), correlación, Jarque-Bera)."
   },
   {
    "path": "fincept-qt/scripts/Analytics/economics/analytics_engine.py",
@@ -612,7 +643,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "_find_significant_correlations flags every pair with p<0.05 without multiple-testing correction. Forecast comparison has no Clark-West or out-of-sample R2 test against the historical mean.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "StatisticalAnalyzer (estadística descriptiva, valores p de correlación, pruebas de hipótesis, ADF y autocorrelación), ScenarioAnalyzer (Monte Carlo, sensibilidad, estrés), descomposición de estacionalidad y ForecastingEngine (naive, media, tendencia, ETS, ARIMA)."
   },
   {
    "path": "fincept-qt/scripts/Analytics/economics/business_cycle.py",
@@ -629,7 +661,8 @@
    ],
    "cli_entry": "python business_cycle.py get_indicators",
    "relevance_note": "A point-in-time dashboard. It has no historical recession-probability (probit) model, no regime estimation and no backtest of the SMA-200 timing flag.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Instantánea de proxies de mercado (S&P, VIX, rendimientos a 3m/10y/30y, oro, petróleo, DXY), con la señal de inversión del diferencial 10y-3m, la razón oro/petróleo, el S&P frente a sus SMA de 50/200 días y categorías de sentimiento según el VIX."
   },
   {
    "path": "fincept-qt/scripts/Analytics/economics/equity_risk_premium.py",
@@ -645,7 +678,8 @@
    ],
    "cli_entry": "python equity_risk_premium.py estimate_erp",
    "relevance_note": "Point estimates with hard-coded inputs (buyback 2%, growth 2.5%) and VIX/100*0.5. It has no CAPE, no Goyal-Welch predictor set and no out-of-sample predictive regression.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Estima la ERP de varias formas: exceso de rendimiento histórico del S&P a 10y y 5y, rendimiento por utilidades menos el 10y, enfoque del lado de la oferta (dividendos + recompras + crecimiento + inflación) y una heurística con el VIX. Luego las promedia en un 'consensus'."
   },
   {
    "path": "fincept-qt/scripts/Analytics/economics/market_cycles.py",
@@ -663,7 +697,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Rule-based scoring of regimes, with no HMM or Markov-switching estimation and no validation against NBER dates.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "BusinessCycleAnalyzer asigna puntajes a expansión, pico, contracción y valle a partir de PIB, desempleo, inflación, tasas, confianza e inversión proporcionados por el usuario, y califica la ciclicidad de los sectores. También incluye CreditCycleAnalyzer y un analizador de estructura de mercado (HHI)."
   },
   {
    "path": "fincept-qt/scripts/Analytics/equityInvestment/company_analysis/fundamental_analysis.py",
@@ -681,7 +716,8 @@
    ],
    "cli_entry": "python fundamental_analysis.py <profitability|liquidity|solvency|efficiency|dupont_3way|dupont_5way|cost_of_equity> <args>",
    "relevance_note": "Scores one firm at a time. It has no gross-profits-to-assets (GP/A), no QMJ composite and no cross-sectional quality ranking or portfolio returns.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Calculadoras de razones: rentabilidad (margen bruto, operativo y neto, ROE, ROA, ROIC, NOPAT), liquidez, solvencia, eficiencia, DuPont de 3 y 5 componentes, y costo de capital propio, cada una con interpretaciones basadas en umbrales."
   },
   {
    "path": "fincept-qt/scripts/Analytics/equityInvestment/equity_valuation/multiples_valuation.py",
@@ -699,7 +735,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Valuation-screen building blocks for a single company. It does not form HML-style book-to-market portfolios or test value returns.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "P/E, P/B, P/S, PEG, rendimiento por dividendos y por utilidades, múltiplos justificados, múltiplos de EV, selección de comparables, estadísticas con media armónica y una regresión transversal del P/E."
   },
   {
    "path": "fincept-qt/scripts/Analytics/equityInvestment/equity_valuation/residual_income.py",
@@ -718,7 +755,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Links profitability (ROE) to P/B valuation at firm level, with no factor-return backtest.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Valuación por ingreso residual y por EVA/MVA, crecimiento implícito, P/B justificado a partir del ROE, sostenibilidad del ROE y una evaluación de la calidad contable."
   },
   {
    "path": "fincept-qt/scripts/Analytics/equityInvestment/market_analysis/index_analysis.py",
@@ -736,7 +774,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Supports 1/N versus cap-weight comparisons, but rebalancing ignores turnover and costs.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Construcción de índices (ponderados por precio, por capitalización y equiponderados), cálculo del valor y del rendimiento del índice, rebalanceo y reconstitución, y comparación de índices y análisis de su composición."
   },
   {
    "path": "fincept-qt/scripts/Analytics/equityInvestment/market_analysis/market_efficiency.py",
@@ -759,7 +798,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "The most anomaly-like code in the area, but every test is a raw t-test at p<0.05. It runs 5 weekday, 12 month and 1 January tests and per-fund alpha t-stats with no Bonferroni/Holm/BHY or FDR. The 'momentum' deciles sort one asset's own overlapping 12-1 returns, which is time-series momentum rather than cross-sectional WML, and tests them without Newey-West. No CLI or caller invokes the module.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Pruebas de eficiencia en forma débil (rachas, autocorrelación, razón de varianzas), estudio de eventos/PEAD, pruebas de alfa de Jensen para insiders y fondos de inversión, y MarketAnomalyDetector para anomalías de día de la semana, mes del año, enero, decil de tamaño y decil de momentum."
   },
   {
    "path": "fincept-qt/scripts/Analytics/equityInvestment/market_analysis/market_structure.py",
@@ -777,7 +817,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "The area's only explicit trading-cost estimator, and it is standalone: no backtest subtracts these costs from returns. The margin calculator covers leverage arithmetic, not optimal sizing.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Clasificación de valores, calculadora de operaciones con margen, análisis de tipos de orden, y análisis de microestructura, liquidez y profundidad, incluido estimate_trading_costs (medio spread más un proxy de impacto escalado por volumen)."
   },
   {
    "path": "fincept-qt/scripts/Analytics/ffn_wrapper/ffn_service.py",
@@ -797,7 +838,8 @@
    ],
    "cli_entry": "python ffn_service.py <check_status|calculate_performance|calculate_drawdowns|calculate_rolling_metrics|monthly_returns|compare_assets|risk_metrics|full_analysis|portfolio_optimization|benchmark_comparison> <json>",
    "relevance_note": "Descriptive performance and static weights. ffn's calc_prob_mom (probabilistic momentum) is wrapped in ffn_performance.py but not exposed here.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Servicio JSON de FFN: estadísticas de desempeño, drawdowns, métricas móviles, rendimientos mensuales, comparación de activos, métricas de riesgo, optimización de portafolio (ERC, volatilidad inversa, media-varianza, ponderación igual) y comparación contra benchmark."
   },
   {
    "path": "fincept-qt/scripts/Analytics/financial_analysis_cli.py",
@@ -815,7 +857,8 @@
    ],
    "cli_entry": "python financial_analysis_cli.py <analyze_income|analyze_balance|analyze_cashflow|analyze_comprehensive|get_key_metrics> <json_data>",
    "relevance_note": "The entry point for quality and profitability metrics, though FinancialReportingQualityAnalyzer (Beneish) is not exposed as a command.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "CLI que interpreta estados financieros en JSON y ejecuta los analizadores de estado de resultados, balance general, flujo de efectivo, integral y métricas clave de finanicalanalysis."
   },
   {
    "path": "fincept-qt/scripts/Analytics/finanicalanalysis/specialized_analysis/quality_analysis.py",
@@ -833,7 +876,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "The area's richest earnings-quality and accrual logic (Beneish, accrual ratios). It has no Piotroski F-score, no Novy-Marx GP/A and no testing of accrual-anomaly returns.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "FinancialReportingQualityAnalyzer cubre la calidad de las utilidades, los devengos del balance y del flujo de efectivo, el Beneish M-score, la calidad del balance, del flujo de efectivo, de los ingresos y de los gastos, señales de alerta y una calificación general de calidad."
   },
   {
    "path": "fincept-qt/scripts/Analytics/finanicalanalysis/statement_analyzers",
@@ -850,7 +894,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Firm-level quality and profitability diagnostics (an accruals ratio with good/moderate/poor thresholds). They do not rank stocks cross-sectionally.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Analizadores de estado de resultados, balance general, flujo de efectivo e integral que generan márgenes, ROE, razón de devengos, apalancamiento y puntajes compuestos de salud financiera."
   },
   {
    "path": "fincept-qt/scripts/Analytics/fixedIncome/yield_curve.py",
@@ -869,7 +914,8 @@
    ],
    "cli_entry": "python yield_curve.py '<params_json>'",
    "relevance_note": "Supplies term-spread and inversion inputs, but it does not link curve slope to recession probabilities or equity-premium forecasts.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Bootstrapping de la curva spot, curvas forward, ajustes de Nelson-Siegel y Svensson, interpolación, clasificación de la forma de la curva (normal, invertida, plana) y análisis de spreads G/I/Z y OAS."
   },
   {
    "path": "fincept-qt/scripts/Analytics/fortitudo_tech_wrapper/fortitudo_service.py",
@@ -887,7 +933,8 @@
    ],
    "cli_entry": "python fortitudo_service.py <operation> <json_data>",
    "relevance_note": "An alternative Markowitz/CVaR allocator with time-decayed scenario weights. No out-of-sample evaluation or cost model.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Servicio de optimización consciente del riesgo: métricas de portafolio, matrices de covarianza/correlación, optimización media-varianza y media-CVaR, frontera eficiente y probabilidades de escenarios con decaimiento exponencial."
   },
   {
    "path": "fincept-qt/scripts/Analytics/functime_wrapper/advanced_cv.py",
@@ -906,7 +953,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Generates CPCV splits (the prerequisite for PBO/CSCV) for forecasting models but never computes PBO or the rank-logit distribution.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Utilidades de CV para series de tiempo: CV por bloques, k-fold purgado con embargo, CV purgado combinatorio, validación walk-forward y CV anidado sobre datos de panel."
   },
   {
    "path": "fincept-qt/scripts/Analytics/functime_wrapper/advanced_models.py",
@@ -924,7 +972,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "GBDT return/price forecasting on a single series's own lags. Not cross-sectional characteristic-based ML (Gu-Kelly-Xiu style) and not evaluated as a trading strategy.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Pronosticadores adicionales: naive, naive estacional, drift, SES, Holt, Theta, Croston, y XGBoost y CatBoost de gradient boosting sobre variables de rezago."
   },
   {
    "path": "fincept-qt/scripts/Analytics/functime_wrapper/backtesting.py",
@@ -943,7 +992,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Proper walk-forward out-of-sample evaluation, but only functime_service_polars_legacy.py (the 'walk_forward' operation) calls it, and nothing in src/ or any other script calls that legacy service, so in practice it is unreachable. It measures forecast error only, not strategy returns, costs or trial counts.",
-   "area": "critic"
+   "area": "critic",
+   "summary_es": "Backtest walk-forward en Polars con reentrenamiento opcional, evaluación con origen móvil, comparación de modelos y atribución de la precisión por horizonte para pronosticadores de series de tiempo."
   },
   {
    "path": "fincept-qt/scripts/Analytics/functime_wrapper/functime_service.py",
@@ -962,7 +1012,8 @@
    ],
    "cli_entry": "python functime_service.py <operation> '<json>'",
    "relevance_note": "Seasonality here is generic STL decomposition, not a calendar-anomaly test. Forecasts are for a single series with no walk-forward evaluation; the walk-forward code lives in functime_wrapper/backtesting.py, which only the unused legacy service calls.",
-   "area": "critic"
+   "area": "critic",
+   "summary_es": "Backend de pronósticos que usan el AI Quant Lab y MCP. Cubre pronósticos (lineal, ridge, lasso, elastic net, kNN, Holt-Winters, ARIMA, naive y drift sobre rezagos), anomalías por z-score/IQR/IsolationForest, fuerza de la estacionalidad con STL, intervalos de predicción por bootstrap o por residuales, y pruebas de estacionariedad."
   },
   {
    "path": "fincept-qt/scripts/Analytics/gluonts_wrapper",
@@ -980,7 +1031,8 @@
    ],
    "cli_entry": "python gluonts_wrapper/gluonts_service.py <operation> <json_data>",
    "relevance_note": "Deep-learning time-series forecasting for single series. No cross-sectional ranking, portfolio formation or economic (Sharpe) evaluation of forecasts.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Pronóstico probabilístico: modelos profundos de GluonTS (DeepAR, TFT, WaveNet, DLinear, PatchTST, TiDE, Lag-TST, DeepNPTS) más un servicio autocontenido con pronósticos probabilísticos por bootstrap y por cuantiles, ajuste de distribuciones y evaluación de pronósticos."
   },
   {
    "path": "fincept-qt/scripts/Analytics/gs_quant_wrapper/backtest_analytics.py",
@@ -1001,7 +1053,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Cost-netted by default, unlike most engines here. The momentum is a 20-day lookback top-N cross-sectional sort with no 12-1 skip month and no risk adjustment.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "BacktestEngine con valores predeterminados de comisión (10 pb) y deslizamiento (5 pb), que ejecuta backtests de comprar y mantener, rebalanceo periódico, momentum transversal top-N y reversión a la media, con comparación de estrategias."
   },
   {
    "path": "fincept-qt/scripts/Analytics/gs_quant_wrapper/gs_quant_service.py",
@@ -1021,7 +1074,8 @@
    ],
    "cli_entry": "python gs_quant_service.py <risk_metrics|portfolio_analytics|greeks|var_analysis|stress_test|backtest|statistics> <json_data>",
    "relevance_note": "_bt_momentum holds only the single top trailing performer, with daily rebalance and commission on both sides. That is concentrated relative momentum, not decile WML.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Despachador de operaciones al estilo gs_quant: risk_metrics, portfolio_analytics, greeks, var_analysis, stress_test, backtest (comprar y mantener, momentum de un solo ganador, reversión a la media, rebalanceo con comisión) y statistics."
   },
   {
    "path": "fincept-qt/scripts/Analytics/gs_quant_wrapper/ts_portfolio_analytics.py",
@@ -1039,7 +1093,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "portfolio_factor_exposure runs separate univariate cov/var betas per factor, not a joint multivariate regression. It gives no alpha intercept, t-stat or HAC errors, so it cannot test FF/q-factor alpha.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Analítica de portafolio offline con gs_quant.timeseries: CAPM y alfa de Jensen (incluido mercado alcista/bajista), Treynor, M2, tracking error e IR (alcista/bajista), razones de captura, tasa de aciertos, exposición a factores, PnL por factor y proporción del riesgo atribuible a factores, y backtest de canastas."
   },
   {
    "path": "fincept-qt/scripts/Analytics/gs_quant_wrapper/ts_risk_measures.py",
@@ -1057,7 +1112,8 @@
    ],
    "cli_entry": "python gs_quant_service.py risk_metrics '<json>' (uses volatility, sharpe_ratio, max_drawdown and value_at_risk, but not exponential_volatility)",
    "relevance_note": "Provides the EWMA volatility forecast that volatility management needs, but no module uses it to scale exposure and the service's risk_metrics operation does not return it. Sharpe has no standard error and no trial adjustment.",
-   "area": "critic"
+   "area": "critic",
+   "summary_es": "Funciones de riesgo de series de tiempo al estilo gs-quant: volatilidad móvil y EWMA, riesgo a la baja, duración del drawdown y recuperación, Sharpe/Sortino/Calmar/Omega, volatilidad forward y estructura temporal de la varianza, volatilidad de vol-swap y VaR."
   },
   {
    "path": "fincept-qt/scripts/Analytics/options",
@@ -1076,7 +1132,8 @@
    ],
    "cli_entry": "python <gex_calculator|iv_smile|iv_surface|oi_tracker|strategy_chart>.py compute '<json_args>' ; python straddle_simulator.py simulate '<json_args>'",
    "relevance_note": "Builds put-call ratio and implied-vol sentiment inputs (oriented to Indian F&O such as NIFTY). The straddle simulator P&L leaves out brokerage and slippage. There is no VIX term-structure or variance-risk-premium time series and no short-interest data.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Herramientas de cadena de opciones con Black-76 portadas de OpenAlgo: calculadora de GEX, sonrisa de IV, superficie de IV, seguimiento de interés abierto/PCR/max pain, simulador intradía de straddle corto ATM y gráfica de payoff/griegas de estrategias de varias patas."
   },
   {
    "path": "fincept-qt/scripts/Analytics/portfolioManagement/active_management.py",
@@ -1096,7 +1153,8 @@
    ],
    "cli_entry": "python active_management.py <value_added|information_ratio|tracking_risk|comprehensive_analysis|manager_selection> <json>",
    "relevance_note": "Significance of active return is tested with an i.i.d. t-stat against fixed normal critical values (1.645/1.96/2.576). It has no HAC errors, no multiple-testing haircut and no luck-versus-skill bootstrap. The factor-model sections are mostly descriptive dictionaries.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Cubre la gestión activa al estilo CFA: valor agregado y su descomposición, information ratio ex post/ex ante, la Ley Fundamental (IR = IC x sqrt(BR) x TC), descripciones de APT/multifactoriales, descomposición del riesgo activo y selección de gestores por IR."
   },
   {
    "path": "fincept-qt/scripts/Analytics/portfolioManagement/behavioral_finance.py",
@@ -1108,7 +1166,8 @@
    "key_functions": [],
    "cli_entry": "",
    "relevance_note": "Holds the place for retail/behavioral analysis but implements nothing. etf_analytics.py is the same kind of stub.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Stub de 30 líneas que solo contiene un docstring de módulo. No define clases ni funciones."
   },
   {
    "path": "fincept-qt/scripts/Analytics/portfolioManagement/economics_markets.py",
@@ -1127,7 +1186,8 @@
    ],
    "cli_entry": "python economics_markets.py <comprehensive_analysis|business_cycle_analysis|equity_risk_premium> <args>",
    "relevance_note": "The regime is an input, not an estimate, and implications are hard-coded. It has no predictive regression and no out-of-sample R2.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Relaciona una fase del ciclo económico elegida por el usuario con sus implicaciones para la política, la curva de rendimientos, el crédito, las utilidades y los bienes raíces, con funciones auxiliares de ERP y de múltiplos normalizados."
   },
   {
    "path": "fincept-qt/scripts/Analytics/portfolioManagement/math_engine.py",
@@ -1147,7 +1207,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Gives point estimates of Sharpe and alpha with no standard errors, no PSR/DSR and no cost adjustment, and supports the minimum-variance (low-vol) construction.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Biblioteca matemática central: estadística (beta, tracking error, desviación a la baja), varianza del portafolio y portafolio de mínima varianza, Sharpe/Treynor/IR/alfa de Jensen/M2/Sortino, VaR/CVaR paramétrico/histórico, frontera eficiente y optimizador de máximo Sharpe."
   },
   {
    "path": "fincept-qt/scripts/Analytics/portfolioManagement/portfolio_analytics.py",
@@ -1167,7 +1228,8 @@
    ],
    "cli_entry": "python portfolio_analytics.py <calculate_portfolio_metrics|comprehensive_analysis|tax_report|pme_analysis|allocation_analysis> <json>",
    "relevance_note": "Computes single-factor CAPM alpha and frontier statistics on 1y yfinance data, gross of costs, with no statistical-significance or overfitting controls.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Implementa herramientas de MPT (frontera eficiente, CAL/CML, alfa de CAPM, utilidad con aversión al riesgo, efectos de la correlación) y comandos invocables desde C++ para métricas de portafolio, reporte fiscal, PME frente a SPY y análisis de asignación."
   },
   {
    "path": "fincept-qt/scripts/Analytics/portfolioManagement/portfolio_management.py",
@@ -1186,7 +1248,8 @@
    ],
    "cli_entry": "python portfolio_management.py <comprehensive_management_analysis|pension_analysis> <args>",
    "relevance_note": "Lifecycle and fund content is qualitative lookup tables. It does no empirical fund-performance (SPIVA-style) or glide-path simulation.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Clasificación por tipo de inversionista, etapas del ciclo de vida basadas en reglas (acumulación, consolidación, gasto, donación), análisis de pensiones DC frente a DB, y contenido descriptivo sobre comisiones de fondos de inversión y de administración de activos."
   },
   {
    "path": "fincept-qt/scripts/Analytics/portfolioManagement/portfolio_optimization.py",
@@ -1202,7 +1265,8 @@
    ],
    "cli_entry": "echo '{\"symbols\":[...],\"strategy\":\"max_sharpe\"}' | python portfolio_optimization.py",
    "relevance_note": "Purely in-sample mean-variance optimization with no out-of-sample test, no 1/N benchmark comparison and no costs. Two methods are mislabeled: 'hrp' is plain inverse-variance weighting, and 'black_litterman' is the equilibrium prior from equal weights with no views.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Usa SciPy SLSQP sobre medias muestrales y covarianza de 1y de yfinance para resolver las ponderaciones max_sharpe, min_volatility, efficient_risk/return, utilidad cuadrática, risk_parity, 'black_litterman' y 'hrp'. Nota: 'hrp' es una simple ponderación por varianza inversa y 'black_litterman' no tiene views."
   },
   {
    "path": "fincept-qt/scripts/Analytics/portfolioManagement/portfolio_planning.py",
@@ -1221,7 +1285,8 @@
    ],
    "cli_entry": "python portfolio_planning.py <asset_allocation|retirement_planning> <args>",
    "relevance_note": "retirement_planning is a deterministic projection (fixed 7% return, 3% inflation, 4% withdrawal rule). It has no Monte Carlo of wealth, no sequence-of-returns risk and no shortfall probability. The $2bn minimum-cap and no-penny-stock rules are IPS text, not data filters.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Construye objetivos y restricciones de la IPS, asignación estratégica de activos, principios de construcción con presupuesto de riesgo y política ESG, y ofrece un comando retirement_planning."
   },
   {
    "path": "fincept-qt/scripts/Analytics/portfolioManagement/risk_management.py",
@@ -1240,7 +1305,8 @@
    ],
    "cli_entry": "python risk_management.py comprehensive_risk_analysis <json>",
    "relevance_note": "Measures risk and allocates a risk budget on static return samples. It does not forecast volatility or scale exposure to it.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Gobierno de riesgos más VaR paramétrico, Monte Carlo y por componentes, pruebas de estrés y de escenarios históricos, un sistema de presupuesto de riesgo y una evaluación de la tolerancia al riesgo por capacidad/disposición."
   },
   {
    "path": "fincept-qt/scripts/Analytics/pypme_wrapper",
@@ -1258,7 +1324,8 @@
    ],
    "cli_entry": "python pypme_wrapper/pypme_service.py <operation> <json_data>",
    "relevance_note": "Fund-vs-benchmark performance attribution for private equity (Kaplan-Schoar style). Nothing comparable (SPIVA, persistence, fee drag) exists for mutual funds or retail traders.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Wrapper de Public Market Equivalent (PME, xPME, variantes verbose, xPME con datos de mercado de Tessa) para comparar flujos de efectivo de fondos privados contra un índice público."
   },
   {
    "path": "fincept-qt/scripts/Analytics/pyportfolioopt_wrapper/additional_optimizers.py",
@@ -1276,7 +1343,8 @@
    ],
    "cli_entry": "python pyportfolioopt_service.py <risk_parity|inverse_volatility|equal_weight|market_neutral> '<json>'",
    "relevance_note": "optimize_risk_parity is mislabelled: it returns inverse-volatility weights that ignore correlations, not equal risk contributions. It offers a 1/N allocator but no cost or turnover accounting, and performance uses a fixed 2% risk-free rate.",
-   "area": "critic"
+   "area": "critic",
+   "summary_es": "Asignadores adicionales basados en PyPortfolioOpt: mínimo tracking error, 'risk parity', ponderación igual, neutral al mercado, volatilidad inversa y máxima diversificación."
   },
   {
    "path": "fincept-qt/scripts/Analytics/pyportfolioopt_wrapper/advanced_objectives.py",
@@ -1295,7 +1363,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Transaction costs and turnover appear as ex-ante optimization penalties only. They are not linked to the backtest's realised P&L.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Objetivos y restricciones adicionales de PyPortfolioOpt: objetivos personalizados, restricciones sectoriales, restricción de tracking error, restricción de rotación, regularización L1, objetivo de costos de transacción y optimización con views."
   },
   {
    "path": "fincept-qt/scripts/Analytics/pyportfolioopt_wrapper/core.py",
@@ -1314,7 +1383,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "backtest_strategy re-optimizes every 21 days on a 252-day window but reports gross returns with no turnover or transaction cost, so the comparison to 1/N (DeMiguel et al.) is not cost-aware.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "PyPortfolioOptAnalyticsEngine: rendimientos esperados (históricos, EMA, CAPM), modelos de riesgo (muestral, semicovarianza, shrinkage), frontera eficiente, HRP, Black-Litterman, CLA, optimización por semivarianza/CVaR/CDaR, asignación discreta, descomposición del riesgo, sensibilidad y un backtest con ventana móvil."
   },
   {
    "path": "fincept-qt/scripts/Analytics/pyportfolioopt_wrapper/pyportfolioopt_service.py",
@@ -1332,7 +1402,8 @@
    ],
    "cli_entry": "python pyportfolioopt_service.py <operation> <json_data>",
    "relevance_note": "UI entry point for the Markowitz, 1/N, risk parity, BL and HRP comparisons. Its backtest op returns gross Sharpe and Calmar only.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Despachador del worker que expone optimize, efficient_frontier, discrete_allocation, backtest, risk_decomposition, black_litterman, hrp, risk_parity, equal_weight, inverse_volatility, market_neutral, min_tracking_error, max_diversification, custom_constraints y views_optimization."
   },
   {
    "path": "fincept-qt/scripts/Analytics/python_skfolio_lib/skfolio_core.py",
@@ -1352,7 +1423,8 @@
    ],
    "cli_entry": "python skfolio_core.py <validate_config|example> (programmatic use through skfolio_api.SkfolioAPI)",
    "relevance_note": "The only skfolio path that evaluates out of sample (train_test_split with shuffle=False). WalkForward and CombinatorialPurgedCV are imported but optimize_portfolio does not use them, and transaction_costs only enter the optimizer objective, not the reported returns.",
-   "area": "critic"
+   "area": "critic",
+   "summary_es": "SkfolioCore construye optimizadores de skfolio: MeanRisk, RiskParity, HierarchicalRiskParity y NestedClustersOptimization, con priors BlackLitterman, FactorModel y EntropyPooling y conjuntos de incertidumbre por bootstrap. Ajusta sobre una partición de entrenamiento cronológica y predice sobre el conjunto reservado."
   },
   {
    "path": "fincept-qt/scripts/Analytics/python_skfolio_lib/skfolio_data.py",
@@ -1372,7 +1444,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Factor proxies are crude: 'value' = 1/price and 'size' = log(price). There are no book-to-market, market-cap or profitability fundamentals, so they are not HML/SMB.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "DataManager para carga desde múltiples fuentes (CSV, Excel, DB, yfinance), puntuación de calidad, limpieza, manejo de valores atípicos y cálculo de rendimientos, además de create_factor_data, que construye factores de momentum, reversión, volatilidad, 'value' y 'size' a partir de precios."
   },
   {
    "path": "fincept-qt/scripts/Analytics/python_skfolio_lib/skfolio_optimization.py",
@@ -1392,7 +1465,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Most complete Markowitz/1-N/shrinkage/HRP/BL toolkit. transaction_costs and max_turnover enter only as optimizer penalties and constraints, not as realised cost netting in a backtest.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "OptimizationEngine que envuelve modelos de skfolio (MeanRisk, HRP, HERC, NCO, RiskBudgeting, MaxDiversification) con estimadores de mu/covarianza (shrinkage, Ledoit-Wolf, OAS, denoise, detone, Gerber), priors (BlackLitterman, FactorModel), conjuntos de incertidumbre, costos de transacción y límites de rotación, comparación de modelos y frontera."
   },
   {
    "path": "fincept-qt/scripts/Analytics/python_skfolio_lib/skfolio_portfolio.py",
@@ -1412,7 +1486,8 @@
    ],
    "cli_entry": "python skfolio_portfolio.py construct <returns_csv>",
    "relevance_note": "rebalance_portfolio is one of the few places that measures turnover from weight changes, but its benefit test assumes a hard-coded expected improvement of turnover*0.001. backtest_portfolio is gross: weights never drift between rebalances, and total_costs and average_turnover are never updated from 0.",
-   "area": "critic"
+   "area": "critic",
+   "summary_es": "PortfolioManager construye portafolios de skfolio con restricciones, calcula la rotación de un rebalanceo único (0.5*sum|w_new-w_old|) y los costos de transacción por activo, monitorea drawdowns y ejecuta un backtest con rebalanceo periódico."
   },
   {
    "path": "fincept-qt/scripts/Analytics/python_skfolio_lib/skfolio_risk.py",
@@ -1431,7 +1506,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Monte Carlo covers a default 252-day horizon of portfolio returns. There is no multi-decade wealth or lifecycle (contribution/withdrawal) modelling.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "RiskAnalyzer que calcula VaR, CVaR, EVaR, CDaR, Ulcer, Gini, riesgo entrópico, Sharpe/Sortino/Treynor/IR/alfa/beta, atribución de riesgo, escenarios de estrés, presupuestos de riesgo y un Monte Carlo de rendimientos del portafolio basado en cópulas."
   },
   {
    "path": "fincept-qt/scripts/Analytics/python_skfolio_lib/skfolio_service.py",
@@ -1450,7 +1526,8 @@
    ],
    "cli_entry": "python skfolio_service.py <optimize|efficient_frontier|risk_metrics|stress_test|backtest|compare_strategies|validate_model|...> <json>",
    "relevance_note": "op_backtest is a gross rolling max-Sharpe backtest (no costs or turnover) against a 1/N benchmark. op_validate_model runs CombinatorialPurgedCV but returns only fold metrics, with no PBO or DSR.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Worker de skfolio que expone optimize (media-riesgo, HRP, HERC, NCO, presupuesto de riesgo, máxima diversificación, ponderación igual, volatilidad inversa, DR-CVaR), frontera eficiente, métricas de riesgo, prueba de estrés, backtest móvil, comparación de estrategias, ajuste de hiperparámetros y validación de modelos walk-forward/CPCV."
   },
   {
    "path": "fincept-qt/scripts/Analytics/python_skfolio_lib/skfolio_validation.py",
@@ -1468,7 +1545,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Closest thing to a PBO framework (it generates CPCV paths) but stops at mean and std of scores and an ad-hoc degradation score. Pairwise model tests are not multiplicity-adjusted.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "ModelValidator con walk-forward, CV purgado combinatorio, k-fold, ajuste de hiperparámetros, comparaciones de modelos con pruebas t pareada/Wilcoxon/Mann-Whitney y d de Cohen, y un puntaje de sobreajuste fuera de muestra (degradación del Sharpe/rendimiento)."
   },
   {
    "path": "fincept-qt/scripts/Analytics/quant/data_validator.py",
@@ -1486,7 +1564,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Data-hygiene step before backtests (outliers and jumps). It does not address survivorship or look-ahead bias.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "DataValidator y DataQualityReport revisan la estructura, los datos faltantes, los valores atípicos, los patrones de rendimiento y los saltos de precio, y validan rangos de fechas, matrices de correlación y ponderaciones de portafolio."
   },
   {
    "path": "fincept-qt/scripts/Analytics/quant/quant_modules_3042.py",
@@ -1505,7 +1584,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "The ML runs on lagged values of one time series, not a cross-section. The 80/20 split keeps time order, but cross_val_score uses unpurged KFold. 'Overfitting' means the train-validation R2 gap exceeds 0.1. There are no GBDT/NN models. The 'fama_french_5' default appears only in a boilerplate docstring.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "AdvancedQuantAnalyzer cubre pruebas de tendencia y estacionariedad, ARIMA, pronósticos, ML supervisado (ridge/lasso/elastic-net/SVM/KNN/árbol de decisión/random forest), PCA/k-means no supervisados, evaluación de modelos con cross_val_score y curvas de aprendizaje, remuestreo bootstrap/jackknife/permutación, y demostraciones del CLT y del error muestral."
   },
   {
    "path": "fincept-qt/scripts/Analytics/quant_analytics_cli.py",
@@ -1524,7 +1604,8 @@
    ],
    "cli_entry": "python quant_analytics_cli.py <list|trend_analysis|stationarity_test|arima_model|forecasting|supervised_learning|unsupervised_learning|model_evaluation|feature_engineering|sampling_techniques|central_limit_theorem|resampling_methods|sampling_error_analysis|validate_data> [params_json]",
    "relevance_note": "The entry point to the area's ML prediction. Fits are judged by R2 and accuracy, not by trading Sharpe or long-short spread returns, and there is no purged or embargoed CV.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "CLI unificada (CFAQuantEngine) que envuelve quant_modules_3042 y DataValidator. Construye variables de rezago a partir de un ticker o de una serie y ejecuta comandos de tendencia, estacionariedad, ARIMA, ML, evaluación, muestreo y validación."
   },
   {
    "path": "fincept-qt/scripts/Analytics/quant_evidence/stats.py",
@@ -1546,7 +1627,8 @@
    ],
    "cli_entry": "python quant_evidence_cli.py <deflated_sharpe|haircut_sharpe|min_backtest_length|cost_drag|horizon_risk|kelly> '<json>'",
    "relevance_note": "Added on this branch (commit 67acf5e). It is the repo's only deflated Sharpe that accounts for the number of trials, its only Harvey-Liu-Zhu haircut and its only continuous mu/sigma^2 Kelly. No backtest engine, optimizer or C++ screen calls it, and it does not implement PBO/CSCV.",
-   "area": "critic"
+   "area": "critic",
+   "summary_es": "Fórmulas escritas solo con la biblioteca estándar de Python: Sharpe ratio probabilístico y deflactado, longitud mínima del backtest, recorte del Sharpe de Harvey-Liu-Zhu y umbral t de Bonferroni, lastre de costos por rotación y costo de equilibrio, el put de shortfall de Bodie y la probabilidad de pérdida real, Kelly continuo y la ganancia de Campbell-Thompson."
   },
   {
    "path": "fincept-qt/scripts/Analytics/quant_evidence_cli.py",
@@ -1567,7 +1649,8 @@
    ],
    "cli_entry": "python quant_evidence_cli.py <list|strategies|strategy|categories|evaluate|deflated_sharpe|haircut_sharpe|min_backtest_length|cost_drag|horizon_risk|kelly|cascade|repo_map|repo_scan|export_web> [params_json]",
    "relevance_note": "The evaluate command scores a strategy after multiple testing, publication decay, microcap dependence and costs. No file in src/ or any other script references quant_evidence, so the evaluator is not connected to the app's backtests.",
-   "area": "critic"
+   "area": "critic",
+   "summary_es": "CLI JSON sobre la base de conocimiento de evidencia cuantitativa. Lista estrategias y categorías, califica una decisión propuesta mediante quant_evidence/evaluator.evaluate_decision, expone las funciones auxiliares de stats, devuelve el mapa del repositorio curado o en vivo y exporta web/decision_lab.html."
   },
   {
    "path": "fincept-qt/scripts/Analytics/quantstats_analytics.py",
@@ -1588,7 +1671,8 @@
    ],
    "cli_entry": "python quantstats_analytics.py <stats|returns|drawdown|rolling|montecarlo|full_report|html_report> <tickers_weights_json> [benchmark=SPY] [period=1y] [rf=0.02] [sims=1000]",
    "relevance_note": "This is the only place in the area that reports probabilistic_sharpe_ratio and kelly_criterion. Everything runs on gross buy-and-hold returns, with no deflated Sharpe, no adjustment for the number of trials and no costs; the Monte Carlo is an i.i.d. bootstrap of daily returns.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Descarga precios de yfinance para una canasta ponderada de tickers y un benchmark, y luego calcula más de 50 métricas de quantstats, drawdowns, Sharpe/volatilidad/beta móviles, un Monte Carlo por bootstrap de trayectorias de riqueza y un tearsheet en HTML."
   },
   {
    "path": "fincept-qt/scripts/Analytics/riskfoliolib_wrapper.py",
@@ -1605,7 +1689,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Non-functional stub. Riskfolio-based risk parity is not actually available at this path.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Clase RiskPortfolioAnalytics cuyos métodos calculate_var, calculate_cvar, stress_test y risk_budgeting están todos vacíos ('pass')."
   },
   {
    "path": "fincept-qt/scripts/Analytics/skfolio_wrapper.py",
@@ -1626,7 +1711,8 @@
    ],
    "cli_entry": "python skfolio_wrapper.py <optimize|backtest|efficient_frontier> <symbols_csv> ...",
    "relevance_note": "It imports WalkForward and CombinatorialPurgedCV but uses them only as the CV splitter for GridSearchCV (default cv_method is plain KFold). It never computes a PBO. backtest_strategy returns gross results, because transaction_costs only enter the MeanRisk objective and are never subtracted from realized returns. compare_strategies picks the best Sharpe in-sample without any haircut. The CLI 'backtest' command returns hard-coded placeholder metrics (Sharpe 0.83) taken from the bundled load_sp500_dataset.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Motor basado en skfolio que ofrece MeanRisk, RiskBudgeting, HRP, NestedClusters, EqualWeighted, InverseVolatility, priors Black-Litterman/FactorModel y covarianza LedoitWolf, además de ajuste con GridSearchCV, un backtest walk-forward móvil, pruebas de estrés y comparación de estrategias."
   },
   {
    "path": "fincept-qt/scripts/Analytics/statsmodels_cli.py",
@@ -1646,7 +1732,8 @@
    ],
    "cli_entry": "python statsmodels_cli.py <command> <params_json>",
    "relevance_note": "Generic OLS can run a factor regression, but the CLI passes only (y, X), so there is no HAC/Newey-West option. fit_markov_regression and rolling_ols are imported but missing from command_map, so regime switching is not reachable through the CLI.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "CLI de Statsmodels que expone ARIMA/SARIMAX/ETS/STL, ADF/KPSS/ACF/PACF/Ljung-Box, OLS/diagnósticos/logit/GLM, pruebas t y potencia, Jarque-Bera, PCA, KDE y LOWESS."
   },
   {
    "path": "fincept-qt/scripts/Analytics/statsmodels_wrapper/regression.py",
@@ -1664,7 +1751,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Could run Fama-French time-series alpha regressions, but uses default (non-HAC) standard errors and has no factor-data loader.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "OLS, WLS, GLS, GLSAR, mínimos cuadrados recursivos, OLS/WLS móviles y diagnósticos de regresión que devuelven parámetros, errores estándar, valores t y valores p."
   },
   {
    "path": "fincept-qt/scripts/Analytics/statsmodels_wrapper/stats_extended.py",
@@ -1683,7 +1771,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Together with stats_tests.multipletests_correction, these are the repo's only Bonferroni/Holm/BH/BY corrections and its only Newey-West helper. The module is imported as statsmodels_wrapper.stats_extended but is absent from statsmodels_service.OPERATIONS and from statsmodels_cli command_map, so nothing uses it. breaks_hansen is Hansen's parameter-instability test, not Hansen's SPA test.",
-   "area": "critic"
+   "area": "critic",
+   "summary_es": "Wrappers delgados sobre cerca de 100 funciones de statsmodels.stats, incluidas multipletests, fdrcorrection, fdrcorrection_twostage, local_fdr, cov_nw_panel (covarianza Newey-West para panel), cov_white_simple y breaks_hansen."
   },
   {
    "path": "fincept-qt/scripts/Analytics/statsmodels_wrapper/stats_tests.py",
@@ -1701,7 +1790,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "The only Bonferroni/Holm/BHY-capable code in the area. It is not registered in statsmodels_service.OPERATIONS (ols, arima, stationarity_tests, acf_pacf, granger_causality, descriptive) and is not applied to any backtest or optimizer output.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Pruebas de hipótesis de statsmodels: pruebas t/z, ANOVA, normalidad, heterocedasticidad, autocorrelación, y corrección de valores p por pruebas múltiples (multipletests: Bonferroni/Holm/BH/BY etc.) y FDR en dos etapas."
   },
   {
    "path": "fincept-qt/scripts/Analytics/statsmodels_wrapper/statsmodels_service.py",
@@ -1720,7 +1810,8 @@
    ],
    "cli_entry": "python statsmodels_service.py <operation> '<json>'",
    "relevance_note": "This is the statsmodels script the C++ app actually runs (AIQuantLabService kStatsmodelsScript). OLS reports t-stats with non-robust standard errors (no HAC). Granger causality is the only exposed predictability test. Multipletests, Markov regression and VARMAX are not registered.",
-   "area": "critic"
+   "area": "critic",
+   "summary_es": "Backend econométrico de la subpestaña Statsmodels del AI Quant Lab, con las operaciones ols, arima, stationarity_tests, acf_pacf, granger_causality y descriptive."
   },
   {
    "path": "fincept-qt/scripts/Analytics/statsmodels_wrapper/timeseries_models.py",
@@ -1739,7 +1830,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Has Hamilton-type regime switching (smoothed regime probabilities) and VAR/ARDL predictive regressions, but nothing wires them into a timing backtest or the service ops.",
-   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve"
+   "area": "fincept-qt/scripts/Analytics/backtesting/ (base, fincept, ve",
+   "summary_es": "Ajuste de modelos de series de tiempo: ARIMA, SARIMAX, VARMAX, AutoReg, ARDL, suavizamiento exponencial, STL, factor dinámico, componentes no observados, regresión y autorregresión con cambio de régimen de Markov, y VECM."
   },
   {
    "path": "fincept-qt/scripts/Analytics/technical_analysis/momentum_indicators.py",
@@ -1757,7 +1849,8 @@
    ],
    "cli_entry": "python momentum_indicators.py <symbol> <indicator_type> <params_json>",
    "relevance_note": "Produces indicator series only, with no trading-rule evaluation, so it says nothing about rule profitability net of costs.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Obtiene el historial de un símbolo y calcula RSI, MACD, Stochastic, CCI, ROC, Williams %R, Awesome Oscillator, TSI y Ultimate Oscillator."
   },
   {
    "path": "fincept-qt/scripts/Analytics/technical_indicators.py",
@@ -1773,7 +1866,8 @@
    ],
    "cli_entry": "python technical_indicators.py test",
    "relevance_note": "Computes indicators only; it neither generates nor backtests signals. The only CLI command, 'test', runs on synthetic random-walk data.",
-   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w"
+   "area": "fincept-qt/scripts/Analytics (excluding backtesting/ and *_w",
+   "summary_es": "Clase TechnicalIndicators con SMA, EMA, RSI, MACD, Bollinger, Stochastic, Williams %R, ATR, CCI y ADX, además de calculate_all_indicators."
   },
   {
    "path": "fincept-qt/scripts/agents/TraderInvestorsAgent/configs",
@@ -1793,7 +1887,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Value and quality screens exist only as LLM instructions executed via yfinance/financial_datasets tools. The EV>$500M gate is the only microcap-style exclusion, and the LLM enforces it rather than code.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "agent_definitions.json con 11 personajes LLM de inversionistas legendarios, incluidos filtros basados en reglas como el de Graham (P/E<=15, P/B<=1.5, razón circulante>=2) y la Magic Formula de Greenblatt (rankings de ROC y de rendimiento por utilidades, EV>$500M, excluyendo financieras y servicios públicos)."
   },
   {
    "path": "fincept-qt/scripts/agents/finagent_core/configs",
@@ -1814,7 +1909,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "These configs define the LLM/news/sentiment and business-cycle 'signals': qualitative markdown outputs from GPT-class models with web, news and openbb tools. None of the agents' calls are logged or scored against subsequent returns.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Configuraciones JSON para agentes LLM de propósito único (noticias y narrativa, finanzas conductuales, ciclo macro, banco central, estratega de divisas, rastreador de flujos institucionales, Polymarket, RenTech) que especifican modelo, instrucciones y herramientas."
   },
   {
    "path": "fincept-qt/scripts/agents/finagent_core/paper_trading_bridge.py",
@@ -1832,7 +1928,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Applies a flat 0.1% fee per fill (fee_rate 0.001) with no slippage or impact, so agent paper P&L is only lightly cost-adjusted. It is the only place agent decisions accrue realized outcomes.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Puente de paper trading (en el host o local) para portafolios, órdenes, ejecuciones, posiciones, operaciones y estadísticas, que usan los agentes para ejecutar operaciones simuladas."
   },
   {
    "path": "fincept-qt/scripts/agents/finagent_core/registries/tools_registry.py",
@@ -1850,7 +1947,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Defines which data sources feed the LLM agents: yfinance, OpenBB, SEC EDGAR and web/news scrapers. It has no dedicated Mexico (Banxico/INEGI/BMV) or options/short-interest tool.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Catálogo ToolsRegistry que asigna de forma diferida nombres de herramientas (yfinance, financial_datasets, openbb, edgar, tavily, duckduckgo, newspaper, firecrawl, etc.) a clases de toolkit de Agno para los agentes."
   },
   {
    "path": "fincept-qt/scripts/agents/finagent_core/tools/edgar_tools.py",
@@ -1870,7 +1968,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Supplies filing text for LLM text signals plus 13F institutional positioning and XBRL fundamentals usable for profitability screens. It is used qualitatively by the institutional_flow_tracker agent.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Toolkit de Agno EdgarTools que envuelve el MCP interno de EDGAR: secciones y texto completo de 10-K/10-Q, eventos 8-K, transacciones de insiders del Form 4, tenencias 13F, y estados financieros y métricas XBRL."
   },
   {
    "path": "fincept-qt/scripts/agents/hedgeFundAgents/renaissance_technologies_hedge_fund_agent/agents/tools",
@@ -1891,7 +1990,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "These tools mention factor exposures, turnover and transaction-cost drag by name, but return mocked values. They should not be read as an implemented factor regression, optimizer or cost netting.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Toolkits de Agno para agentes LLM (portfolio_tools, risk_tools, execution_tools, market_data_tools, compliance_tools) que en su mayoría devuelven diccionarios de relleno (p. ej. exposiciones fijas a SMB/HML/UMD/QMJ, fracciones de Kelly fijas, ponderaciones óptimas fijas)."
   },
   {
    "path": "fincept-qt/scripts/agents/hedgeFundAgents/renaissance_technologies_hedge_fund_agent/agents/tools/signal_tools.py",
@@ -1911,7 +2011,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "backtest_signal returns a fixed Sharpe 2.1, net Sharpe 1.85 and '15% OOS degradation', and detect_patterns returns a fixed 'month_end_effect'. These are stubs, not computed evidence; only calculate_p_value does real math (a normal two-sided p from a test statistic), with no multiplicity correction.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Toolkit de Agno expuesto a científicos de señales LLM (detect_patterns, backtest_signal, calculate_p_value, IC, dependencia de régimen) en el que la mayoría de los métodos devuelven números ilustrativos fijos en el código."
   },
   {
    "path": "fincept-qt/scripts/agents/hedgeFundAgents/renaissance_technologies_hedge_fund_agent/evaluation/signal_evaluation.py",
@@ -1930,7 +2031,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "This is the closest thing to an ex-post decision-effectiveness evaluator in the agents area (hit rate, IC on realized outcomes). It averages raw p-values and has no deflation, bootstrap or multiple-testing control.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "SignalEvaluator califica los resultados realizados de las señales por tasa de aciertos (meta de 50.75%), rendimiento promedio, IC de Spearman, tasa de aprobación por valor p, timing y desglose por tipo."
   },
   {
    "path": "fincept-qt/scripts/agents/hedgeFundAgents/renaissance_technologies_hedge_fund_agent/evaluation/trade_evaluation.py",
@@ -1948,7 +2050,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Post-trade cost analysis that only averages per-trade slippage_bps and market_impact_bps supplied by the caller (targets of 2 and 5 bps). It does not estimate costs from turnover or net them from a strategy's return series.",
-   "area": "critic"
+   "area": "critic",
+   "summary_es": "TradeEvaluator califica las operaciones ejecutadas por calidad de ejecución, media y volatilidad del deslizamiento reportado (pb), impacto de mercado (pb), calidad de los fills y P&L por algoritmo, contra metas fijas y umbrales de advertencia."
   },
   {
    "path": "fincept-qt/scripts/agents/hedgeFundAgents/renaissance_technologies_hedge_fund_agent/guardrails/signal_guardrails.py",
@@ -1966,7 +2069,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Applies a single-test p threshold (risk_limits.min_p_value) per signal, with no Bonferroni/Holm/BHY haircut for the number of signals tried.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Salvaguardas previas a la operación que bloquean señales según un umbral de valor p, un tamaño mínimo de muestra (100), la confianza, la calidad de los datos y su antigüedad."
   },
   {
    "path": "fincept-qt/scripts/agents/hedgeFundAgents/renaissance_technologies_hedge_fund_agent/knowledge/seed_data.py",
@@ -1985,7 +2089,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "This links agent reasoning to literature on momentum and reversal, but as text for retrieval, not as replicated return series.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Texto estático de conocimiento semilla para el agente RenTech (descripciones de estrategias, una metodología de un cuarto de Kelly, metas de rotación). Son documentos, no código de cálculo."
   },
   {
    "path": "fincept-qt/scripts/agents/hedgeFundAgents/renaissance_technologies_hedge_fund_agent/main.py",
@@ -2005,7 +2110,8 @@
    ],
    "cli_entry": "python -m renaissance_technologies_hedge_fund_agent.main <TICKER> [--trade-value N] [--period 1y] [--json] (run from fincept-qt/scripts/agents/hedgeFundAgents)",
    "relevance_note": "Produces a point-in-time bullish/bearish/neutral decision with no historical replay, so its decision effectiveness cannot be measured inside this module.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Orquestador RenaissanceTechnologiesSystem: obtiene datos de yfinance, ejecuta los análisis de señales, riesgo, ejecución y arbitraje estadístico, y devuelve un MedallionDecision para un ticker o un portafolio, con un modo opcional mejorado con LLM."
   },
   {
    "path": "fincept-qt/scripts/agents/hedgeFundAgents/renaissance_technologies_hedge_fund_agent/reasoning/investment_reasoning.py",
@@ -2023,7 +2129,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Fractional Kelly also lives here, besides quantstats, vbt_portfolio and polymarket_quant_bot. The win probability is the signal's confidence rather than an estimated hit rate, and the computed kelly_fraction variable is never used (a fixed 0.25 multiplier is applied).",
-   "area": "critic"
+   "area": "critic",
+   "summary_es": "InvestmentReasoner evalúa señales y dimensiona posiciones con Kelly discreto ((b*p-q)/b, usando la confianza de la señal como tasa de aciertos) escalado a un cuarto de Kelly, y luego aplica ajustes por liquidez, correlación y límites de riesgo."
   },
   {
    "path": "fincept-qt/scripts/agents/hedgeFundAgents/renaissance_technologies_hedge_fund_agent/strategies/analysis.py",
@@ -2046,7 +2153,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "synthesize_decision nets execution cost from the gross edge (net_edge = signal + arb edge - cost), but the reported 'p_value' is just 1 - a heuristic weighted score, not a statistical test. Value and quality are linear rescalings of P/E and ROE, and no backtest validates the weights (0.3/0.4/0.3 and 0.35/0.30/0.20/0.15).",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Pipeline puramente cuantitativo que combina reversión a la media, momentum y autocorrelación en una señal agregada, añade exposiciones de valor basada en P/E y de calidad basada en ROE, y sintetiza una decisión Medallion con ventaja neta, Kelly y apalancamiento."
   },
   {
    "path": "fincept-qt/scripts/agents/hedgeFundAgents/renaissance_technologies_hedge_fund_agent/strategies/execution.py",
@@ -2064,7 +2172,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "This is the only explicit per-trade cost model in the agents area (50 bps spread for caps under $200M, sqrt impact with k=0.1). It prices a single trade but is never applied to a historical turnover series.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Modelo de costos de transacción: impacto de mercado de raíz cuadrada, spread bid-ask escalonado por capitalización de mercado, comisión institucional/minorista, deslizamiento escalado por participación y urgencia, tamaño óptimo de operación e implementation shortfall."
   },
   {
    "path": "fincept-qt/scripts/agents/hedgeFundAgents/renaissance_technologies_hedge_fund_agent/strategies/mean_reversion.py",
@@ -2083,7 +2192,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Implements the short-term reversal and pairs signals the agent draws on. analyze_pairs_cointegration uses an OLS hedge ratio and spread z-score, not a formal Engle-Granger or Johansen test, and it does no cost or out-of-sample evaluation.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Diagnósticos de reversión a la media: z-score, vida media estilo AR(1), exponente de Hurst y z-score del spread de pares con hedge ratio obtenido por regresión."
   },
   {
    "path": "fincept-qt/scripts/agents/hedgeFundAgents/renaissance_technologies_hedge_fund_agent/strategies/momentum.py",
@@ -2103,7 +2213,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Computes a gross time-series momentum signal per ticker rather than a WML long-short portfolio, and find_optimal_lookback picks the lookback in-sample by a Sharpe-like score, so the parameter is data-snooped with no out-of-sample check.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Puntuación de momentum de precio para un solo ticker con rendimientos de lookback, una medida de fuerza de tendencia basada en R cuadrada, aceleración, fuerza relativa frente a un benchmark y un rango percentil frente a valores de momentum de pares."
   },
   {
    "path": "fincept-qt/scripts/agents/hedgeFundAgents/renaissance_technologies_hedge_fund_agent/strategies/risk_management.py",
@@ -2125,7 +2236,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Kelly is capped at 25% (fractional Kelly) and volatility is RiskMetrics EWMA (the docstring says 'GARCH-like' but no GARCH is fitted). The factor decomposition is a one-factor market beta/R^2, not Fama-French, and the Sharpe ratio is plain, with no PSR/DSR adjustment.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Kit de riesgo: volatilidad realizada y EWMA (lambda 0.94), un clasificador de régimen de volatilidad, VaR, drawdown máximo, Sharpe/Sortino, beta, una descomposición del riesgo de un solo factor, una fracción de Kelly acotada y dimensionamiento de posiciones."
   },
   {
    "path": "fincept-qt/scripts/agents/hedgeFundAgents/renaissance_technologies_hedge_fund_agent/strategies/statistical_arbitrage.py",
@@ -2144,7 +2256,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Its regime detection is described as 'inspired by Hidden Markov Models' but is a fixed-threshold rule (no HMM or Markov-switching estimation), and estimate_edge yields a gross edge that is only netted against costs later in analysis.py.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Clasifica el régimen de mercado (alcista/bajista/lateral/transición) a partir de umbrales de rendimiento y volatilidad anualizados a 60 días, y califica el mispricing estadístico, las operaciones de pares y la ventaja en pb."
   },
   {
    "path": "fincept-qt/scripts/agents/hedgeFundAgents/renaissance_technologies_hedge_fund_agent/utils/data_fetcher.py",
@@ -2164,7 +2277,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "This is the only data feed for the RenTech agent: yfinance with a SPY benchmark, so beta is computed against the US market even for non-US tickers such as .MX listings, and there is no survivorship-free or point-in-time fundamentals source.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Obtiene de yfinance precios, capitalización de mercado, ADV, ingresos, utilidades y métricas de razones para un ticker, usa SPY como benchmark de mercado, y valida y prepara los insumos del análisis."
   },
   {
    "path": "fincept-qt/scripts/agents/hedgeFundAgents/renaissance_technologies_hedge_fund_agent/workflows/signal_validation.py",
@@ -2182,7 +2296,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Bonferroni correction, FDR, bootstrap and purged cross-validation are only requested in the LLM prompt text and never computed in code, so their results depend on LLM output, not on statistics.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Flujo de trabajo LLM de varios pasos en el que se instruye a agentes de investigador cuantitativo, de riesgo y de IC para validar una señal descubierta (análisis estadístico, robustez ante regímenes, aprobación)."
   },
   {
    "path": "fincept-qt/scripts/agents/rdagents/cli.py",
@@ -2201,7 +2316,8 @@
    ],
    "cli_entry": "python agents/rdagents/cli.py <command> <json_params>",
    "relevance_note": "This is the entry point for ML cross-sectional prediction and alpha mining. Reported metrics (IC, ICIR, Sharpe, annualized return, MDD) are in-loop backtest numbers with no deflation for the number of iterations.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "CLI JSON que usa AIQuantLabService.cpp para iniciar y monitorear la minería de factores de RD-Agent, la optimización de modelos (LightGBM, XGBoost, LSTM, GRU, Transformer, TCN) y tareas de investigación cuantitativa, y para exportar factores."
   },
   {
    "path": "fincept-qt/scripts/agents/rdagents/loops.py",
@@ -2221,7 +2337,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Implements iterative propose-code-run-feedback factor mining with IC/ICIR/Sharpe feedback, which is exactly the many-trials setting where DSR and PBO matter. No trial counting or multiple-testing haircut is applied to discovered factors.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Construye loops de Microsoft RD-Agent (FactorRDLoop, ModelRDLoop, QuantRDLoop, FactorReportLoop) sobre Qlib para el descubrimiento autónomo de factores y modelos impulsado por LLM, con un IC objetivo, checkpoints y resultados extraídos de factores/modelos."
   },
   {
    "path": "fincept-qt/scripts/ai_quant_lab/qlib_advanced_backtest.py",
@@ -2241,7 +2358,8 @@
    ],
    "cli_entry": "python qlib_advanced_backtest.py <check_status|run_backtest|optimize_portfolio> '<json>'",
    "relevance_note": "It produces a GROSS equal-weight momentum backtest (signal lagged one day) and reports a separate cost estimate for one sample order that is never subtracted. Sharpe is ann_ret/ann_vol with no risk-free rate, and optimize_portfolio is a not-implemented placeholder.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Módulo de backtest con microestructura de mercado (OrderBook, MarketImpactModel, SlippageModel, ejecución TWAP/VWAP/IS/POV) y un run_backtest que mantiene las top-K acciones según el momentum de los últimos 20 días obtenido de yfinance."
   },
   {
    "path": "fincept-qt/scripts/ai_quant_lab/qlib_advanced_models.py",
@@ -2259,7 +2377,8 @@
    ],
    "cli_entry": "python qlib_advanced_models.py <list_available|train_model|predict|info|list_models> '<json>'",
    "relevance_note": "These are the kind of deep-learning return predictors studied in the ML asset-pricing literature, but they are judged by fit only, with no economic evaluation after costs.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Administrador de modelos de deep learning para series de tiempo (SimpleLSTM/GRU/Transformer en PyTorch y LSTM_TS/GRU_TS de Qlib), con creación, entrenamiento, predicción y estado guardado."
   },
   {
    "path": "fincept-qt/scripts/ai_quant_lab/qlib_data_processors.py",
@@ -2278,7 +2397,8 @@
    ],
    "cli_entry": "python qlib_data_processors.py <list_processors|create_pipeline|process_data> '<json>'",
    "relevance_note": "Provides the cross-sectional rank and z-score normalisation that ML return-prediction studies apply to stock characteristics. It has a fit/transform split, but whether data leaks across time depends on the caller.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Pipeline de preprocesamiento al estilo Qlib: MinMax, ZScore, RobustZScore, z-score transversal y normalización por rango, winsorización, manejo de fillna y de valores inf, con configuraciones de pipeline guardadas."
   },
   {
    "path": "fincept-qt/scripts/ai_quant_lab/qlib_evaluation.py",
@@ -2298,7 +2418,8 @@
    ],
    "cli_entry": "python qlib_evaluation.py <calculate_ic|calculate_rank_ic|analyze_factor_returns|calculate_factor_turnover|calculate_risk_metrics|combine_factors|generate_evaluation_report> '<json>'",
    "relevance_note": "IC significance is a single one-sample t-test at alpha=0.05, with no Bonferroni/Holm/BHY correction and no t>3 hurdle. Turnover is measured but never turned into a cost drag.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Evaluación de factores y señales: IC de Pearson y de rango, prueba t del IC, rendimientos por cuantil y monotonicidad, rotación del top-N, métricas de riesgo VaR/CVaR, combinación de factores y un reporte con calificación."
   },
   {
    "path": "fincept-qt/scripts/ai_quant_lab/qlib_feature_engineering.py",
@@ -2319,7 +2440,8 @@
    ],
    "cli_entry": "python qlib_feature_engineering.py <rsi|macd|momentum|volatility|select_features_by_ic|evaluate_expression|...> '<json>'",
    "relevance_note": "select_features_by_ic keeps the top-k features by in-sample |IC|, a data-mining step with no out-of-sample check or multiple-testing control. rolling_beta is a building block for betting-against-beta, but no BAB portfolio is built.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Biblioteca de features (MA, RSI, MACD, Bollinger, ATR, estocástico, momentum, volatilidad, OBV, VWAP, beta móvil, drawdown), un motor aislado (sandbox) de expresiones de alfas formulaicos al estilo Qlib y selección de features basada en IC."
   },
   {
    "path": "fincept-qt/scripts/ai_quant_lab/qlib_high_frequency.py",
@@ -2337,7 +2459,8 @@
    ],
    "cli_entry": "python qlib_high_frequency.py <fetch_orderbook|fetch_trades|analyze|market_making|toxic_flow|slippage> '<json>'",
    "relevance_note": "Measures realistic execution cost on crypto venues (slippage vs mid from walking the book), which could feed cost netting, but it is not connected to any backtest.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Analítica en vivo del libro de órdenes vía CCXT: métricas del libro, cotizaciones de market making, detección de flujo tóxico y una estimación de slippage recorriendo el libro de órdenes."
   },
   {
    "path": "fincept-qt/scripts/ai_quant_lab/qlib_meta_learning.py",
@@ -2356,7 +2479,8 @@
    ],
    "cli_entry": "python qlib_meta_learning.py <list_models|run_selection|create_ensemble|tune_hyperparameters|get_results> '<json>'",
    "relevance_note": "Picks the best of many models and hyperparameter trials on a single holdout without correcting for the number of trials, which is classic selection bias.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Selección de modelos, ensambles y ajuste de hiperparámetros con modelos de sklearn y de boosting. Si no se proporcionan datos, recurre a datos sintéticos aleatorios."
   },
   {
    "path": "fincept-qt/scripts/ai_quant_lab/qlib_online_learning.py",
@@ -2375,7 +2499,8 @@
    ],
    "cli_entry": "python qlib_online_learning.py <initialize|create_model|train|predict|performance|setup_rolling|handle_drift|list_models> '<json>'",
    "relevance_note": "Handles changing markets only in name: handle_concept_drift either resets the model or just returns a message ('adaptive'). There is no drift detector and no regime model.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Aprendizaje incremental con River (lineal, árboles Hoeffding/adaptativos, random forest adaptativo, bagging, EWA, SRP), programación de actualizaciones móviles y un manejador de concept drift."
   },
   {
    "path": "fincept-qt/scripts/ai_quant_lab/qlib_portfolio_opt.py",
@@ -2393,7 +2518,8 @@
    ],
    "cli_entry": "python qlib_portfolio_opt.py <black_litterman|hierarchical_risk_parity|minimum_variance|maximum_sharpe|efficient_frontier> '<json>'",
    "relevance_note": "Covers Markowitz, Black-Litterman and HRP from the literature, but uses the sample covariance with no Ledoit-Wolf shrinkage and no comparison against a 1/N benchmark.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Optimizadores de portafolio construidos sobre scipy: Black-Litterman, Hierarchical Risk Parity, mínima varianza, máximo Sharpe y frontera eficiente."
   },
   {
    "path": "fincept-qt/scripts/ai_quant_lab/qlib_reporting.py",
@@ -2412,7 +2538,8 @@
    ],
    "cli_entry": "python qlib_reporting.py <check_status|ic_analysis|cumulative_returns|risk_report|model_performance|factor_quantiles> '<json>'",
    "relevance_note": "Labels signals with rule-of-thumb verdicts on raw IC (ICIR>=0.75 is 'STRONG') without any significance or multiple-testing correction.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Reportes sobre arreglos planos: análisis de IC e IC de rango con veredictos, rendimientos acumulados contra un benchmark, un reporte de riesgo con drawdown/VaR/CVaR/volatilidad móvil, desempeño del modelo, y spreads y monotonicidad por cuantil de factores."
   },
   {
    "path": "fincept-qt/scripts/ai_quant_lab/qlib_rl.py",
@@ -2431,7 +2558,8 @@
    ],
    "cli_entry": "python qlib_rl.py <list_algorithms|initialize|create_env|train|evaluate|save_model|load_model> '<json>'",
    "relevance_note": "Charges a proportional commission (default 10bp) inside the reward, but runs on a single asset and evaluates with episodes that have no separate out-of-sample period.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Entorno de trading de Gym y agentes de RL de stable-baselines (PPO, DQN, A2C, SAC, TD3) sobre OHLCV de yfinance, con una comisión proporcional."
   },
   {
    "path": "fincept-qt/scripts/ai_quant_lab/qlib_rolling_retraining.py",
@@ -2450,7 +2578,8 @@
    ],
    "cli_entry": "python qlib_rolling_retraining.py <list|create|preview|retrain|delete> '<json>'",
    "relevance_note": "The closest thing in the area to walk-forward out-of-sample validation (rolling step=20, horizon=20), but it has no purging or embargo and does not estimate the probability of backtest overfitting.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Programador de reentrenamiento walk-forward construido sobre Qlib Rolling, con una plantilla integrada LightGBM + Alpha158 y ventanas de step/horizon, que transmite el progreso de cada ventana."
   },
   {
    "path": "fincept-qt/scripts/ai_quant_lab/qlib_service.py",
@@ -2471,7 +2600,8 @@
    ],
    "cli_entry": "python qlib_service.py <check_status|train_model|predict|run_backtest|get_factor_analysis|...> '<json>'",
    "relevance_note": "This is the only engine in the area that subtracts costs from returns (net = return - cost; 5bp to open, 15bp to close, min 5, 9.5% limit). But train_model sets the test segment equal to the validation segment, and get_factor_analysis ranks the top-N Alpha158 factors by |IC| without any multiple-testing adjustment.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Envuelve Microsoft Qlib: data handlers Alpha158/Alpha360, unos 15 modelos de ML de Qlib (LightGBM, XGBoost, CatBoost, lineal, LSTM, GRU, ALSTM, Transformer, TCN, ADARNN, HIST, TabNet, SFM), además de entrenamiento, predicción, un backtest diario TopkDropout y análisis de IC de factores."
   },
   {
    "path": "fincept-qt/scripts/ai_quant_lab/qlib_strategy.py",
@@ -2490,7 +2620,8 @@
    ],
    "cli_entry": "python qlib_strategy.py <create_topk_dropout|create_enhanced_indexing|create_weight_strategy|create_risk_parity|create_mean_variance|portfolio_metrics> '<json>'",
    "relevance_note": "Implements risk-parity and Markowitz weights for ML score portfolios, but calculate_portfolio_metrics is gross: no turnover or cost terms.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Construye configuraciones de estrategia: TopK-dropout, indexación mejorada, basada en pesos, paridad de riesgo (contribución de riesgo igual) y media-varianza, y calcula métricas del portafolio."
   },
   {
    "path": "fincept-qt/scripts/akshare_funds_expanded.py",
@@ -2508,7 +2639,8 @@
    ],
    "cli_entry": "python akshare_funds_expanded.py <command> [args]",
    "relevance_note": "Supplies NAV and fee data from which active-fund vs index (SPIVA-like) comparisons could be computed. No such persistence or survivorship analysis exists in this area.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "ExpandedFundsWrapper para fondos de inversión y ETFs chinos: panorama general, comisiones, historiales de NAV, historial de ETFs y calificaciones de fondos (Shanghai, Zhishu, JiAn)."
   },
   {
    "path": "fincept-qt/scripts/akshare_index.py",
@@ -2525,7 +2657,8 @@
    ],
    "cli_entry": "python akshare_index.py <command> [args]",
    "relevance_note": "Provides non-US implied-volatility fear gauges analogous to VIX, as data only.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Wrapper de índices de AKShare que incluye índices de volatilidad de opciones de China (QVIX de 50ETF, 300ETF y 500ETF) y otras series de índices."
   },
   {
    "path": "fincept-qt/scripts/akshare_misc.py",
@@ -2545,7 +2678,8 @@
    ],
    "cli_entry": "python akshare_misc.py <command> [args]",
    "relevance_note": "The only Fama-French factor download found in this area (via AKShare), plus realized-vol and EPU series. Nothing in the agents area runs factor regressions or alpha t-stats with them.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "MiscWrapper sobre datos misceláneos de AKShare, incluidos article_epu_index (Economic Policy Uncertainty), article_ff_crr (factores CRR de Fama-French) y series de volatilidad realizada de Oxford-Man/RLab."
   },
   {
    "path": "fincept-qt/scripts/akshare_stocks_margin.py",
@@ -2564,7 +2698,8 @@
    ],
    "cli_entry": "python akshare_stocks_margin.py <command> [args]",
    "relevance_note": "Gives China leverage and short-selling balances and foreign-flow series (retail/margin sentiment proxies). The data is fetched but never tested as a predictor.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Wrapper de AKShare para saldos y detalles de financiamiento con margen y préstamo de valores en SSE/SZSE, información de cuentas de margen, e historiales, rankings y tenencias de los flujos northbound de HSGT (Stock Connect)."
   },
   {
    "path": "fincept-qt/scripts/bcb_data.py",
@@ -2583,7 +2718,8 @@
    ],
    "cli_entry": "python bcb_data.py <command> [args]",
    "relevance_note": "This is the only dedicated LatAm central-bank feed (Brazil). No equivalent Banxico or INEGI wrapper exists for Mexico.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "BCBWrapper para la API SGS del Banco Central do Brasil: Selic, IPCA, IGP-M, PTAX USD/BRL y EUR/BRL, agregados monetarios, PIB, desempleo, crédito y reservas."
   },
   {
    "path": "fincept-qt/scripts/cboe_data.py",
@@ -2602,7 +2738,8 @@
    ],
    "cli_entry": "python cboe_data.py <command> [args]",
    "relevance_note": "Supplies options chains and the VX futures curve, the raw inputs for put/call, skew and term-structure sentiment measures that are not computed here.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "CBOEDataAPI para cotizaciones e históricos de acciones e índices, componentes de índices, curva de futuros VX y cadenas de opciones completas."
   },
   {
    "path": "fincept-qt/scripts/cboe_vix_data.py",
@@ -2621,7 +2758,8 @@
    ],
    "cli_entry": "python cboe_vix_data.py <history|current|indices|term_structure|data> [args]",
    "relevance_note": "Primary source of implied-volatility and fear-gauge series. It does not compute a variance risk premium (VIX minus realized vol) or VIX-based timing signals.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Descarga históricos de índices de CBOE (VIX, VIX3M, VVIX, SKEW, VXN, GVZ, OVX, etc.) desde el CDN de CBOE y arma una instantánea de la estructura temporal del VIX."
   },
   {
    "path": "fincept-qt/scripts/cftc_data.py",
@@ -2640,7 +2778,8 @@
    ],
    "cli_entry": "python cftc_data.py <cot_data|market_sentiment|position_summary|cot_historical_trend|...> [args]",
    "relevance_note": "Provides speculator vs commercial positioning in futures as a sentiment/positioning predictor. analyze_market_sentiment is descriptive (long % of OI), with no return test.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "CFTCDataWrapper para los reportes Commitments of Traders (legacy/desagregados, incluidos los futuros del VIX) con un análisis de sentimiento de mercado basado en el posicionamiento y la tendencia histórica."
   },
   {
    "path": "fincept-qt/scripts/compute_technicals.py",
@@ -2657,7 +2796,8 @@
    ],
    "cli_entry": "python compute_technicals.py <historical_json | file>",
    "relevance_note": "Produces indicator values only (MA, RSI, etc.), with no trading-rule backtest, cost netting or data-snooping control over the indicator set.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Calcula indicadores técnicos de tendencia, momentum, volatilidad y volumen sobre JSON de OHLCV usando el paquete scripts/technicals."
   },
   {
    "path": "fincept-qt/scripts/federal_reserve_data.py",
@@ -2676,7 +2816,8 @@
    ],
    "cli_entry": "python federal_reserve_data.py <federal_funds_rate|sofr_rate|treasury_rates|yield_curve|...> [args]",
    "relevance_note": "Supplies the term-structure inputs for yield-curve recession and timing signals, but no module turns them into a term-spread predictor or a regime state.",
-   "area": "critic"
+   "area": "critic",
+   "summary_es": "CLI FederalReserveWrapper para datos de la Reserva Federal y de la Fed de Nueva York: fed funds, SOFR, OBFR, tasas del Tesoro, la curva de rendimiento H.15, medidas monetarias y tenencias SOMA."
   },
   {
    "path": "fincept-qt/scripts/finnhub_data.py",
@@ -2696,7 +2837,8 @@
    ],
    "cli_entry": "python finnhub_data.py <command> [args]",
    "relevance_note": "Feeds company news text and earnings-announcement dates (an event-calendar input), but computes no signal itself.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Wrapper de Finnhub para cotizaciones, perfil de la empresa, estados financieros, calendario de reportes de resultados, noticias de la empresa y velas de FX y cripto."
   },
   {
    "path": "fincept-qt/scripts/fred_data.py",
@@ -2715,7 +2857,8 @@
    ],
    "cli_entry": "python fred_data.py <command> [args]",
    "relevance_note": "Can pull any Goyal-Welch-style predictor available on FRED (and FRED's Mexico series by ID), but holds no predictor set or timing model.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Cliente genérico de la API de FRED para cualquier serie, búsqueda, categorías, fechas de publicación y descargas de múltiples series."
   },
   {
    "path": "fincept-qt/scripts/fred_economic_data.py",
@@ -2735,7 +2878,8 @@
    ],
    "cli_entry": "python fred_economic_data.py <yield_curve|money_supply|credit|stress|sentiment|pce> [start] [end]",
    "relevance_note": "Main source of classic macro predictors (term spread, credit, stress, sentiment) used in equity-premium and recession studies. It only fetches them and has no predictive regression or out-of-sample R^2.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Descargador extendido de FRED para la curva de rendimiento del Tesoro y los spreads 10y-2y y 10y-3m, oferta monetaria, condiciones de crédito, índices de estrés financiero (STLFSI, NFCI, VIXCLS, MOVE, TED), confianza del consumidor (UMich, Conference Board) e inflación PCE."
   },
   {
    "path": "fincept-qt/scripts/iadb_data.py",
@@ -2753,7 +2897,8 @@
    ],
    "cli_entry": "python iadb_data.py <command> [args]",
    "relevance_note": "Provides development and economic indicators for Mexico and LatAm, but no market (equity index, rates curve) data.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Cliente del Banco Interamericano de Desarrollo para proyectos de América Latina y el Caribe, indicadores por país, desembolsos, sectores y países."
   },
   {
    "path": "fincept-qt/scripts/investing_calendar_data.py",
@@ -2771,7 +2916,8 @@
    ],
    "cli_entry": "python investing_calendar_data.py <command> [args]",
    "relevance_note": "Provides event dates (macro releases such as FOMC, earnings) needed for event and calendar studies, but no day-of-week, turn-of-month or pre-FOMC return analysis is implemented.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Calendarios de Investing.com (económico, de resultados, de IPO, de dividendos, de splits y de bonos) con Trading Economics como respaldo."
   },
   {
    "path": "fincept-qt/scripts/multpl_data.py",
@@ -2791,7 +2937,8 @@
    ],
    "cli_entry": "python multpl_data.py <get_series|get_shiller_pe|get_dividend_yield|get_earnings_yield|get_valuation_overview|...> [args]",
    "relevance_note": "Supplies the CAPE and dividend-yield predictors central to market-timing literature. It is scraped (not vintage or point-in-time) and is US-only.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "MULTPLDataFetcher que extrae por scraping series del S&P 500 de multpl.com: CAPE de Shiller, P/E, rendimiento por dividendo, rendimiento de utilidades, P/B, P/S, crecimiento de utilidades y de dividendos, y precios reales."
   },
   {
    "path": "fincept-qt/scripts/nber_data.py",
@@ -2809,7 +2956,8 @@
    ],
    "cli_entry": "python nber_data.py <cycles|recession|macro|datasets|cps|unemployment> [args]",
    "relevance_note": "Provides hard-coded US recession labels usable as ground truth for regime and recession models. It contains no model, and its labels are revised ex post (look-ahead risk if used as a predictor).",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Tabla de picos y valles del ciclo económico del NBER desde 1857, un indicador mensual de recesión, y datos de macrohistoria, de la CPS y de desempleo."
   },
   {
    "path": "fincept-qt/scripts/news_correlation.py",
@@ -2828,7 +2976,8 @@
    ],
    "cli_entry": "python news_correlation.py <detect_signals|compute_instability|baseline_update|detect_deviations|focal_points> <json args>",
    "relevance_note": "Generates news-event signals from count thresholds (e.g. 3x volume, 5+ mentions), with no statistical test of whether they predict returns.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Motor de correlación de noticias que detecta picos de velocidad, picos de palabras clave, triangulación, convergencia geográfica y señales de noticias que se adelantan a los mercados, además de un Country Instability Index y seguimiento de desviaciones respecto a la línea base."
   },
   {
    "path": "fincept-qt/scripts/news_nlp.py",
@@ -2847,7 +2996,8 @@
    ],
    "cli_entry": "python news_nlp.py <extract_entities|cluster_semantic|analyze_sentiment_batch> <json_headlines>",
    "relevance_note": "This is the main text-sentiment signal generator: a dictionary/VADER method, not an LLM or FinBERT. Labels use fixed +/-0.15 thresholds with no link to subsequent returns.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Pipeline de NLP de noticias: extracción de entidades de país y ticker, agrupamiento semántico de titulares por similitud coseno con TF-IDF, y sentimiento por lotes con VADER ajustado a finanzas o un léxico de palabras clave como respaldo, que etiqueta BULLISH/BEARISH/NEUTRAL."
   },
   {
    "path": "fincept-qt/scripts/oecd_data.py",
@@ -2867,7 +3017,8 @@
    ],
    "cli_entry": "python oecd_data.py <command> [args]",
    "relevance_note": "One of the few paths to Mexico macro series (via a country-code map, as also in imf_data.py and econdb_data.py), usable as macro predictors. It provides no Mexico-specific analytics.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "OECDWrapper (SDMX v1/v2) para PIB real, CPI, pronósticos de PIB, desempleo, tasas de interés y balanza comercial por país, con 'mexico' mapeado a MEX."
   },
   {
    "path": "fincept-qt/scripts/optimize_portfolio_weights.py",
@@ -2885,7 +3036,8 @@
    ],
    "cli_entry": "echo '{\"symbols\":[...],\"method\":\"max_sharpe\"}' | python optimize_portfolio_weights.py",
    "relevance_note": "Uses sample mean and covariance with no shrinkage. 'hrp' is an inverse-variance proxy rather than true hierarchical clustering, BL uses an equal-weight prior, and there is no out-of-sample or turnover/cost comparison against 1/N.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Optimizador de portafolio con SciPy sobre rendimientos de yfinance que soporta max_sharpe, min_volatility, risk_parity, equal_weight (1/N), hrp, target_return y black_litterman, además de una frontera eficiente de 40 puntos y una comparación de todos los métodos."
   },
   {
    "path": "fincept-qt/scripts/polymarket_quant_bot.py",
@@ -2904,7 +3056,8 @@
    ],
    "cli_entry": "python polymarket_quant_bot.py",
    "relevance_note": "The clearest Kelly implementation (half-Kelly) and the only module that scores its probability forecasts with a proper score (Brier), a template for measuring decision effectiveness.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Bot independiente de paper trading para Polymarket: una estimación de probabilidad con filtro de partículas y Monte Carlo, detección de ventaja (edge) frente al precio de mercado, dimensionamiento con medio Kelly, un rastreador del Brier score y un gestor de riesgo."
   },
   {
    "path": "fincept-qt/scripts/quantstats_analysis.py",
@@ -2920,7 +3073,8 @@
    ],
    "cli_entry": "echo '{\"symbols\":[...],\"weights\":[...]}' | python quantstats_analysis.py",
    "relevance_note": "Reports a raw gross Sharpe with no PSR/DSR, no autocorrelation adjustment and no cost netting. Deflated Sharpe exists only elsewhere (Analytics/backtesting/vectorbt/vbt_returns.py).",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Calcula estadísticas de desempeño del portafolio (rendimiento y volatilidad anuales, Sharpe y Sortino con una rf fija de 4%, Calmar, drawdown máximo, VaR/CVaR al 95%) a partir de precios de yfinance y pesos dados."
   },
   {
    "path": "fincept-qt/scripts/quantstats_monte_carlo.py",
@@ -2937,7 +3091,8 @@
    ],
    "cli_entry": "echo '{\"symbols\":[...],\"weights\":[...],\"num_simulations\":1000}' | python quantstats_monte_carlo.py",
    "relevance_note": "Wealth Monte Carlo under i.i.d. normal (GBM) returns estimated from a short 2-year window, which understates fat tails and parameter uncertainty for long-horizon risk.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Ajusta un GBM a dos años de rendimientos diarios del portafolio y simula trayectorias a 1 año, y reporta la mediana y los percentiles 5 y 95 de los rendimientos, la probabilidad de pérdida y el drawdown máximo esperado."
   },
   {
    "path": "fincept-qt/scripts/relationship_map.py",
@@ -2955,7 +3110,8 @@
    ],
    "cli_entry": "python relationship_map.py <TICKER>",
    "relevance_note": "The only short-interest source found: a current yfinance snapshot, with no historical short-interest series (no FINRA feed) that could support a short-interest anomaly test.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Obtiene de yfinance un paquete de inteligencia corporativa para un ticker: gobierno corporativo, tenedores, pares, calendario de resultados, indicadores técnicos, múltiplos de valor empresa e interés en corto (sharesShort, shortRatio, shortPercentOfFloat)."
   },
   {
    "path": "fincept-qt/scripts/strategies/BlackLittermanPortfolioOptimizationFrameworkAlgorithm.py",
@@ -2972,7 +3128,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "In fincept_engine the Black-Litterman, mean-variance and risk-parity models are stubs (1/N or no-op), so these strategies do not perform the optimisation their names describe.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "HistoricalReturnsAlphaModel más construcción de portafolio Black-Litterman con UnconstrainedMeanVariancePortfolioOptimizer (MeanVarianceOptimizationFrameworkAlgorithm y RiskParityPortfolioAlgorithm son similares)."
   },
   {
    "path": "fincept-qt/scripts/strategies/CapmAlphaRankingFrameworkAlgorithm.py",
@@ -2989,7 +3146,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Ranks raw in-sample CAPM alphas with no t-statistics, and the regression is inverted (benchmark regressed on the stock). It works through a universe-selection model that the engine never runs.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Cada mes elige las dos acciones del Dow 30 con el intercepto OLS más alto de una regresión contra SPY."
   },
   {
    "path": "fincept-qt/scripts/strategies/CoarseFineFundamentalComboAlgorithm.py",
@@ -3006,7 +3164,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Sorts for the highest P/E, a growth tilt that is the opposite of value (HML). Fundamentals in fincept_engine default to 0, so the selection means nothing there.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "El filtro grueso conserva las top-N acciones por volumen en dólares; el filtro fino ordena por P/E de forma descendente y mantiene los primeros nombres."
   },
   {
    "path": "fincept-qt/scripts/strategies/CustomModelsAlgorithm.py",
@@ -3024,7 +3183,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Shows the intended cost hooks, but fincept_engine.market_order never calls get_order_fee or get_slippage_approximation (VolumeShareSlippageModelAlgorithm has the same problem).",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Muestra modelos personalizados de ejecución (fill), comisión (1 pb, mínimo $1), slippage (logaritmo de la cantidad) y poder de compra."
   },
   {
    "path": "fincept-qt/scripts/strategies/CustomVolatilityModelAlgorithm.py",
@@ -3041,7 +3201,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "The only volatility estimator among the strategies: simple historical volatility, no GARCH, and no exposure scaled to a volatility target.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Modelo de volatilidad personalizado: desviación estándar anualizada sobre una ventana móvil, asociado a un instrumento."
   },
   {
    "path": "fincept-qt/scripts/strategies/ETFGlobalRotationAlgorithm.py",
@@ -3060,7 +3221,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "A dual-momentum (relative plus absolute) rotation in which ILF (Latin America 40) is the only Latin American exposure. No skip-month and no costs.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Rotación mensual hacia el mejor de MDY, IEV, EEM, ILF, EPP, EDV y SHY según el momentum ponderado de 1 y 3 meses; se queda en efectivo cuando la mejor puntuación es 0 o menor."
   },
   {
    "path": "fincept-qt/scripts/strategies/FuturesMomentumAlgorithm.py",
@@ -3077,7 +3239,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Trend following on a single market, not diversified multi-asset time-series momentum (Moskowitz-Ooi-Pedersen), and with no volatility scaling.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Usa un cruce de EMA sobre SPY para ir largo o corto en el futuro E-mini del S&P 500 del mes más cercano."
   },
   {
    "path": "fincept-qt/scripts/strategies/KerasNeuralNetworkAlgorithm.py",
@@ -3094,7 +3257,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "A neural net on price levels of a few symbols. Under fincept_engine, history() returns a synthetic ramp, so the trained model proves nothing.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Entrena una red de Keras con 30 días de precios de apertura para predecir la siguiente apertura y opera según la predicción (PytorchNeuralNetworkAlgorithm y TensorFlowNeuralNetworkAlgorithm son similares)."
   },
   {
    "path": "fincept-qt/scripts/strategies/MovingAverageCrossAlgorithm.py",
@@ -3111,7 +3275,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "One of the few strategies that trade through on_data and so actually trade in the fincept runner. It fills at the close of the signal bar with zero fees.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Cruce clásico de EMA de 15/30 días sobre SPY, en largo o fuera del mercado, con una pequeña banda de tolerancia (MACDTrendAlgorithm y DisplacedMovingAverageRibbon son similares)."
   },
   {
    "path": "fincept-qt/scripts/strategies/NLTKSentimentTradingAlgorithm.py",
@@ -3127,7 +3292,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "A toy keyword-sentiment rule: no LLM, no finance word list (such as Loughran-McDonald) and no out-of-sample evaluation.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Descarga un CSV de titulares de noticias económicas, lo tokeniza con NLTK y compra o liquida SPY según aparezca 'Up' o 'Down'."
   },
   {
    "path": "fincept-qt/scripts/strategies/_registry.py",
@@ -3141,7 +3307,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "A large menu of mostly ported QuantConnect demo and regression algorithms. Picking the best one by backtest invites selection bias, and no count of trials is kept.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Índice autogenerado de 418 estrategias identificadas por ids FCT: 86 de opciones, 80 pruebas de regresión, 64 generales, 30 de selección de universo, 25 modelos alfa y otras."
   },
   {
    "path": "fincept-qt/scripts/strategies/alphas",
@@ -3160,7 +3327,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "13 of 14 explicitly set ConstantFeeModel(0), and all depend on AlphaModels that the fincept engine never runs, so as run here they produce no evidence.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "14 adaptaciones de la Benchmark Alpha Series de QuantConnect: Greenblatt, default de Merton, IBS, reversión en la hora de la comida, reversión intradía de FX, gas-crudo, volatilidad de la tasa hipotecaria, gap de precio, rebalanceo y decaimiento de ETFs apalancados, clase de acciones, microcaps de Sykes, arbitraje triangular de FX y dual thrust sobre el VIX."
   },
   {
    "path": "fincept-qt/scripts/strategies/alphas/ContingentClaimsAnalysisDefaultPredictionAlpha.py",
@@ -3179,7 +3347,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "A distress-risk signal related to the 'safety' leg of QMJ. The comment says it takes the smallest 750 names, but the code takes the top 750 by dollar volume. The default threshold is arbitrary and fees are zero.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Calcula una probabilidad de incumplimiento de Merton por derechos contingentes, N(-d2), a partir de fundamentales y emite insights 'down' para los probables incumplidores."
   },
   {
    "path": "fincept-qt/scripts/strategies/alphas/GlobalEquityMeanReversionIBSAlpha.py",
@@ -3195,7 +3364,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Includes Latin American ETFs (ECH, EWZ, GXG, ILF) but not the Mexico ETF EWW; EWM is listed three times, likely in its place. So there is no Mexico-specific exposure. A daily reversal strategy run with zero fees.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Clasifica unos 32 ETFs de acciones de países y regiones por el Internal Bar Strength del día anterior: largo en el más bajo y corto en el más alto."
   },
   {
    "path": "fincept-qt/scripts/strategies/alphas/GreenblattMagicFormulaAlpha.py",
@@ -3214,7 +3384,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "The area's only combined value and profitability screen and its only size filter (>$500M). But it sorts EV/EBITDA descending and ROA ascending, which picks expensive, low-ROA stocks, the opposite of the Magic Formula. It also uses zero fees, and fundamentals in fincept_engine are zero placeholders.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Universo mensual al estilo QC500 (EE. UU., NYSE/NASDAQ, más de 180 días listado, capitalización de mercado mayor a $500M) clasificado por EV/EBITDA y luego por ROA prospectivo."
   },
   {
    "path": "fincept-qt/scripts/strategies/alphas/MeanReversionLunchBreakAlpha.py",
@@ -3231,7 +3402,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Captures intraday time-of-day seasonality only. The area has no day-of-week, turn-of-month or FOMC tests.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Clasifica 20 ETFs por su rendimiento desde el cierre anterior hasta el mediodía y predice reversión a la media durante la hora de la comida."
   },
   {
    "path": "fincept-qt/scripts/strategies/alphas/MortgageRateVolatilityAlpha.py",
@@ -3248,7 +3420,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "The area's only market-timing rule driven by a macro variable. It has no out-of-sample R² test against the historical mean (Welch-Goyal).",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Usa las desviaciones y la volatilidad de la tasa hipotecaria a 30 años de Quandl para hacer timing de ETFs inmobiliarios."
   },
   {
    "path": "fincept-qt/scripts/strategies/alphas/SykesShortMicroCapAlpha.py",
@@ -3267,7 +3440,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Deliberately trades microcaps with zero fees and no borrow cost. That is exactly the setup in which published anomalies disappear once costs are subtracted and microcaps excluded.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Cada mes vende en corto las 10 acciones con mayor alza en un día entre las penny stocks de menos de $5 con volumen diario de entre 10k y 1M."
   },
   {
    "path": "fincept-qt/scripts/strategies/alphas/VIXDualThrustAlpha.py",
@@ -3286,7 +3460,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "A comment in the source says the parameters were chosen because they 'gave acceptable results on a series of random backtests'. That is textbook data snooping, and no haircut is applied.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Alfa de ruptura de rango dual-thrust que opera UVXY (un producto de futuros del VIX) sobre barras consolidadas, con k1=k2=0.63 y un rango de 20 barras."
   },
   {
    "path": "fincept-qt/scripts/strategies/fincept_engine/algorithm.py",
@@ -3306,7 +3481,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Orders fill instantly at the current bar price with zero fee; fee and slippage models are stored but never used. history() returns a synthetic linear price ramp, MVO and Black-Litterman models return 1/N weights, and models passed to set_alpha or set_portfolio_construction are never run (emit_insights does nothing).",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Shim de QCAlgorithm compatible con QuantConnect LEAN (órdenes, posiciones, historial, programación), además de modelos stub del framework (ConstantAlpha, EqualWeighting, construcción de portafolio MeanVariance/Black-Litterman, modelos de ejecución y de riesgo por drawdown)."
   },
   {
    "path": "fincept-qt/scripts/strategies/fincept_engine/algorithm_imports.py",
@@ -3325,7 +3501,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "The default FeeModel returns 0, and VolumeShareSlippageModel, MarketImpactSlippageModel and RiskParityPortfolioConstructionModel are empty stubs. So LEAN strategies that model costs or use risk parity run here with no costs and no actual optimisation.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Capa de compatibilidad de stubs y alias para los imports de QuantConnect LEAN, incluidos FeeModel, ConstantFeeModel, SlippageModel, VolumeShareSlippageModel, MarketImpactSlippageModel y los modelos de construcción de portafolio RiskParity/MeanReversion."
   },
   {
    "path": "fincept-qt/scripts/strategies/fincept_engine/framework/portfolio_construction.py",
@@ -3340,7 +3517,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Any 'mean-variance' or 'Black-Litterman' strategy using this optimiser actually holds 1/N, which happens to be the DeMiguel naive benchmark.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Stub de UnconstrainedMeanVariancePortfolioOptimizer cuyo optimize() devuelve pesos iguales."
   },
   {
    "path": "fincept-qt/scripts/technicals",
@@ -3358,7 +3536,8 @@
    ],
    "cli_entry": "python technicals/technical_analysis.py <yfinance <symbol> [period] [categories]|csv <file>|json '<data>'>",
    "relevance_note": "Computes indicators only. There is no trading rule, no backtest and no test of whether technical rules are profitable or survive data-snooping correction.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Wrappers sobre la biblioteca ta para unos 45 indicadores: momentum (RSI, estocástico, Williams %R, ROC, TSI, KAMA, PPO), volumen (OBV, CMF, MFI, VWAP), volatilidad, tendencia y rendimientos, además de un cargador CLI para yfinance/CSV/JSON."
   },
   {
    "path": "fincept-qt/scripts/technicals/trend_indicators.py",
@@ -3377,7 +3556,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Supplies the moving-average trend signals used in the MA-rule and trend-following literature, but has no position or performance logic.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Indicadores de tendencia: SMA, EMA, WMA, MACD, TRIX, Mass Index, Ichimoku, KST, DPO, CCI, ADX, Vortex, PSAR, STC y Aroon."
   },
   {
    "path": "fincept-qt/scripts/technicals/volatility_indicators.py",
@@ -3396,7 +3576,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Donchian channels allow breakout (turtle) rules and ATR allows volatility-scaled sizing, but nothing in the area uses them for vol targeting or a breakout backtest.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Indicadores de volatilidad: ATR, Bandas de Bollinger, Canal de Keltner, Canal de Donchian y Ulcer Index."
   },
   {
    "path": "fincept-qt/scripts/vision_quant/backtester.py",
@@ -3414,7 +3595,8 @@
    ],
    "cli_entry": "python vision_quant/backtester.py backtest '{\"symbol\":\"AAPL\",\"start\":\"20230101\",\"end\":\"20250101\",\"capital\":100000}'",
    "relevance_note": "A gross backtest: no commissions or slippage, signal and fill on the same close, and a Sharpe ratio with no risk-free rate and no significance test.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Backtest de una sola acción, solo en largo, de una entrada MA60 + RSI + histograma del MACD, con salidas por stop-loss, take-profit, tenencia máxima y RSI, y una comparación contra buy-and-hold."
   },
   {
    "path": "fincept-qt/scripts/vision_quant/engine.py",
@@ -3433,7 +3615,8 @@
    ],
    "cli_entry": "python vision_quant/engine.py search '{\"symbol\":\"AAPL\",\"date\":\"20250115\",\"top_k\":10}'",
    "relevance_note": "A chart-pattern forecaster that works by finding similar past charts. Matches are not required to come before the query date, and the win rate has no significance test or cost adjustment.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Búsqueda de patrones en imágenes de velas: codifica imágenes de gráficas con un autoencoder con atención, busca con FAISS, reordena con DTW, correlación y rasgos de forma, y luego etiqueta cada coincidencia con una triple barrera para producir estadísticas de tasa de acierto."
   },
   {
    "path": "fincept-qt/scripts/vision_quant/models/triple_barrier.py",
@@ -3452,7 +3635,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Computes win rate and payoff ratio and labels them as Kelly inputs, but no Kelly fraction is computed or used anywhere in the area.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Etiquetador de triple barrera de López de Prado, un predictor que combina las etiquetas de los patrones coincidentes en probabilidades alcistas/bajistas, y un helper de razón ganancia/pérdida."
   },
   {
    "path": "fincept-qt/scripts/vision_quant/scorer.py",
@@ -3471,7 +3655,8 @@
    ],
    "cli_entry": "python vision_quant/scorer.py score '{\"symbol\":\"AAPL\",\"win_rate\":72.5,\"date\":\"20250115\"}'",
    "relevance_note": "An ad-hoc value (P/E) and profitability (ROE) screen with arbitrary cut-offs. It uses current yfinance fundamentals (look-ahead bias if applied to past dates) and has never been backtested.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Tarjeta de puntuación de 0 a 10 que suma puntos por tasa de acierto del patrón, puntos de P/E y ROE de yfinance y puntos técnicos de MA60/RSI/MACD, y luego emite BUY, WAIT o SELL."
   },
   {
    "path": "fincept-qt/scripts/vision_quant/setup_index.py",
@@ -3487,7 +3672,8 @@
    ],
    "cli_entry": "python vision_quant/setup_index.py build '{\"symbols\":[\"AAPL\",\"MSFT\"],\"start\":\"20200101\",\"stride\":5}'",
    "relevance_note": "The default universe is today's megacap winners (survivorship bias), and the model is trained on the same full history later searched for patterns.",
-   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi"
+   "area": "fincept-qt/scripts/ai_quant_lab, fincept-qt/scripts/strategi",
+   "summary_es": "Descarga OHLCV, genera imágenes de velas, entrena el AttentionCAE y construye el índice FAISS. El universo predeterminado es una lista de las 50 megacaps principales actuales del S&P 500."
   },
   {
    "path": "fincept-qt/scripts/yfinance_data.py",
@@ -3508,7 +3694,8 @@
    ],
    "cli_entry": "python yfinance_data.py <command> [args] (or daemon mode)",
    "relevance_note": "Feeds price and fundamental ratio inputs for momentum, value and quality across the terminal. It can fetch BMV tickers via the .MX suffix (mapped in src/ui/navigation/CommandBar_Assets.cpp) and ^MXX generically, but it is current-snapshot fundamentals with survivorship bias.",
-   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi"
+   "area": "fincept-qt/scripts/agents/ (Renaissance hedge-fund agent, fi",
+   "summary_es": "Script principal de datos de mercado (CLI de una sola ejecución y daemon con mensajes enmarcados) para cotizaciones, historial OHLCV, info, estados financieros, razones (P/E, P/B, ROE, margen bruto), noticias e historial de NAV del portafolio."
   },
   {
    "path": "fincept-qt/src/algo_engine/BacktestEngine.cpp",
@@ -3525,7 +3712,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Produces only GROSS backtests (no commission, slippage or spread). It is called by AlgoTradingService::run_backtest for the Algo Trading Strategy Builder.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Backtester nativo en C++, barra por barra, para estrategias de condiciones DSL. Las señales se disparan al cierre de la barra y se ejecutan en la siguiente apertura; maneja SL/TP/trailing stop y position_size_pct fijo, y reporta curva de capital, benchmark buy-and-hold, drawdown máximo, profit factor y Sharpe/Sortino/Calmar anualizados según la temporalidad."
   },
   {
    "path": "fincept-qt/src/algo_engine/IndicatorEngine.cpp",
@@ -3543,7 +3731,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Calculation core for the technical trading rules (moving-average crossovers, channel breakouts) that the literature tests.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Biblioteca nativa de indicadores en C++ que usan el algo engine y los scanners: SMA/EMA/WMA/DEMA/TEMA, RSI, MACD, Bollinger, Keltner, Donchian, SuperTrend, Ichimoku, ADX, Aroon, ATR, CCI, Stochastic, Williams %R, ROC, OBV, CMF, MFI e indicadores relacionados con VWAP."
   },
   {
    "path": "fincept-qt/src/mcp/tools/MAAnalyticsTools.cpp",
@@ -3564,7 +3753,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "The only route by which equity_risk_premium.py, business_cycle.py and active_management.py reach the app (MCP only). ma_skfolio_backtest exposes the gross skfolio_service backtest, with no costs and no trial adjustment.",
-   "area": "critic"
+   "area": "critic",
+   "summary_es": "Registra herramientas MCP que exponen la analítica en Python de MAAnalyticsService a agentes LLM: ma_black_litterman, ma_equity_risk_premium, ma_business_cycle, ma_am_information_ratio, las herramientas ma_skfolio_* (optimización, backtest, métricas de riesgo, prueba de estrés), y ma_ffn_*, ma_functime_* y ma_gs_*."
   },
   {
    "path": "fincept-qt/src/screens/ai_quant_lab/AIQuantLabScreen.cpp",
@@ -3582,7 +3772,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "The user-facing entry point to every ML, factor and Qlib capability in the repo.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Contenedor de la pantalla AI Quant Lab: una barra lateral agrupada en CORE/AI_ML/ADVANCED/ANALYTICS que crea un QuantModulePanel por módulo bajo demanda."
   },
   {
    "path": "fincept-qt/src/screens/ai_quant_lab/QuantModulePanel_AdvancedDisplays_Factors.cpp",
@@ -3600,7 +3791,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Marks a factor green when its IC p-value is below 0.05, a single-test threshold with no Bonferroni/Holm/BHY haircut. Turnover is shown but never netted against the long-short return.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Muestra la evaluación de factores (media del IC, ICIR, valor p, estadísticas por cuantil, Sharpe y rendimiento medio long-short, rotación media/mediana/máxima) y los resultados de strategy_builder (rotación esperada, métricas del portafolio)."
   },
   {
    "path": "fincept-qt/src/screens/ai_quant_lab/QuantModulePanel_Backtesting.cpp",
@@ -3617,7 +3809,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Costs appear as a separate estimate strip. The UI does not show net-of-cost Sharpe next to gross Sharpe.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Panel de backtest al estilo Qlib. La estrategia puede ser topk_dropout, weight_based o enhanced_indexing, con top-K y un benchmark de Yahoo. Muestra tarjetas de KPI, una gráfica de capital contra el benchmark y una franja de costos de ejecución (commission_bps y expected_slippage_bps)."
   },
   {
    "path": "fincept-qt/src/screens/ai_quant_lab/QuantModulePanel_DeepAgent.cpp",
@@ -3634,7 +3827,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "LLM agents that generate and test many candidate factors automatically, the highest data-snooping risk in the app, with no multiple-testing haircut on the discovered factors.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Pestañas de Deep Agent (LangGraph) y RD-Agent para tareas autónomas impulsadas por LLM de minería de factores, optimización de modelos e investigación cuantitativa."
   },
   {
    "path": "fincept-qt/src/screens/ai_quant_lab/QuantModulePanel_Fortitudo.cpp",
@@ -3649,7 +3843,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Mean-variance and CVaR portfolio construction, with exp-decay weights acting as a simple estimation-error mitigation.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Panel de Fortitudo: métricas del portafolio, covarianza, optimización media-varianza y media-CVaR, frontera eficiente y pesos de probabilidad con decaimiento exponencial."
   },
   {
    "path": "fincept-qt/src/screens/ai_quant_lab/QuantModulePanel_GS.cpp",
@@ -3666,7 +3861,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Risk and VaR/stress analytics plus a basic backtest, with no overfitting statistics.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Panel de GS Quant: métricas de riesgo, analítica de portafolio, griegas, análisis de VaR, pruebas de estrés, un backtest simple y estadísticas a través de gs_quant_service.py."
   },
   {
    "path": "fincept-qt/src/screens/ai_quant_lab/QuantModulePanel_HFT.cpp",
@@ -3680,7 +3876,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "The only UI that estimates market-impact/slippage from depth. It is standalone and not fed back into any backtest.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Panel HFT: libro de órdenes en vivo vía CCXT, cotizaciones de market making de Avellaneda-Stoikov, puntaje PIN de flujo tóxico y una estimación de slippage recorriendo el libro de órdenes."
   },
   {
    "path": "fincept-qt/src/screens/ai_quant_lab/QuantModulePanel_LiveLearning.cpp",
@@ -3699,7 +3896,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Rolling retraining works as walk-forward validation. Meta-learning model selection and hyperparameter tuning add trials that are never counted toward an overfitting adjustment.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Paneles de Live Signals (análisis de factores, importancia de features), Online Learning (concept drift), Meta Learning (selección de modelos/ensambles/ajuste de hiperparámetros) y Rolling Retraining (LightGBM+Alpha158 por defecto)."
   },
   {
    "path": "fincept-qt/src/screens/ai_quant_lab/QuantModulePanel_Misc.cpp",
@@ -3719,7 +3917,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Covers the Gu-Kelly-Xiu-style ML return-prediction and factor-zoo workflow. IC-based feature selection is a data-mining step with no false-discovery control.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Paneles de Factor Discovery, Model Library (LightGBM/XGBoost/LSTM/Transformer), Advanced Models, Feature Engineering (selección de features basada en IC, motor de expresiones), Portfolio Opt (Black-Litterman con capitalizaciones de mercado, HRP, paridad de riesgo), Factor Evaluation, Strategy Builder (TopK-Dropout) y Data Processors."
   },
   {
    "path": "fincept-qt/src/screens/ai_quant_lab/QuantModulePanel_QuantReporting.cpp",
@@ -3736,7 +3935,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Reports single-factor IC and quantile spreads, with no deflation for how many factors or models were tried.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Panel de Quant Reporting con cinco generadores de reportes: análisis de IC, rendimientos acumulados, reporte de riesgo, desempeño del modelo y cuantiles de factores (qlib_reporting.py)."
   },
   {
    "path": "fincept-qt/src/screens/ai_quant_lab/QuantModulePanel_Statsmodels.cpp",
@@ -3752,7 +3952,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Generic tools that could run predictive and factor regressions. The statsmodels_wrapper's multipletests/FDR functions are not exposed in this panel.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Panel de Statsmodels: OLS, ARIMA, estacionariedad ADF/KPSS, ACF/PACF, causalidad de Granger y estadística descriptiva."
   },
   {
    "path": "fincept-qt/src/screens/algo_trading/StrategyBuilderPanel.cpp",
@@ -3771,7 +3972,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Lets users iterate on rules against a single in-sample gross backtest, with no holdout, walk-forward or cost input. This invites data snooping.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Interfaz del Strategy Builder de Algo Trading. Los usuarios componen condiciones de indicadores de entrada/salida, cargan plantillas, ejecutan el backtest nativo en C++, ven los resultados y despliegan en vivo o en paper (incluidas patas de F&O)."
   },
   {
    "path": "fincept-qt/src/screens/alt_investments/AltInvestmentsScreen_Analysis.cpp",
@@ -3790,7 +3992,8 @@
    ],
    "cli_entry": "python Analytics/alternateInvestment/cli.py <analyzer> <json>",
    "relevance_note": "Covers the fund-fee-drag side of the active-management literature using hypothetical inputs. There is no mutual-fund persistence or SPIVA-style data.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Formularios de análisis para inversiones alternativas (hedge funds con hurdle rate, fondos de managed futures/CTA con comisiones de administración y de desempeño sobre el rendimiento bruto, market neutral, PE/VC, anualidades, notas estructuradas, ETFs apalancados, TIPS) que llaman a Analytics/alternateInvestment/cli.py."
   },
   {
    "path": "fincept-qt/src/screens/backtesting/BacktestingScreen_Commands.cpp",
@@ -3810,7 +4013,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Commission (default 0.1%) and slippage (default 0.05%) are sent only for backtest/optimize/walk_forward. No n_trials count is ever sent, so no deflated-Sharpe correction can be applied to optimizer results.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Construye los argumentos JSON de cada comando de backtesting a partir de los widgets de la UI: capital, % de comisión, % de slippage, apalancamiento, dimensionamiento de posición, stop/take-profit, benchmark, tasa libre de riesgo, paramRanges/maxIterations del optimizador, splits/proporción de entrenamiento del walk-forward, purge/embargo del splitter y parámetros de etiquetas."
   },
   {
    "path": "fincept-qt/src/screens/backtesting/BacktestingScreen_Layout.cpp",
@@ -3829,7 +4033,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "BacktestingScreen_Commands.cpp sends these defaults as commission and slippage for backtest, optimize and walk_forward, so runs on vectorbt, backtesting.py and bt from the UI include costs. The fincept provider still sets fees to zero, and there is no field for the number of trials or a deflated Sharpe.",
-   "area": "critic"
+   "area": "critic",
+   "summary_es": "Construye la pantalla de Backtesting: la lista de comandos (Backtest, Optimize, Walk-Forward, Indicators, ML Labels, CV Splits, Returns) y la sección de ejecución, cuyo spin box de comisión tiene 0.1% por defecto y el de slippage 0.05%."
   },
   {
    "path": "fincept-qt/src/screens/backtesting/BacktestingScreen_Results.cpp",
@@ -3846,7 +4051,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Shows out-of-sample walk-forward degradation and any metric Python returns, including vectorbt's 'deflatedSharpe'. That figure only adjusts for skew and kurtosis and does not account for the number of trials.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Muestra los resultados del proveedor: tarjetas de resumen, una tabla genérica clave/valor de métricas, operaciones, tablas de ventanas walk-forward (avgOosReturn, avgOosSharpe, robustnessScore, degradationRatio), folds de splits de CV y análisis de rendimientos."
   },
   {
    "path": "fincept-qt/src/screens/economics/panels",
@@ -3866,7 +4072,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Broad macro data coverage. Global Central Banks covers BOE/RBA/BoC/Riksbank/SNB/Norges/CNB/NBP/MNB/BNR/HNB/TCMB/BOI/BNM, BCB is the only Latin American central bank, and Mexico appears only as a country code in the IMF/EconDb/WorldBank/UN Comtrade selectors.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Unos 35 paneles de datos de la pantalla Economics (FRED, BEA, BLS, Census, Fed, ECB, Eurostat, ONS, IMF, World Bank, OECD, BIS, ADB, EconDb, Trading Economics, CFTC, NBER, BCB Brazil, Global Central Banks, UN Comtrade, WTO, EIA, etc.), cada uno de los cuales llama a su propio *_data.py."
   },
   {
    "path": "fincept-qt/src/screens/economics/panels/CftcPanel.cpp",
@@ -3884,7 +4091,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Positioning-sentiment data for futures. It is not linked to any TSMOM or sentiment-timing backtest.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Panel de Commitments of Traders de la CFTC con cot_data, market_sentiment y cot_historical_trend para más de 40 mercados de futuros, además de un widget de sentimiento."
   },
   {
    "path": "fincept-qt/src/screens/economics/panels/FredAnalyticsPanel.cpp",
@@ -3901,7 +4109,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Shows the yield curve and spreads, the inputs to recession and term-premium predictors, without a predictive model.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Vistas compuestas de datasets de FRED (curva de rendimiento, spreads y otras analíticas de múltiples series) a partir de fred_economic_data.py."
   },
   {
    "path": "fincept-qt/src/screens/economics/panels/NberPanel.cpp",
@@ -3917,7 +4126,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Source of recession dates for regime and business-cycle studies. It only displays them and does not condition returns on regimes.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Muestra los picos y valles de recesión de EE. UU. del NBER Business Cycle Dating Committee a partir de nber_data.py."
   },
   {
    "path": "fincept-qt/src/screens/equity_research/EquityValuationTab.cpp",
@@ -3936,7 +4146,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Firm-level quality and value scores for one ticker, with no cross-sectional ranking or portfolio sort.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Pestaña de valuación de una sola acción: DCF, múltiplos (EV/EBITDA, número de Graham) y puntajes Altman Z / Piotroski F / Beneish mediante endpoints de QuantLibClient como analysis/valuation/predictive/altman-z."
   },
   {
    "path": "fincept-qt/src/screens/portfolio/PortfolioFFNView.cpp",
@@ -3955,7 +4166,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Performance measurement against a benchmark, with no significance or alpha t-statistics.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Pestaña de analítica FFN: estadísticas generales, desempeño rebasado, drawdowns, métricas móviles, comparación contra el benchmark y resultados de optimización desde ffn_analysis.py."
   },
   {
    "path": "fincept-qt/src/screens/portfolio/views/CustomIndexView.cpp",
@@ -3974,7 +4186,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Lets users build fundamental- or inverse-vol-weighted indices (smart-beta style) without any factor-adjusted performance attribution.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Constructor de índices personalizados con ponderación por precio, por capitalización, igual (1/N), por flotante, fundamental, por factores, por volatilidad inversa (paridad de riesgo), geométrica y con tope, además del desempeño del índice."
   },
   {
    "path": "fincept-qt/src/screens/portfolio/views/EconomicsView.cpp",
@@ -3993,7 +4206,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Its macro factor betas are fixed constants, not estimated by regression, so they are not factor-model evidence.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Pestaña macro del portafolio: niveles macro de FRED vía EconomicsService (fred_data.py) y una 'sensibilidad del portafolio a factores' calculada con betas por sector fijas en el código frente a tasas/crecimiento/inflación/USD/petróleo, ponderadas por las posiciones."
   },
   {
    "path": "fincept-qt/src/screens/portfolio/views/PlanningView.cpp",
@@ -4011,7 +4225,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Runs a 2,000-path Monte Carlo of normal annual returns with monthly contributions and reports goal-success probability and p5/p50/p95 bands; no withdrawal phase, glide path or fat tails.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Planeador de retiro, ahorro y metas. Meta de capital (corpus) = gasto / tasa de retiro (4% por defecto), rendimiento real ajustado por inflación, y un Monte Carlo normal nativo de 2,000 corridas con semilla fija que da la riqueza p5/p50/p95 y la probabilidad de éxito."
   },
   {
    "path": "fincept-qt/src/screens/portfolio/views/PortfolioOptimizationView.cpp",
@@ -4029,7 +4244,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Matches the DeMiguel 1/N vs Markowitz, shrinkage, HRP and Black-Litterman literature. The comparison table is in-sample, with no out-of-sample test of whether optimised weights beat 1/N.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Interfaz de optimización de portafolio: Max Sharpe, Min Volatility, Risk Parity, Max Return, Equal Weight (1/N), HRP, Target Return, Black-Litterman. Las opciones de covarianza son Sample, Ledoit-Wolf, Semicovariance y Exponential. Las pestañas cubren frontera, comparación de métodos, asignación, estrés y backtest."
   },
   {
    "path": "fincept-qt/src/screens/portfolio/views/QuantStatsView.cpp",
@@ -4049,7 +4265,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Shows performance statistics, and Monte Carlo of wealth paths, for the user's actual holdings. It shows Sharpe-type metrics without deflation.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Pestaña de QuantStats: métricas (Sharpe, Sortino, CVaR), rendimientos, drawdowns, estadísticas móviles y un Monte Carlo GBM de 1,000 trayectorias de los rendimientos del portafolio."
   },
   {
    "path": "fincept-qt/src/screens/portfolio/views/RiskManagementView.cpp",
@@ -4066,7 +4283,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Risk decomposition and beta-based stress tests, descriptive only.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Pestaña de riesgo: panorama general (beta, VaR, CVaR), contribución al riesgo por posición, y escenarios de estrés históricos/hipotéticos predefinidos aplicados como choques a las acciones."
   },
   {
    "path": "fincept-qt/src/screens/quantlib/QuantLibScreen_Data.cpp",
@@ -4083,7 +4301,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "The only GARCH and HMM implementations reachable from C++, and they depend on a remote API rather than local code.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Catálogo de endpoints de la pantalla QuantLib, que hace POST a la API remota de Fincept ({api_base_url}/quantlib/...) mediante QuantLibClient. Cubre ajuste/pronóstico GARCH/EGARCH/GJR-GARCH, ARIMA, ajuste de HMM, changepoint, modelos de factores, Black-Litterman, paridad de riesgo, frontera eficiente, VaR/CVaR/EVT y cópulas."
   },
   {
    "path": "fincept-qt/src/screens/screener/ScreenerScreen.cpp",
@@ -4100,7 +4319,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Daily gainers/losers only. There are no value (P/B), quality (GP/A, ROE), 12-1 momentum screens and no market-cap or microcap filters.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Screener de pantalla completa sobre una canasta fija y amplia de large caps, filtrado por símbolo/nombre y ordenado por % de cambio, volumen o precio."
   },
   {
    "path": "fincept-qt/src/services/ai_quant_lab/AIQuantLabService.cpp",
@@ -4124,7 +4344,8 @@
    ],
    "cli_entry": "python ai_quant_lab/<qlib_service|qlib_advanced_backtest|qlib_evaluation|qlib_portfolio_opt|...>.py <command> <json>; python agents/rdagents/cli.py <start_factor_mining|...> <json>",
    "relevance_note": "The C++ entry point for Qlib-style ML cross-sectional prediction, Alpha158 factor mining, IC evaluation and rolling retraining. It only routes calls and adds no multiple-testing control.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Despachador de todos los módulos de AI Quant Lab. Llama a ai_quant_lab/qlib_*.py (service, advanced_backtest, rl, online/meta learning, rolling_retraining, feature_engineering, portfolio_opt, evaluation, strategy, data_processors, reporting, high_frequency), a los servicios Analytics/*_wrapper (gs_quant, statsmodels, functime, fortitudo, gluonts), a Analytics/quant_analytics_cli.py y a agents/rdagents|deepagents/cli.py."
   },
   {
    "path": "fincept-qt/src/services/ai_quant_lab/AIQuantLabTypes.h",
@@ -4142,7 +4363,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Authoritative map from screen module to Python script. It documents that the technical_indicators.py 'pattern_intelligence' module was removed because it returned synthetic random data.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Registro de los 22 módulos de AI Quant Lab, cada uno con la ruta de su script: factor_discovery, model_library, backtesting, live_signals, deep_agent, rl_trading, online/meta learning, hft, rolling_retraining, advanced_models, feature_engineering, portfolio_opt, factor_evaluation, strategy_builder, data_processors, quant_reporting, cfa_quant, gs_quant, statsmodels, functime, fortitudo, gluonts."
   },
   {
    "path": "fincept-qt/src/services/algo_trading/AlgoStrategyLibrary.h",
@@ -4158,7 +4380,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Single-asset technical rules with fixed SL/TP; its 'momentum' is indicator momentum, not cross-sectional WML or 12-1 time-series momentum.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Biblioteca curada de estrategias DSL en C++ precargada con ids LIB-*: Golden Cross, cruce de EMA, Triple EMA, SuperTrend, ADX, Ichimoku, ruptura de Donchian, momentum con RSI/MACD/Stochastic/CCI/Williams/ROC, ruptura y rebote con Bollinger/Keltner, y reglas de volumen OBV/CMF/MFI y de confluencia."
   },
   {
    "path": "fincept-qt/src/services/alpha_arena",
@@ -4176,7 +4399,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Live, cost-aware evaluation of LLM trading decisions. It is a forward test whose leaderboard has no significance testing.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Alpha Arena: agentes LLM compiten operando perpetuos de cripto en un PaperExchange (comisión taker de 4.5 pb, slippage de 2 pb, funding cada hora) o en un venue en vivo de Hyperliquid, con prompts construidos a partir de datos de mercado e indicadores."
   },
   {
    "path": "fincept-qt/src/services/backtesting/BacktestingService.cpp",
@@ -4196,7 +4420,8 @@
    ],
    "cli_entry": "python Analytics/backtesting/<vectorbt|bt|backtestingpy|fasttrade|zipline|fincept>/<provider>_provider.py <run_backtest|optimize|walk_forward|calculate_indicator|generate_labels|generate_splits|analyze_returns|...> <json>",
    "relevance_note": "This is the main path to the gross and net backtests: it forwards whatever commission and slippage the UI sends but does no cost netting or multiple-testing adjustment of its own.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Singleton que envía los comandos de la pantalla de Backtesting a Analytics/backtesting/{provider}/{provider}_provider.py mediante PythonRunner. Traduce los ids cortos de comandos de la UI (backtest, optimize, walk_forward, labels, splits, returns, indicator_sweep) a los nombres de Python, agrega velas de brokers indios para vectorbt y guarda en caché get_strategies/get_command_options."
   },
   {
    "path": "fincept-qt/src/services/backtesting/BacktestingTypes.h",
@@ -4217,7 +4442,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "Kelly and vol-target sizing and the PurgedKFold/walk-forward splitters appear only as option strings passed to Python. The optimizer picks the best in-sample Sharpe from grid/random search with no record of how many trials it ran.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Declara los proveedores de backtest y los comandos que muestra cada uno, además de listas de opciones de respaldo: dimensionamiento de posición (percent/fixed/kelly/vol_target/risk), objetivos de optimización (sharpe/sortino/calmar/return), búsqueda grid/random, tipos de etiquetas de ML, splitters (Rolling/Expanding/PurgedKFold) y los parsers de métricas y estrategias."
   },
   {
    "path": "fincept-qt/src/services/economics/EconomicsService.cpp",
@@ -4236,7 +4462,8 @@
    ],
    "cli_entry": "python <source>_data.py <command> <args...>",
    "relevance_note": "Data pipe for macro predictors and regime indicators. It fetches series but runs no predictive regression.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Despachador singleton que ejecuta los scripts de datos económicos (fred_data.py, nber_data.py, cftc_data.py, bcb_data.py, oecd_data.py, imf_datamapper_data.py, los *_data.py de bancos centrales, etc.) y publica los resultados en los tópicos de DataHub econ:<source>:<request_id>."
   },
   {
    "path": "fincept-qt/src/services/equity/EquitySentimentService.cpp",
@@ -4255,7 +4482,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "The main text-sentiment trading signal in the app (Equity Research). Its weights and thresholds are hard-coded, and its output is never scored against forward returns (no IC or hit-rate log).",
-   "area": "critic"
+   "area": "critic",
+   "summary_es": "Combina el sentimiento NLP de noticias por ticker (peso 0.5), una señal de precio/técnicos (0.3) y el sentimiento social de Adanos de MarketSentimentService (0.2), cada uno escalado por su confianza, en una etiqueta BULLISH, NEUTRAL o BEARISH con un umbral de +/-0.15."
   },
   {
    "path": "fincept-qt/src/services/ma_analytics/MAAnalyticsService.cpp",
@@ -4277,7 +4505,8 @@
    ],
    "cli_entry": "python Analytics/<module>.py <command> <json>",
    "relevance_note": "Active management (information ratio, tracking risk, manager selection), retirement planning, business-cycle and ERP estimators exist, but are reachable only through MCP tools (mcp/tools/MAAnalyticsTools.cpp) and not from any screen.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Despachador general de Python. Además de M&A, enruta a Analytics/portfolioManagement/*.py (active_management, portfolio_planning, risk_management, portfolio_analytics, economics_markets), Analytics/economics/business_cycle.py y equity_risk_premium.py, indicadores técnicos de momentum, los backtests *_fincept_bridge.py y vision_quant."
   },
   {
    "path": "fincept-qt/src/services/markets/MarketDataService.cpp",
@@ -4295,7 +4524,8 @@
    ],
    "cli_entry": "python yfinance_data.py <batch_all|historical_period|batch_sparklines|...> <args>",
    "relevance_note": "Tracks ^VIX level, but ^MXX (S&P/BMV IPC) is absent from every default index list.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Cotizaciones de mercado, historial, sparklines y noticias mediante yfinance_data.py, publicados en DataHub. Define listas predeterminadas de índices globales y regionales (^GSPC, ^DJI, ^IXIC, ^RUT, ^FTSE, ^GDAXI, ^N225, ^HSI, ^BSESN, ^NSEI, etc.) más una instantánea de VIX/tasas/materias primas."
   },
   {
    "path": "fincept-qt/src/services/news/NewsNlpService.cpp",
@@ -4312,7 +4542,8 @@
    ],
    "cli_entry": "python news_nlp.py <analyze_sentiment_batch|extract_entities|...> <json>",
    "relevance_note": "Produces news sentiment scores but never tests them as a return-predicting signal.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Ejecuta news_nlp.py para el sentimiento de titulares por lotes (léxico VADER ajustado a finanzas con respaldo offline), extracción de entidades, agrupamiento semántico y geolocalización. Lo usa EquitySentimentService."
   },
   {
    "path": "fincept-qt/src/services/portfolio/PortfolioAnalyticsService.cpp",
@@ -4332,7 +4563,8 @@
    ],
    "cli_entry": "python quantstats_analysis.py < json; python quantstats_monte_carlo.py < json; python ffn_analysis.py < json; python optimize_portfolio_weights.py <json>",
    "relevance_note": "The bridge between the portfolio screens and Python for Sharpe/drawdown statistics (quantstats can return probabilistic Sharpe), Monte Carlo paths and Markowitz/HRP/risk-parity weights.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Wrapper que ejecuta scripts/quantstats_analysis.py, quantstats_monte_carlo.py y ffn_analysis.py (JSON por stdin) y optimize_portfolio_weights.py (JSON por argv) para las pantallas de portafolio."
   },
   {
    "path": "fincept-qt/src/services/portfolio/PortfolioService_Metrics.cpp",
@@ -4351,7 +4583,8 @@
    ],
    "cli_entry": "python yfinance_data.py <...> (benchmark/history fetch)",
    "relevance_note": "default_benchmark_for_currency sends MXN (and BRL) portfolios to SPY instead of ^MXX/IPC. The risk-free rate always comes from US FRED, so CAPM alpha/beta is wrong for Mexican portfolios.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Cálculo nativo de la volatilidad del portafolio, Sharpe, drawdown máximo, beta/alfa OLS contra el benchmark, VaR/CVaR 95 y un puntaje de riesgo compuesto. También obtiene el benchmark (elegido según la moneda), la tasa libre de riesgo de FRED y una matriz de correlación."
   },
   {
    "path": "fincept-qt/src/services/workflow/nodes/AnalyticsNodes.cpp",
@@ -4372,7 +4605,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "The 'analytics.factor_model' node (ff3/ff5/capm/carhart4) is a stub that always returns 'not available'. 'analytics.regime_detection' claims HMM but uses a rolling-volatility plus SMA heuristic, and the Backtest node is disabled.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Nodos de analítica del editor de nodos: técnicos (compute_technicals.py), optimización de portafolio (optimize_portfolio_weights.py), desempeño, VaR/Monte Carlo, cruce de MA, drawdown, pairs trading, además de nodos de modelo de factores y de detección de régimen."
   },
   {
    "path": "fincept-qt/src/ui/navigation/CommandBar_Assets.cpp",
@@ -4388,7 +4622,8 @@
    ],
    "cli_entry": "",
    "relevance_note": "The only explicit Mexican-market support in C++: BMV/BIVA tickers resolve to Yahoo .MX symbols, with no IPC-specific analytics.",
-   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli"
+   "area": "fincept-qt/src C++ side: backtesting, ai_quant_lab, portfoli",
+   "summary_es": "Mapea códigos de bolsa a sufijos de ticker de yfinance para la búsqueda de activos, incluida América Latina (BMV/BIVA→.MX, B3→.SA, BCBA→.BA, BCS→.SN, BVC→.CL, BVL→.LM)."
   }
  ],
  "gaps": [

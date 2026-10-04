@@ -82,7 +82,8 @@ def _literal(pattern: str) -> str:
     """Longest plain run of letters/digits that every match must contain,
     used as a cheap substring prefilter before running the regex."""
     bare = re.sub(r'\\[a-zA-Z]', ' ', pattern)
-    bare = re.sub(r'\[[^\]]*\]\??|\([^)]*\|[^)]*\)\??', ' ', bare)
+    bare = re.sub(r'\[[^\]]*\]\??', ' ', bare)
+    bare = re.sub(r'\([^)]*\)\?|\([^)]*\|[^)]*\)', ' ', bare)
     runs = re.findall(r'[a-z0-9]+', bare)
     return max(runs, key=len) if runs else ''
 

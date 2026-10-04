@@ -42,7 +42,7 @@ if script_dir not in sys.path:
     sys.path.insert(0, script_dir)
 
 from quant_evidence import stats  # noqa: E402
-from quant_evidence.evaluator import evaluate_decision  # noqa: E402
+from quant_evidence.evaluator import _bool, evaluate_decision  # noqa: E402
 from quant_evidence.knowledge_base import (  # noqa: E402
     get_strategy, list_strategies, load_kb, load_repo_map, organize)
 
@@ -106,9 +106,9 @@ def cmd_min_backtest_length(params):
 def cmd_cost_drag(params):
     turnover = _f(params, 'turnover_monthly', 0.0)
     cost = _f(params, 'roundtrip_cost_bps', 40.0)
-    ls = bool(params.get('long_short', False))
+    ls = _bool(params.get('long_short'), False)
     out = {'monthly_cost_bps': stats.monthly_cost_bps(turnover, cost, ls),
-           'survives_turnover_rule': turnover < 0.5}
+           'survives_turnover_rule': turnover <= 0.5}
     if params.get('gross_monthly_bps') is not None:
         gross = _f(params, 'gross_monthly_bps')
         out['net_monthly_bps'] = gross - out['monthly_cost_bps']
@@ -193,7 +193,7 @@ def main():
                     params = json.load(f)
             else:
                 params = json.loads(arg)
-        except (json.JSONDecodeError, OSError) as e:
+        except (ValueError, OSError) as e:  # JSONDecodeError and UnicodeDecodeError
             print(json.dumps({'success': False, 'error': f'Invalid JSON parameters: {e}'}))
             return
     if command == 'list':
