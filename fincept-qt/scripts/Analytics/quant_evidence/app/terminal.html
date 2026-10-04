@@ -1243,7 +1243,7 @@ var CODE = /*__CODE_INDEX__*/null;
       h += '<dt>CATEGORÍAS</dt><dd>' + m.categories.map(function (k) { return esc(CAT[k] ? CAT[k].name : k); }).join(' · ') + '</dd>';
       if (m.key_functions && m.key_functions.length) h += '<dt>FUNCIONES CLAVE</dt><dd>' + m.key_functions.map(esc).join(', ') + '</dd>';
       if (m.cli_entry) h += '<dt>CLI</dt><dd>' + esc(m.cli_entry) + '</dd>';
-      if (m.relevance_note) h += '<dt>FRENTE A LA EVIDENCIA</dt><dd>' + esc(m.relevance_note) + '</dd>';
+      if (m.relevance_note_es || m.relevance_note) h += '<dt>FRENTE A LA EVIDENCIA</dt><dd>' + esc(m.relevance_note_es || m.relevance_note) + '</dd>';
       var rel = KB.strategies.filter(function (s) { return s.categories.some(function (k) { return m.categories.indexOf(k) >= 0; }); });
       if (rel.length) h += '<dt>ESTRATEGIAS RELACIONADAS</dt><dd class="codes">' + rel.map(function (s) { return '<button type="button" data-load-mon="' + esc(s.id) + '" title="' + esc(s.name) + '">' + TICK[s.id] + '</button>'; }).join('') + '</dd>';
     } else if (c && c.summary) {
