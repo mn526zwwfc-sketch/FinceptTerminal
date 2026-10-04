@@ -4,7 +4,8 @@ Local server for Fincept Quant Studio (stdlib only).
 Serves the app and a JSON API so the page runs on the Python engine and can
 reach the whole repository:
 
-    GET  /                      the app
+    GET  /                      the app (terminal interface)
+    GET  /studio                the Apple-style interface
     GET  /api/health            {"app": "quant-studio", ...}
     GET  /api/kb | /api/repo-map
     POST /api/evaluate          quant_evidence.evaluate_decision(body)
@@ -149,6 +150,7 @@ def run_cli(script_id: str, command: str, params) -> dict:
 class StudioHandler(BaseHTTPRequestHandler):
     server_version = 'QuantStudio/1.0'
     page: str = ''
+    studio_page: str = ''
     index: list = []
     by_id: dict = {}
 
@@ -199,6 +201,8 @@ class StudioHandler(BaseHTTPRequestHandler):
         try:
             if path in ('/', '/index.html'):
                 return self._send(200, self.page.encode('utf-8'), 'text/html; charset=utf-8')
+            if path in ('/studio', '/studio/'):
+                return self._send(200, self.studio_page.encode('utf-8'), 'text/html; charset=utf-8')
             m = re.match(r'^/code/(\d+)\.txt$', path)
             if m:
                 e = self.by_id.get(int(m.group(1)))
@@ -261,7 +265,8 @@ def make_server(host: str = '127.0.0.1', port: int = 8765, scan_repo: bool = Tru
 
     Handler.index = index
     Handler.by_id = {e['id']: e for e in index}
-    Handler.page = render_page(index, scan_repo=scan_repo, standalone=True)
+    Handler.page = render_page(index, scan_repo=scan_repo, standalone=True, ui='terminal')
+    Handler.studio_page = render_page(index, scan_repo=scan_repo, standalone=True, ui='studio')
     return ThreadingHTTPServer((host, port), Handler)
 
 

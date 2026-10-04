@@ -9,6 +9,9 @@ API and its path / host protections. Stdlib only:
 import http.client
 import json
 import os
+import re
+import shutil
+import subprocess
 import sys
 import tempfile
 import threading
@@ -36,8 +39,30 @@ class TestBuild(unittest.TestCase):
             self.assertEqual(len(os.listdir(os.path.join(d, 'code'))), len(index))
         for marker in ('/*__ENGINE__*/', '/*__KB__*/', '/*__REPO__*/', '/*__CODE_INDEX__*/'):
             self.assertNotIn(marker, html)
-        self.assertTrue(html.startswith('<title>Fincept Quant Studio</title>'))
+        self.assertTrue(html.startswith('<title>Fincept Quant Terminal</title>'))
         self.assertLess(len(html), 2_000_000)
+
+    def test_both_interfaces_render(self):
+        term = build_app.render_page([], scan_repo=False, standalone=False, ui='terminal')
+        studio = build_app.render_page([], scan_repo=False, standalone=False, ui='studio')
+        self.assertIn('MONITOR &lt;1&gt;', term)
+        self.assertIn('Decide con', studio)
+        with self.assertRaises(ValueError):
+            build_app.render_page([], scan_repo=False, ui='nope')
+
+    @unittest.skipUnless(shutil.which('node'), 'Node.js not installed')
+    def test_inline_scripts_parse(self):
+        for ui in ('terminal', 'studio'):
+            html = build_app.render_page([], scan_repo=False, standalone=False, ui=ui)
+            scripts = re.findall(r'<script>([\s\S]*?)</script>', html)
+            js = ("let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{"
+                  "for (const s of JSON.parse(d)) new Function(s);});")
+            proc = subprocess.run(['node', '-e', js], input=json.dumps(scripts), capture_output=True, text=True)
+            self.assertEqual(proc.returncode, 0, (ui, proc.stderr[-500:]))
+
+    def test_terminal_has_no_third_party_branding(self):
+        with open(build_app.TEMPLATES['terminal'], encoding='utf-8') as f:
+            self.assertNotIn('bloomberg', f.read().lower())
 
     def test_code_index_starts_with_new_package(self):
         index = build_app.code_index()
@@ -88,6 +113,9 @@ class TestServer(unittest.TestCase):
 
     def test_page_and_health(self):
         st, html = self.req('GET', '/')
+        self.assertEqual(st, 200)
+        self.assertIn('Fincept Quant Terminal', html)
+        st, html = self.req('GET', '/studio')
         self.assertEqual(st, 200)
         self.assertIn('Fincept Quant Studio', html)
         st, j = self.req('GET', '/api/health')
