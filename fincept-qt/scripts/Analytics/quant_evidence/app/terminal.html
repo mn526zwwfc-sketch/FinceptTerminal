@@ -326,13 +326,32 @@ pre.formula { margin: 0; color: var(--text); white-space: pre; font-size: 11.5px
 .mkt th:nth-child(8) { width: 7ch; }
 .mkt td:nth-child(-n+2) { overflow: hidden; text-overflow: ellipsis; }
 .mkt td.px { color: var(--white); font-weight: 600; }
-.mkt .spark { display: block; width: 80px; height: 16px; }
-.mkt .spark path { fill: none; stroke-width: 1.3; }
-.mkt .spark .up { stroke: var(--green); } .mkt .spark .dn { stroke: var(--red); } .mkt .spark .fl { stroke: var(--muted); }
+.spark { display: block; width: 80px; height: 16px; }
+.spark path { fill: none; stroke-width: 1.3; }
+.spark .up { stroke: var(--green); } .spark .dn { stroke: var(--red); } .spark .fl { stroke: var(--muted); }
 @media (max-width: 1300px) { .mkt th:nth-child(2), .mkt td:nth-child(2) { display: none; } }
 @media (max-width: 1100px) { .mkt th:nth-child(8), .mkt td:nth-child(8) { display: none; } }
 .mkt-note { color: var(--muted); padding: 4px 0 6px; }
 .mkt-note b { color: var(--amber); font-weight: 500; }
+#screen-mercado[data-src="av"] > .panel[data-set="yf"], #screen-mercado[data-src="yf"] > .panel[data-set="av"] { display: none !important; }
+.mkt-av { table-layout: fixed; }
+.mkt-av td.px { color: var(--white); font-weight: 600; }
+.tag.closed { color: var(--muted); }
+.srcsw { display: inline-flex; gap: 2px; }
+.srcsw button { background: transparent; border: 1px solid var(--line-2); color: var(--text); padding: 0 5px; cursor: pointer; font-size: 10.5px; }
+.srcsw button[aria-pressed="true"], #av-plan[aria-pressed="true"] { background: var(--amber); color: var(--amber-ink); border-color: var(--amber); }
+#av-status th:nth-child(2) { width: 13ch; } #av-status th:nth-child(3) { width: 10ch; } #av-status th:nth-child(4) { width: 7ch; }
+#av-status th:nth-child(5) { width: 7ch; } #av-status th:nth-child(6) { width: 27%; }
+#av-status td:nth-child(1), #av-status td:nth-child(6) { overflow: hidden; text-overflow: ellipsis; }
+#av-status td:nth-child(1) { line-height: 1.25; }
+#av-quotes th:nth-child(1) { width: 10ch; } #av-quotes th:nth-child(3) { width: 11ch; } #av-quotes th:nth-child(4) { width: 9ch; }
+#av-quotes th:nth-child(5) { width: 8ch; } #av-quotes th:nth-child(6) { width: 7ch; } #av-quotes th:nth-child(7) { width: 5ch; }
+#av-quotes td:nth-child(2), #av-macro td:nth-child(2) { overflow: hidden; text-overflow: ellipsis; }
+#av-macro th:nth-child(1) { width: 8ch; } #av-macro th:nth-child(3) { width: 12ch; } #av-macro th:nth-child(4) { width: 9ch; }
+#av-macro th:nth-child(5) { width: 8ch; } #av-macro th:nth-child(6) { width: 84px; } #av-macro th:nth-child(7) { width: 16ch; }
+#av-movers th:nth-child(1) { width: 11ch; }
+@media (max-width: 1300px) { #av-status th:nth-child(6), #av-status td:nth-child(6), #av-macro th:nth-child(6), #av-macro td:nth-child(6) { display: none; } }
+@media (max-width: 1100px) { #av-quotes th:nth-child(2), #av-quotes td:nth-child(2), #av-macro th:nth-child(2), #av-macro td:nth-child(2) { display: none; } }
 
 /* ── Status bar ─────────────────────────────────────────────────────────── */
 .status { display: flex; gap: 14px; padding: 3px 10px; background: var(--chrome); border-top: 1px solid var(--line); white-space: nowrap; overflow: hidden; font-size: 11px; color: var(--muted); }
@@ -546,7 +565,7 @@ pre.formula { margin: 0; color: var(--text); white-space: pre; font-size: 11.5px
       </section>
 
       <!-- ── MERCADO <7> ── -->
-      <section class="screen quad" id="screen-mercado" aria-label="Mercado" hidden></section>
+      <section class="screen quad" id="screen-mercado" aria-label="Mercado" data-src="av" hidden></section>
     </main>
   </div>
 
@@ -683,7 +702,7 @@ var CODE = /*__CODE_INDEX__*/null;
     store('qe.term.screen', name);
     try { if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name); } catch (e) { /* sandboxed */ }
     renderHiddenPanels();
-    if (name === 'mercado') refreshMarket(false);
+    if (name === 'mercado') { if (state.mktSrc === 'yf') refreshMarket(false); else avAutoLoad(); }
   }
   document.querySelectorAll('[data-screen]').forEach(function (b) { b.addEventListener('click', function () { showScreen(b.getAttribute('data-screen')); }); });
   window.addEventListener('hashchange', function () { showScreen(location.hash.slice(1)); });
@@ -785,7 +804,12 @@ var CODE = /*__CODE_INDEX__*/null;
     '  <CÓDIGO> DES        ABRE SU HISTORIA EN EL CABLE',
     '  EVAL | TOP | CODE [FILTRO] | REPO | GAPS | CALC | CONS | MKT   CAMBIA DE PANTALLA',
     '  1..7                CAMBIA DE PANTALLA (TAMBIÉN ALT+1..7 Y F2..F7; F1 AYUDA, F8 GUARDAR)',
-    '  MKT [ACT]           MERCADO EN VIVO (APP LOCAL): MÉXICO, EE. UU., GLOBAL, FACTORES; ACT FUERZA LA ACTUALIZACIÓN',
+    '  MKT [ACT]           MERCADO: ALPHA VANTAGE (TU CONECTOR O CLAVE LOCAL) O YAHOO (APP LOCAL); ACT ACTUALIZA TODO (GASTA CONSULTAS)',
+    '  BOLSAS | MOVERS     BOLSAS DEL MUNDO ABIERTAS/CERRADAS Y MAYORES MOVIMIENTOS DE EE. UU. (AÑADE ACT PARA ACTUALIZAR)',
+    '  Q <TICKER>          COTIZACIÓN DE ALPHA VANTAGE (1 CONSULTA), P. EJ. Q AAPL O Q EWW',
+    '  DIVISA <DE> <A>     TIPO DE CAMBIO DE ALPHA VANTAGE, P. EJ. DIVISA USD MXN',
+    '  PLAN GRATIS|PREMIUM   RITMO DE CONSULTAS A ALPHA VANTAGE (GRATIS: 25 AL DÍA, 1 POR SEGUNDO)',
+    '  FUENTE AV|YAHOO     FUENTE DE LA PANTALLA MERCADO (YAHOO SOLO CON LA APP LOCAL)',
     '  SET <CAMPO> <VALOR> AJUSTA UN PARÁMETRO: SHARPE YEARS TRIALS SKEW KURT TURN COST MICRO VOL ALPHA LIVE HORIZON KELLY FREQ',
     '  DSR <SR> <N> <AÑOS> [PER/AÑO] [VAR]   DEFLATED SHARPE RATIO',
     '  HC <SR> <AÑOS> <N>  SHARPE CON RECORTE POR PRUEBAS MÚLTIPLES (HARVEY-LIU)',
@@ -818,8 +842,7 @@ var CODE = /*__CODE_INDEX__*/null;
     var a = tk.slice(1).map(num);
     switch (head) {
       case 'HELP': case 'AYUDA': case 'H': case '?':
-        HELP[14] = '  TECLAS ON|OFF       ESCRIBIR EN CUALQUIER PARTE ENVÍA LAS TECLAS A ESTA LÍNEA (AHORA: ' + (typeAnywhere ? 'ON' : 'OFF') + ')';
-        HELP.forEach(function (l) { log(l); }); showScreen('consola'); return;
+        HELP.forEach(function (l) { log(/^  TECLAS/.test(l) ? '  TECLAS ON|OFF       ESCRIBIR EN CUALQUIER PARTE ENVÍA LAS TECLAS A ESTA LÍNEA (AHORA: ' + (typeAnywhere ? 'ON' : 'OFF') + ')' : l); }); showScreen('consola'); return;
       case 'EVAL': case 'MONITOR': case 'GP': showScreen('monitor'); return;
       case 'TOP': case 'CABLE': case 'N': case 'NEWS': showScreen('cable'); return;
       case 'CODE': case 'CODIGO': case 'CÓDIGO': case 'SRC': {
@@ -841,9 +864,53 @@ var CODE = /*__CODE_INDEX__*/null;
       case 'CONS': case 'CONSOLA': case 'LOG': showScreen('consola'); return;
       case 'MKT': case 'MERCADO': case 'MARKET': {
         showScreen('mercado');
-        if (!state.live) log('LOS PRECIOS EN VIVO REQUIEREN LA APP LOCAL: cd fincept-qt/scripts/Analytics && python quant_studio.py', 'er');
-        else if (/^(ACT|REFRESH|R)$/.test(tk[1] || '')) refreshMarket(true);
+        if (/^(ACT|REFRESH|R)$/.test(tk[1] || '')) { if (state.mktSrc === 'yf') refreshMarket(true); else if (av.mode) avRefreshAll(); else log(avOffMessage(), 'er'); }
+        else if (state.mktSrc === 'av' && !av.mode) log(avOffMessage(), 'er');
         return;
+      }
+      case 'BOLSAS': case 'MOVERS': {
+        if (!av.mode) { showScreen('mercado'); log(avOffMessage(), 'er'); return; }
+        if (state.mktSrc !== 'av') { store('qe.mkt.src', 'av'); chooseSource(); renderAv(); renderMarket(); }
+        showScreen('mercado');
+        if (tk[1] === 'ACT') { if (head === 'BOLSAS') avSection('status', [['MARKET_STATUS', {}]], true); else avSection('movers', [['TOP_GAINERS_LOSERS', {}]], true); }
+        return;
+      }
+      case 'Q': case 'COT': {
+        var sym = tk[1] || '';
+        if (!/^[A-Z0-9.\-]{1,12}$/.test(sym)) { log('USO: Q <TICKER>, P. EJ. Q AAPL O Q EWW', 'er'); return; }
+        if (!av.mode) { log(avOffMessage(), 'er'); return; }
+        if (state.mktSrc !== 'av') { store('qe.mkt.src', 'av'); chooseSource(); renderMarket(); }
+        showScreen('mercado'); log('CONSULTANDO ' + sym + ' EN ALPHA VANTAGE…');
+        avQuote(sym, true).then(function () {
+          var e = avGet('GLOBAL_QUOTE', { symbol: sym }), qerr = av.err['q:' + sym];
+          if (qerr || !e) log(sym + ': ' + (qerr ? qerr.message : av.halted ? av.halted.message : 'SIN DATO'), 'er');
+          else log(sym + '  ' + fmtN(e.data.price, 2) + '  ' + sgn(e.data.change, 2) + ' (' + sgn(e.data.change_pct, 2) + '%)  DÍA ' + e.data.day + '  · ALPHA VANTAGE', 'ok');
+        });
+        return;
+      }
+      case 'DIVISA': case 'DIV': {
+        var cf = tk[1] || '', ct = tk[2] || '';
+        if (!/^[A-Z]{3,5}$/.test(cf) || !/^[A-Z]{3,5}$/.test(ct)) { log('USO: DIVISA <DE> <A>, P. EJ. DIVISA USD MXN O DIVISA BTC USD', 'er'); return; }
+        if (!av.mode) { log(avOffMessage(), 'er'); return; }
+        log('CONSULTANDO ' + cf + '/' + ct + ' EN ALPHA VANTAGE…');
+        avFetch('CURRENCY_EXCHANGE_RATE', { from_currency: cf, to_currency: ct }).then(function (d) {
+          var dp = d.rate < 10 ? 4 : 2;
+          log(cf + '/' + ct + ' = ' + fmtN(d.rate, dp) + (d.bid != null && d.ask != null ? '  (COMPRA ' + fmtN(d.bid, dp) + ' · VENTA ' + fmtN(d.ask, dp) + ')' : '') + '  ' + d.refreshed + ' ' + d.tz + '  · ALPHA VANTAGE', 'ok');
+          renderAv(); renderStatus();
+        }, function (e) { log(cf + '/' + ct + ': ' + (e && e.message ? e.message : String(e)), 'er'); });
+        return;
+      }
+      case 'PLAN': {
+        if (!/^(GRATIS|GRATUITO|FREE|PREMIUM)$/.test(tk[1] || '')) { log('USO: PLAN GRATIS|PREMIUM (AHORA: ' + (av.plan === 'premium' ? 'PREMIUM' : 'GRATUITO') + ')', 'er'); return; }
+        av.plan = tk[1] === 'PREMIUM' ? 'premium' : 'free'; store('qe.av.plan', av.plan); renderAv();
+        log('PLAN DE ALPHA VANTAGE: ' + (av.plan === 'premium' ? 'PREMIUM (ACTUALIZA CADA MINUTO)' : 'GRATUITO (ACTUALIZA AL PEDIRLO O CADA 6 HORAS)'), 'ok'); return;
+      }
+      case 'FUENTE': {
+        var src = /^(YAHOO|YF)$/.test(tk[1] || '') ? 'yf' : /^(AV|ALPHA|ALPHAVANTAGE)$/.test(tk[1] || '') ? 'av' : null;
+        if (!src) { log('USO: FUENTE AV|YAHOO', 'er'); return; }
+        if (src === 'yf' && !state.live) { log('YAHOO SOLO FUNCIONA CON LA APP LOCAL (python quant_studio.py)', 'er'); return; }
+        store('qe.mkt.src', src); chooseSource(); renderAv(); renderMarket(); showScreen('mercado');
+        log('FUENTE DEL MERCADO: ' + (state.mktSrc === 'av' ? 'ALPHA VANTAGE' : 'YAHOO'), 'ok'); return;
       }
       case 'CLEAR': case 'LIMPIAR': clearLog(); return;
       case 'TECLAS': case 'KEYS': {
@@ -931,7 +998,7 @@ var CODE = /*__CODE_INDEX__*/null;
   function suggest(q) {
     q = q.replace(/<[^>]*>/g, '').trim().toUpperCase();
     if (!q || q.indexOf(' ') >= 0) { hideSuggest(); return; }
-    var cmds = ['HELP', 'EVAL', 'TOP', 'CODE', 'REPO', 'GAPS', 'CALC', 'CONS', 'DSR', 'HC', 'MINBTL', 'COST', 'BODIE', 'KELLY', 'SET', 'SAVE', 'JSON', 'RUN', 'RESET', 'TECLAS', 'LIMPIAR', 'MKT'];
+    var cmds = ['HELP', 'EVAL', 'TOP', 'CODE', 'REPO', 'GAPS', 'CALC', 'CONS', 'DSR', 'HC', 'MINBTL', 'COST', 'BODIE', 'KELLY', 'SET', 'SAVE', 'JSON', 'RUN', 'RESET', 'TECLAS', 'LIMPIAR', 'MKT', 'BOLSAS', 'MOVERS', 'Q', 'DIVISA', 'PLAN', 'FUENTE'];
     var out = KB.strategies.filter(function (s) {
       return TICK[s.id].indexOf(q) === 0 || s.name.toUpperCase().indexOf(q) >= 0;
     }).slice(0, 8).map(function (s) { return { v: TICK[s.id], label: s.name, kind: '<' + FAM[s.family][0] + '>' }; });
@@ -1600,24 +1667,443 @@ var CODE = /*__CODE_INDEX__*/null;
   $('screen-calc').addEventListener('submit', function (ev) { ev.preventDefault(); });
   $('clearlog').addEventListener('click', clearLog);
 
-  // ── Market (local app only; never shows a number that did not arrive) ───
-  var MKT_GROUPS = [
-    { key: 'mx', n: 22, name: 'MÉXICO', codes: [['IPC', 'S&P/BMV IPC'], ['USDMXN', 'Dólar / peso mexicano'], ['AMX', 'América Móvil'], ['WALMEX', 'Walmart de México'], ['GFNORTE', 'Banorte'], ['FEMSA', 'FEMSA'], ['GMEXICO', 'Grupo México'], ['CEMEX', 'Cemex']] },
-    { key: 'us', n: 23, name: 'EE. UU.', codes: [['SPX', 'S&P 500'], ['NASDAQ', 'Nasdaq Composite'], ['DJIA', 'Dow Jones Industrial'], ['RTY', 'Russell 2000'], ['UST10', 'Bono del Tesoro 10 años (rend. %)'], ['VIX', 'Volatilidad implícita S&P 500']] },
-    { key: 'global', n: 24, name: 'GLOBAL Y MATERIAS PRIMAS', codes: [['SX5E', 'Euro Stoxx 50'], ['UKX', 'FTSE 100'], ['DAX', 'DAX'], ['NKY', 'Nikkei 225'], ['HSI', 'Hang Seng'], ['EURUSD', 'Euro / dólar'], ['WTI', 'Petróleo WTI (futuro)'], ['ORO', 'Oro (futuro)'], ['COBRE', 'Cobre (futuro)'], ['BTC', 'Bitcoin']] },
-    { key: 'factors', n: 25, name: 'FACTORES (ETF)', codes: [['MTUM', 'iShares MSCI USA Momentum'], ['VLUE', 'iShares MSCI USA Value'], ['QUAL', 'iShares MSCI USA Quality'], ['USMV', 'iShares MSCI USA Min Vol'], ['SIZE', 'iShares MSCI USA Size'], ['SPY', 'SPDR S&P 500 (referencia)']] }
+  // ── Market ──────────────────────────────────────────────────────────────
+  // Two sources, never mixed in one row and never filled in:
+  //  · Alpha Vantage (default): through the viewer's claude.ai connector when the page runs as an
+  //    artifact, or through the local app's /api/av proxy when ALPHA_VANTAGE_API_KEY is set.
+  //  · Yahoo Finance: local app only (/api/market), the fallback when Alpha Vantage is not set up.
+  var AV_SERVER = 'Alpha Vantage MCP Server';
+  var AV_JSON = { GLOBAL_QUOTE: 1, CURRENCY_EXCHANGE_RATE: 1, TREASURY_YIELD: 1, WTI: 1 };
+  var AV_GAP_MS = 1100;                       // free plan: one request per second
+  var AV_TTL = {                              // automatic refresh age per plan; buttons always refresh
+    free: { status: 6 * 3600e3, macro: 6 * 3600e3, movers: 6 * 3600e3 },
+    premium: { status: 60e3, macro: 60e3, movers: 15 * 60e3, quotes: 60e3 }
+  };
+  var AV_AUTHZ = /^(not_granted|capability_disabled|capability_removed|server_not_connected|server_not_found|needs_reauth|selection_required|not_in_manifest|blocked_by_policy|approval_required|consent_required|user_changed)$/;
+  var av = { mode: null, mcp: null, queue: Promise.resolve(), last: 0, halted: null, err: {}, busy: {}, mv: 'gainers',
+    plan: store('qe.av.plan') === 'premium' ? 'premium' : 'free' };
+
+  /* AV-PARSE-BEGIN */
+  // Reads one Alpha Vantage answer (connector or REST). Refusals, rate-limit notes and premium-only
+  // answers become {ok: false}; a premium endpoint called with a free key answers with ARTIFICIAL
+  // sample data, which is discarded here and never reaches the screen.
+  function avNum(x) {
+    if (x == null || x === '') return null;
+    var v = parseFloat(String(x).replace('%', ''));
+    return isFinite(v) ? v : null;
+  }
+  function avParse(fn, p) {
+    var EMPTY = { ok: false, kind: 'empty' };
+    if (p == null || typeof p !== 'object' || Array.isArray(p)) return EMPTY;
+    if (p.preview === true && typeof p.sample_data === 'string') {
+      try { p = JSON.parse(p.sample_data); } catch (e) { return { ok: false, kind: 'preview' }; }
+      if (p == null || typeof p !== 'object' || Array.isArray(p)) return { ok: false, kind: 'preview' };
+    }
+    if (typeof p.message === 'string' && /premium endpoint|artificial|illustration/i.test(p.message)) return { ok: false, kind: 'premium' };
+    var note = p.error && typeof p.error === 'object' ? String(p.error.message || p.error.detail || p.error.type || '')
+      : typeof p.error === 'string' ? p.error : typeof p.Information === 'string' ? p.Information : typeof p.Note === 'string' ? p.Note : null;
+    if (note != null) {
+      if (/not yet entitled|premium endpoint|is a premium/i.test(note)) return { ok: false, kind: 'premium' };
+      if (/rate limit|spreading out|requests per (day|second|minute)|call frequency/i.test(note)) return { ok: false, kind: 'rate_limit' };
+      return { ok: false, kind: 'notice', message: note.slice(0, 200) };
+    }
+    if (typeof p['Error Message'] === 'string') return { ok: false, kind: 'invalid' };
+    var s = function (v) { return v == null ? '' : String(v); };
+    switch (fn) {
+      case 'MARKET_STATUS':
+        if (!Array.isArray(p.markets)) break;
+        return { ok: true, data: { markets: p.markets.filter(function (m) { return m && typeof m === 'object'; }).map(function (m) {
+          return { type: s(m.market_type), region: s(m.region), exchanges: s(m.primary_exchanges), open: s(m.local_open), close: s(m.local_close),
+            status: s(m.current_status).toLowerCase(), notes: s(m.notes) };
+        }) } };
+      case 'GLOBAL_QUOTE': {
+        var q = p['Global Quote'];
+        if (!q || typeof q !== 'object') break;
+        var price = avNum(q['05. price']);
+        if (price == null) return { ok: false, kind: 'invalid' };
+        return { ok: true, data: { symbol: s(q['01. symbol']), price: price, open: avNum(q['02. open']), high: avNum(q['03. high']), low: avNum(q['04. low']),
+          volume: avNum(q['06. volume']), day: s(q['07. latest trading day']), prev: avNum(q['08. previous close']),
+          change: avNum(q['09. change']), change_pct: avNum(q['10. change percent']) } };
+      }
+      case 'CURRENCY_EXCHANGE_RATE': {
+        var r = p['Realtime Currency Exchange Rate'];
+        if (!r || typeof r !== 'object') break;
+        var rate = avNum(r['5. Exchange Rate']);
+        if (rate == null) break;
+        return { ok: true, data: { from: s(r['1. From_Currency Code']), to: s(r['3. To_Currency Code']), rate: rate, bid: avNum(r['8. Bid Price']),
+          ask: avNum(r['9. Ask Price']), refreshed: s(r['6. Last Refreshed']), tz: s(r['7. Time Zone']) } };
+      }
+      case 'TREASURY_YIELD': case 'WTI': {
+        if (!Array.isArray(p.data)) break;
+        var pts = p.data.map(function (d) { return { date: s(d && d.date), value: avNum(d && d.value) }; })
+          .filter(function (d) { return d.value != null && /^\d{4}-\d{2}-\d{2}$/.test(d.date); });   // '.' marks a holiday
+        if (!pts.length) break;
+        pts.sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
+        return { ok: true, data: { name: s(p.name), unit: s(p.unit), last: pts[0].value, date: pts[0].date,
+          prev: pts.length > 1 ? pts[1].value : null, prev_date: pts.length > 1 ? pts[1].date : '',
+          series: pts.slice(0, 30).map(function (d) { return d.value; }).reverse() } };
+      }
+      case 'GOLD_SILVER_SPOT': {
+        var gp = avNum(p.price);
+        if (gp == null) break;
+        return { ok: true, data: { nominal: s(p.nominal), price: gp, timestamp: s(p.timestamp) } };
+      }
+      case 'TOP_GAINERS_LOSERS': {
+        if (!Array.isArray(p.top_gainers) && !Array.isArray(p.top_losers) && !Array.isArray(p.most_actively_traded)) break;
+        var rows = function (a) {
+          return (Array.isArray(a) ? a : []).filter(function (x) { return x && typeof x === 'object'; }).map(function (x) {
+            return { ticker: s(x.ticker), price: avNum(x.price), change: avNum(x.change_amount), change_pct: avNum(x.change_percentage), volume: avNum(x.volume) };
+          }).filter(function (x) { return x.ticker && x.price != null; });
+        };
+        return { ok: true, data: { updated: s(p.last_updated), gainers: rows(p.top_gainers), losers: rows(p.top_losers), active: rows(p.most_actively_traded) } };
+      }
+    }
+    return { ok: false, kind: 'shape' };
+  }
+  /* AV-PARSE-END */
+
+  var AV_MSG = {
+    rate_limit: 'LÍMITE DE ALPHA VANTAGE ALCANZADO (PLAN GRATUITO: 1 CONSULTA POR SEGUNDO Y 25 AL DÍA). SE MUESTRAN LOS ÚLTIMOS DATOS GUARDADOS, CON SU HORA.',
+    premium: 'ESTE DATO ES DE PAGO EN ALPHA VANTAGE Y TU PLAN NO LO INCLUYE. LOS DATOS DE EJEMPLO QUE ENVÍA EN SU LUGAR NO SE MUESTRAN.',
+    invalid: 'ALPHA VANTAGE NO TIENE ESTE SÍMBOLO O RECHAZÓ LA CONSULTA.',
+    empty: 'ALPHA VANTAGE RESPONDIÓ SIN DATOS.',
+    preview: 'LA RESPUESTA DE ALPHA VANTAGE LLEGÓ RECORTADA Y NO SE PUDO LEER.',
+    shape: 'LA RESPUESTA DE ALPHA VANTAGE TIENE UN FORMATO INESPERADO; NO SE MUESTRA.',
+    notice: 'ALPHA VANTAGE RESPONDIÓ CON UN AVISO EN LUGAR DE DATOS.'
+  };
+  function avMcpMessage(code, e) {
+    switch (code) {
+      case 'server_not_connected': case 'server_not_found': return 'CONECTA ALPHA VANTAGE EN CLAUDE.AI → AJUSTES → CONECTORES PARA VER ESTOS DATOS.';
+      case 'selection_required': return 'TIENES MÁS DE UN CONECTOR DE ALPHA VANTAGE: ELIGE CUÁL USAR CUANDO CLAUDE.AI LO PREGUNTE.';
+      case 'needs_reauth': return 'RECONECTA ALPHA VANTAGE EN CLAUDE.AI → AJUSTES → CONECTORES.';
+      case 'not_in_manifest': case 'consent_required': return 'NO SE PERMITIÓ ALPHA VANTAGE PARA ESTA PÁGINA. ACTÍVALO EN LOS PERMISOS DE LA PÁGINA.';
+      case 'blocked_by_policy': case 'approval_required': return 'TU ORGANIZACIÓN NO PERMITE ESTA HERRAMIENTA DE ALPHA VANTAGE AQUÍ.';
+      case 'server_unavailable': return 'ALPHA VANTAGE NO RESPONDE AHORA. INTÉNTALO EN UN MOMENTO.';
+      case 'tool_error': return 'ALPHA VANTAGE DEVOLVIÓ UN ERROR: ' + String(e && e.message || '').slice(0, 160).toUpperCase();
+      case 'not_granted': case 'capability_disabled': case 'capability_removed': return 'ESTA VISTA NO PUEDE USAR CONECTORES.';
+      case 'local_error': return String(e && e.message || 'ERROR DEL SERVIDOR LOCAL').toUpperCase();
+      case 'cancelled': return 'CONSULTA CANCELADA.';
+      default: return 'ERROR DEL CONECTOR DE ALPHA VANTAGE (' + String(code).toUpperCase() + ').';
+    }
+  }
+
+  // Last good answers, per viewer, so reopening the screen does not spend the daily quota.
+  var AV_CACHE_KEY = 'qe.av.cache.v1';
+  var avMem = (function () { try { var v = JSON.parse(store(AV_CACHE_KEY) || '{}'); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch (e) { return {}; } })();
+  function avKey(fn, params) { return fn + '|' + JSON.stringify(params || {}); }
+  function avGet(fn, params) { var e = avMem[avKey(fn, params)]; return e && typeof e === 'object' && e.data ? e : null; }
+  function avPut(fn, params, data, at) {
+    avMem[avKey(fn, params)] = { at: at || Date.now(), data: data };
+    delete avMem['x|' + avKey(fn, params)];
+    store(AV_CACHE_KEY, JSON.stringify(avMem));
+  }
+  // Failures are remembered too, so automatic refreshes never re-spend the quota on a refused item.
+  function avMarkFail(fn, params, kind) { avMem['x|' + avKey(fn, params)] = { at: Date.now(), fail: kind }; store(AV_CACHE_KEY, JSON.stringify(avMem)); }
+  function avForget() { avMem = {}; store(AV_CACHE_KEY, '{}'); }
+  function dayKey() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+  function avCalls() { try { var v = JSON.parse(store('qe.av.calls') || 'null'); return v && v.day === dayKey() ? v.n : 0; } catch (e) { return 0; } }
+  function avCount() { store('qe.av.calls', JSON.stringify({ day: dayKey(), n: avCalls() + 1 })); }
+  function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  function avTransport(fn, params) {
+    if (av.mode === 'local') {
+      return fetch('/api/av', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ 'function': fn, params: params }) })
+        .then(function (r) { return r.json(); }).then(function (j) {
+          if (!j || !j.success) { var e = new Error((j && j.error) || 'ERROR DEL SERVIDOR LOCAL'); e.code = 'local_error'; throw e; }
+          return { payload: j.data.payload, at: j.data.fetched_at ? j.data.fetched_at * 1000 : Date.now(), counted: !j.data.cached };
+        });
+    }
+    var input = {};
+    Object.keys(params).forEach(function (k) { input[k] = params[k]; });
+    if (AV_JSON[fn]) input.datatype = 'json';
+    return av.mcp.callTool(AV_SERVER, fn, input, { cache: false }).then(function (res) {
+      return { payload: res ? (res.payload !== undefined ? res.payload : null) : null, at: res && res.cache ? res.cache.storedAt : Date.now(), counted: !(res && res.cache) };
+    });
+  }
+  // One call at a time, at least AV_GAP_MS apart; a halt (quota or access) stops the rest of the queue.
+  function avCall(fn, params) {
+    var run = function () {
+      if (av.halted) return Promise.reject(av.halted);
+      return delay(Math.max(0, av.last + AV_GAP_MS - Date.now())).then(function () {
+        if (av.halted) throw av.halted;
+        av.last = Date.now();
+        return avTransport(fn, params);
+      }).then(function (res) { av.last = Date.now(); if (res.counted) avCount(); return res; },
+        function (e) { av.last = Date.now(); throw e; });
+    };
+    var p = av.queue.then(run, run);
+    av.queue = p.then(function () {}, function () {});
+    return p;
+  }
+  function avFetch(fn, params, retried) {
+    if (!av.mode) return Promise.reject({ kind: 'off', message: avOffMessage() });
+    return avCall(fn, params).then(function (res) {
+      var r = avParse(fn, res.payload);
+      if (r.ok) { avPut(fn, params, r.data, res.at); return r.data; }
+      if (r.kind === 'rate_limit' && !retried) return delay(2500).then(function () { return avFetch(fn, params, true); });
+      var err = { kind: r.kind, message: r.kind === 'notice' ? AV_MSG.notice + ' «' + r.message + '»' : AV_MSG[r.kind] };
+      if (r.kind === 'rate_limit') av.halted = err; else avMarkFail(fn, params, r.kind);
+      throw err;
+    }, function (e) {
+      if (e && e.kind) throw e;
+      var code = (e && e.code) || 'upstream_error';
+      if (e && e.retryable && !retried) return delay(Math.min(60000, e.retryAfterMs || 1500 + Math.random() * 1000)).then(function () { return avFetch(fn, params, true); });
+      var err = { kind: 'mcp', code: code, message: avMcpMessage(code, e) };
+      if (AV_AUTHZ.test(code)) {
+        av.halted = err;
+        if (av.mode === 'mcp') avForget();      // an access denial withdraws what this viewer may see
+      } else avMarkFail(fn, params, code);
+      throw err;
+    });
+  }
+  function avOffMessage() {
+    if (state.live) return 'ALPHA VANTAGE NO ESTÁ CONFIGURADO EN LA APP LOCAL: DEFINE ALPHA_VANTAGE_API_KEY Y VUELVE A ABRIRLA (python quant_studio.py).';
+    return 'PARA VER DATOS DE ALPHA VANTAGE ABRE ESTA PÁGINA EN CLAUDE.AI CON EL CONECTOR ALPHA VANTAGE, O USA LA APP LOCAL CON ALPHA_VANTAGE_API_KEY. AQUÍ NO SE MUESTRA NI SE INVENTA NINGUNA CIFRA.';
+  }
+  function avSection(name, jobs, force) {
+    // jobs: [[fn, params]]; fetched in order, a failure is reported in this section only.
+    if (av.busy[name] || !av.mode) { renderAv(); return Promise.resolve(); }
+    if (force) av.halted = null;            // a button press is a fresh request: try again
+    av.busy[name] = true; av.err[name] = null;
+    jobs.forEach(function (j) { if (j[2]) av.err[j[2]] = null; });
+    renderAv();
+    var chain = Promise.resolve();
+    jobs.forEach(function (j) {
+      chain = chain.then(function () {
+        return avFetch(j[0], j[1]).then(null, function (e) {
+          var err = { kind: e && e.kind || 'error', message: e && e.message ? e.message : String(e) };
+          // Halts (quota, access) belong to the whole section; anything else to its own row.
+          if (j[2] && !(av.halted && av.halted.message === err.message)) av.err[j[2]] = err; else av.err[name] = err;
+        });
+      }).then(function () { renderAv(); renderStatus(); });
+    });
+    return chain.then(function () { av.busy[name] = false; renderAv(); renderStatus(); });
+  }
+
+  var AV_QUOTES = [
+    ['MÉXICO', [['EWW', 'iShares MSCI México (ETF en EE. UU.)', 'buy_hold_single_country'], ['AMX', 'América Móvil (ADR, NYSE)', null], ['FMX', 'FEMSA (ADR, NYSE)', null], ['CX', 'Cemex (ADR, NYSE)', null]]],
+    ['EE. UU.', [['SPY', 'SPDR S&P 500 (ETF)', 'buy_hold_single_country'], ['QQQ', 'Invesco QQQ, Nasdaq-100 (ETF)', null], ['DIA', 'SPDR Dow Jones (ETF)', null], ['IWM', 'iShares Russell 2000 (ETF)', null]]],
+    ['FACTORES', [['MTUM', 'iShares MSCI USA Momentum', 'momentum'], ['VLUE', 'iShares MSCI USA Value', 'value'], ['QUAL', 'iShares MSCI USA Quality', 'profitability_quality'], ['USMV', 'iShares MSCI USA Min Vol', 'betting_against_beta']]]
   ];
-  state.market = null; state.marketErr = null; state.marketBusy = false; state.marketAt = 0;
-  function renderMarketShell() {
-    $('screen-mercado').innerHTML = MKT_GROUPS.map(function (g) {
-      return '<div class="panel" data-pid="' + g.n + '"><div class="ph"><span class="n">' + g.n + '</span><span class="t">MKT &lt;GO&gt; - ' + esc(g.name) + '</span>' +
-        '<span class="r">' + (g.n === 22 ? '<button type="button" class="tbtn" id="mkt-refresh" style="padding:0 6px">ACTUALIZAR</button>' : '') +
-        '<span class="wc"><button data-wc="min" aria-label="Minimizar">_</button><button data-wc="max" aria-label="Maximizar">[ ]</button><button data-wc="close" class="x" aria-label="Cerrar">X</button></span></span></div>' +
-        '<div class="pb"><div id="mkt-note-' + g.key + '"></div><div class="tablewrap"><table class="t mkt" id="mkt-' + g.key + '"></table></div></div>' +
-        '<div class="pf"><span id="mkt-foot-' + g.key + '"></span><b>&lt;MKT&gt;</b></div></div>';
+  var AV_MACRO = [
+    { code: 'USDMXN', name: 'Dólar / peso mexicano', fn: 'CURRENCY_EXCHANGE_RATE', params: { from_currency: 'USD', to_currency: 'MXN' }, dp: 4 },
+    { code: 'EURUSD', name: 'Euro / dólar', fn: 'CURRENCY_EXCHANGE_RATE', params: { from_currency: 'EUR', to_currency: 'USD' }, dp: 4 },
+    { code: 'BTCUSD', name: 'Bitcoin / dólar', fn: 'CURRENCY_EXCHANGE_RATE', params: { from_currency: 'BTC', to_currency: 'USD' }, dp: 2 },
+    { code: 'UST10', name: 'Bono del Tesoro 10 años (rend. %)', fn: 'TREASURY_YIELD', params: { interval: 'daily', maturity: '10year' }, dp: 2, bp: true },
+    { code: 'WTI', name: 'Petróleo WTI (USD por barril)', fn: 'WTI', params: { interval: 'daily' }, dp: 2 },
+    { code: 'ORO', name: 'Oro spot (USD por onza)', fn: 'GOLD_SILVER_SPOT', params: { symbol: 'GOLD' }, dp: 2 }
+  ];
+  var AV_REGION = { 'United States': ['EE. UU.', 'America/New_York', 'SPY'], 'Canada': ['CANADÁ', 'America/Toronto', 'EWC'], 'United Kingdom': ['REINO UNIDO', 'Europe/London', 'EWU'],
+    'Germany': ['ALEMANIA', 'Europe/Berlin', 'EWG'], 'France': ['FRANCIA', 'Europe/Paris', 'EWQ'], 'Spain': ['ESPAÑA', 'Europe/Madrid', 'EWP'], 'Portugal': ['PORTUGAL', 'Europe/Lisbon', 'PGAL'],
+    'Japan': ['JAPÓN', 'Asia/Tokyo', 'EWJ'], 'India': ['INDIA', 'Asia/Kolkata', 'INDA'], 'Mainland China': ['CHINA CONTINENTAL', 'Asia/Shanghai', 'MCHI'], 'Hong Kong': ['HONG KONG', 'Asia/Hong_Kong', 'EWH'],
+    'Brazil': ['BRASIL', 'America/Sao_Paulo', 'EWZ'], 'Mexico': ['MÉXICO', 'America/Mexico_City', 'EWW'], 'South Africa': ['SUDÁFRICA', 'Africa/Johannesburg', 'EZA'], 'Global': ['GLOBAL', null, null] };
+  var AV_TYPE = { equity: 'ACCIONES', forex: 'DIVISAS', cryptocurrency: 'CRIPTO' };
+  var AV_QMAX = 6;
+  function avWatch() {
+    try { var v = JSON.parse(store('qe.av.watch') || '[]'); return Array.isArray(v) ? v.filter(function (x) { return typeof x === 'string' && /^[A-Z0-9.\-]{1,12}$/.test(x); }).slice(0, AV_QMAX) : []; }
+    catch (e) { return []; }
+  }
+  function avAddWatch(sym) {
+    var w = avWatch().filter(function (x) { return x !== sym; }); w.unshift(sym);
+    store('qe.av.watch', JSON.stringify(w.slice(0, AV_QMAX)));
+  }
+  function avQuote(sym, watch) {
+    if (watch && !AV_QUOTES.some(function (g) { return g[1].some(function (r) { return r[0] === sym; }); })) avAddWatch(sym);
+    renderAv();
+    return avSection('q:' + sym, [['GLOBAL_QUOTE', { symbol: sym }, 'q:' + sym]], true);
+  }
+  function avQuoteSymbols() { var out = []; AV_QUOTES.forEach(function (g) { g[1].forEach(function (r) { out.push(r[0]); }); }); return out; }
+  function avStale(fn, params, ttl) {
+    var e = avGet(fn, params), f = avMem['x|' + avKey(fn, params)];
+    if (f && typeof f.at === 'number' && Date.now() - f.at < (/^(premium|invalid)$/.test(f.fail) ? Math.max(ttl, 24 * 3600e3) : ttl)) return false;
+    return !e || Date.now() - e.at > ttl;
+  }
+  function avAutoLoad() {
+    if (!av.mode || state.mktSrc !== 'av' || state.screen !== 'mercado') return;
+    var ttl = AV_TTL[av.plan];
+    if (avStale('MARKET_STATUS', {}, ttl.status)) avSection('status', [['MARKET_STATUS', {}]]);
+    var macro = AV_MACRO.filter(function (m) { return avStale(m.fn, m.params, ttl.macro); }).map(function (m) { return [m.fn, m.params, 'm:' + m.code]; });
+    if (macro.length) avSection('macro', macro);
+    if (avStale('TOP_GAINERS_LOSERS', {}, ttl.movers)) avSection('movers', [['TOP_GAINERS_LOSERS', {}]]);
+    if (ttl.quotes) {
+      var qs = avQuoteSymbols().concat(avWatch()).filter(function (sym) { return avStale('GLOBAL_QUOTE', { symbol: sym }, ttl.quotes); })
+        .map(function (sym) { return ['GLOBAL_QUOTE', { symbol: sym }, 'q:' + sym]; });
+      if (qs.length) avSection('quotes', qs);
+    }
+  }
+  function avRefreshAll() {
+    if (!av.mode) { renderAv(); return; }
+    avSection('status', [['MARKET_STATUS', {}]], true);
+    avSection('macro', AV_MACRO.map(function (m) { return [m.fn, m.params, 'm:' + m.code]; }), true);
+    avSection('movers', [['TOP_GAINERS_LOSERS', {}]], true);
+    if (av.plan === 'premium') avSection('quotes', avQuoteSymbols().concat(avWatch()).map(function (sym) { return ['GLOBAL_QUOTE', { symbol: sym }, 'q:' + sym]; }), true);
+  }
+
+  // ── Market rendering ────────────────────────────────────────────────────
+  function fmtN(v, dp) { return v == null || !isFinite(v) ? '—' : Number(v).toLocaleString('es-MX', { minimumFractionDigits: dp, maximumFractionDigits: dp }); }
+  function avClock(at) { if (!at) return '—'; var d = new Date(at), p = function (n) { return (n < 10 ? '0' : '') + n; }; return p(d.getHours()) + ':' + p(d.getMinutes()); }
+  function avAge(at) {
+    if (!at) return '';
+    var m = Math.max(0, Math.round((Date.now() - at) / 60000));
+    return m < 1 ? 'HACE <1 MIN' : m < 60 ? 'HACE ' + m + ' MIN' : m < 2880 ? 'HACE ' + Math.round(m / 60) + ' H' : 'HACE ' + Math.round(m / 1440) + ' D';
+  }
+  function avStamp(e) { return e ? 'DATOS DE LAS ' + avClock(e.at) + ' (' + avAge(e.at) + ')' : 'SIN DATOS AÚN'; }
+  function shortDate(s) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || ''); return m ? m[3] + '/' + m[2] : '—'; }
+  function localNow(tz) {
+    if (!tz) return '—';
+    try { return new Intl.DateTimeFormat('es-MX', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date()); } catch (e) { return '—'; }
+  }
+  function avNoteEs(n) {
+    var m = /noon trading break from (\d{1,2}:\d{2}) to (\d{1,2}:\d{2}) local time/i.exec(n);
+    if (m) return ['PAUSA DE MEDIODÍA ' + m[1] + '–' + m[2], 'es'];
+    if (/forex market is open 24 hours/i.test(n)) return ['24 H, SALVO DE VIERNES 16:00 A DOMINGO 17:00 (HORA DEL ESTE DE EE. UU.)', 'es'];
+    if (/cryptocurrency market is open 24 hours/i.test(n)) return ['24 H TODOS LOS DÍAS', 'es'];
+    return [n, 'en'];
+  }
+  function avSourceLabel() { return av.mode === 'local' ? 'ALPHA VANTAGE · CLAVE LOCAL' : av.mode === 'mcp' ? 'ALPHA VANTAGE · TU CONECTOR' : 'ALPHA VANTAGE'; }
+  function avNote(section) {
+    var pageWide = !av.mode ? avOffMessage() : av.halted ? av.halted.message : '';
+    var own = av.err[section] && !(av.halted && av.err[section].message === av.halted.message) ? av.err[section].message : '';
+    var perm = av.mode === 'mcp' && av.halted && /^(not_in_manifest|consent_required)$/.test(av.halted.code || '');
+    var out = av.busy[section] ? '<p class="mkt-note">CONSULTANDO ALPHA VANTAGE…</p>' : '';
+    if (pageWide) {
+      var p22 = document.querySelector('#screen-mercado > .panel[data-pid="22"]'), here = section === 'status' || !p22 || p22.hidden;
+      out += here ? '<p class="mkt-note ' + (av.mode ? 'dn' : '') + '">' + esc(pageWide) + (perm ? ' <button type="button" class="tbtn" data-av="perm" style="padding:0 6px">PERMISOS</button>' : '') + '</p>'
+        : '<p class="mkt-note mu">' + (av.mode ? 'SIN DATOS NUEVOS DE ALPHA VANTAGE: VER EL AVISO DEL PANEL 22.' : 'SIN ALPHA VANTAGE EN ESTA VISTA: VER EL PANEL 22.') + '</p>';
+    }
+    if (own) out += '<p class="mkt-note dn">' + esc(own) + '</p>';
+    return out;
+  }
+  function avErrCell(key, cols) {
+    var e = av.err[key];
+    var lbl = !e ? '—' : e.kind === 'premium' ? 'DE PAGO' : 'SIN DATO';
+    return '<td class="n mu"' + (e ? ' title="' + esc(e.message) + '"' : '') + '>' + lbl + '</td>' + new Array(cols).join('<td class="n mu">—</td>');
+  }
+  function srcSwitch() {
+    if (!(av.mode && state.live)) return '';
+    return '<span class="srcsw" role="group" aria-label="Fuente de datos"><button type="button" data-src="av" aria-pressed="' + (state.mktSrc === 'av') + '">ALPHA VANTAGE</button>' +
+      '<button type="button" data-src="yf" aria-pressed="' + (state.mktSrc === 'yf') + '">YAHOO</button></span>';
+  }
+  function setHtml(id, html) { var el = $(id); if (el) el.innerHTML = html; }
+  function setText(id, txt) { var el = $(id); if (el) el.textContent = txt; }
+
+  function renderAv() {
+    if (!$('av-status')) return;
+    document.querySelectorAll('[data-srcsw]').forEach(function (el) { el.innerHTML = srcSwitch(); });
+    var planBtn = $('av-plan');
+    planBtn.textContent = av.plan === 'premium' ? 'PLAN: PREMIUM' : 'PLAN: GRATUITO';
+    planBtn.setAttribute('aria-pressed', String(av.plan === 'premium'));
+    planBtn.title = av.plan === 'premium' ? 'Actualiza solo cada minuto. Cambia a gratuito si tu clave tiene 25 consultas al día.' : 'Cuida las 25 consultas diarias: actualiza solo al pedirlo o cada 6 horas.';
+
+    // 22 · Exchanges
+    var st = avGet('MARKET_STATUS', {}), fk = focusedKey('av-status', 'data-etf');
+    setHtml('av-note-status', avNote('status'));
+    var rows = st ? st.data.markets.map(function (m) {
+      var reg = AV_REGION[m.region] || [m.region.toUpperCase(), null, null], open = m.status === 'open', note = m.notes ? avNoteEs(m.notes) : null;
+      var type = AV_TYPE[m.type.toLowerCase()] || m.type.toUpperCase();
+      return '<tr title="' + esc(m.exchanges) + '"><td><b class="wh">' + esc(reg[0]) + '</b>' + (type !== 'ACCIONES' ? ' <span class="mu">' + esc(type) + '</span>' : '') + '<br><span class="mu">' + esc(m.exchanges) + '</span></td>' +
+        '<td class="n">' + esc(m.open) + '–' + esc(m.close) + '</td><td><span class="tag ' + (open ? 'pass' : 'closed') + '">' + (open ? 'ABIERTA' : m.status === 'closed' ? 'CERRADA' : esc(m.status.toUpperCase() || '—')) + '</span></td>' +
+        '<td class="n" data-tz="' + esc(reg[1] || '') + '">' + localNow(reg[1]) + '</td>' +
+        '<td>' + (reg[2] ? '<button type="button" class="tbtn" data-etf="' + reg[2] + '" style="padding:0 5px" title="Cotización del ETF del país en EE. UU. (1 consulta)">' + reg[2] + '</button>' : '') + '</td>' +
+        '<td class="mu"' + (note && note[1] === 'en' ? ' lang="en"' : '') + ' title="' + esc(note ? note[0] : '') + '">' + esc(note ? note[0] : '') + '</td></tr>';
+    }).join('') : '';
+    setHtml('av-status', '<thead><tr><th>MERCADO</th><th class="n" title="Horario local de cada bolsa">HORARIO</th><th>ESTADO</th><th class="n">AHORA</th><th>ETF</th><th>NOTA</th></tr></thead><tbody>' + rows + '</tbody>');
+    restoreFocus('av-status', 'data-etf', fk);
+    var nOpen = st ? st.data.markets.filter(function (m) { return m.status === 'open'; }).length : 0;
+    setText('av-foot-status', 'HOY: ' + avCalls() + ' CONSULTAS (ESTE NAVEGADOR) · ' + (st ? nOpen + '/' + st.data.markets.length + ' ABIERTOS · ' : '') + avStamp(st));
+
+    // 23 · Quotes
+    fk = focusedKey('av-quotes', 'data-avq');
+    var qhtml = '', anyQ = false;
+    var qRow = function (sym, name, sid) {
+      var e = avGet('GLOBAL_QUOTE', { symbol: sym }), q = e && e.data, link = sid && strat(sid);
+      if (q) anyQ = true;
+      return '<tr' + (link ? ' class="click" tabindex="0" data-load="' + esc(sid) + '" title="Evaluar la estrategia relacionada: ' + esc(link.name) + '"' : '') + '>' +
+        '<td class="code-cell">' + esc(sym) + (link ? '<span class="am" aria-hidden="true"> ›</span>' : '') + '</td><td>' + esc(name) + '</td>' +
+        (q ? '<td class="n px">' + fmtN(q.price, 2) + '</td><td class="n ' + cls(q.change) + '">' + sgn(q.change, 2) + '</td><td class="n ' + cls(q.change_pct) + '">' + sgn(q.change_pct, 2) + '</td><td class="n mu" title="' + esc(avStamp(e)) + '">' + shortDate(q.day) + '</td>'
+          : avErrCell('q:' + sym, 4)) +
+        '<td class="n"><button type="button" class="tbtn" data-avq="' + esc(sym) + '" style="padding:0 5px"' + (av.mode ? '' : ' disabled') + ' aria-label="Consultar ' + esc(sym) + ' (1 consulta)" title="Consultar ahora (1 consulta)">' + (av.busy['q:' + sym] ? '…' : '↻') + '</button></td></tr>';
+    };
+    AV_QUOTES.forEach(function (g) {
+      qhtml += '<tr class="sec"><td colspan="7">' + esc(g[0]) + '</td></tr>' + g[1].map(function (r) { return qRow(r[0], r[1], r[2]); }).join('');
+    });
+    var watch = avWatch();
+    if (watch.length) qhtml += '<tr class="sec"><td colspan="7">CONSULTADAS (Q &lt;TICKER&gt;)</td></tr>' + watch.map(function (sym) { return qRow(sym, 'Consulta del usuario', null); }).join('');
+    setHtml('av-quotes', '<thead><tr><th>CÓDIGO</th><th>NOMBRE</th><th class="n">ÚLTIMO</th><th class="n">CAMBIO</th><th class="n">%</th><th class="n">DÍA</th><th></th></tr></thead><tbody>' + qhtml + '</tbody>');
+    restoreFocus('av-quotes', 'data-avq', fk);
+    setHtml('av-note-quotes', avNote('quotes') + (av.mode && av.plan === 'free' && !anyQ ? '<p class="mkt-note">PLAN GRATUITO: LAS COTIZACIONES SE PIDEN UNA POR UNA (↻) O CON «CARGAR LISTA» PARA CUIDAR TUS 25 CONSULTAS DIARIAS. DE MÉXICO SE MUESTRAN ETF Y ADR QUE COTIZAN EN EE. UU.: ALPHA VANTAGE NO DA LA BMV EN ESTE PLAN.</p>' : ''));
+    setText('av-load-quotes', 'CARGAR LISTA · ' + (avQuoteSymbols().length + watch.length) + ' CONSULTAS');
+    $('av-load-quotes').disabled = !av.mode;
+    setText('av-foot-quotes', avSourceLabel() + ' · CIERRE O ÚLTIMO PRECIO DEL DÍA INDICADO · PUEDE TENER RETRASO');
+
+    // 24 · FX, rates and commodities
+    var mhtml = AV_MACRO.map(function (m) {
+      var e = avGet(m.fn, m.params), d = e && e.data, last = null, chg = null, pct = null, when = '—', series = null, title = '';
+      if (d) {
+        if (m.fn === 'CURRENCY_EXCHANGE_RATE') { last = d.rate; when = d.refreshed ? d.refreshed.slice(5, 16).replace(/^(\d{2})-(\d{2}) /, '$2/$1 ') + ' ' + (d.tz || '') : '—'; title = d.bid != null && d.ask != null ? 'Compra ' + fmtN(d.bid, m.dp) + ' · venta ' + fmtN(d.ask, m.dp) : ''; }
+        else if (m.fn === 'GOLD_SILVER_SPOT') { last = d.price; when = d.timestamp ? d.timestamp.slice(5, 16).replace(/^(\d{2})-(\d{2}) /, '$2/$1 ') : '—'; }
+        else { last = d.last; when = shortDate(d.date); series = d.series; if (d.prev != null) { chg = d.last - d.prev; pct = m.bp ? null : (d.prev ? chg / d.prev * 100 : null); } title = d.prev_date ? 'Frente al dato del ' + shortDate(d.prev_date) : ''; }
+      }
+      var chgTxt = chg == null ? '—' : m.bp ? (chg > 0 ? '+' : '') + Math.round(chg * 100) + ' PB' : sgn(chg, m.dp);
+      var head = '<tr' + (title ? ' title="' + esc(title) + '"' : '') + '><td class="code-cell">' + esc(m.code) + '</td><td>' + esc(m.name) + '</td>';
+      if (!d) return head + avErrCell('m:' + m.code, 5) + '</tr>';
+      return head + '<td class="n px">' + fmtN(last, m.dp) + '</td>' +
+        '<td class="n ' + cls(chg) + '">' + chgTxt + '</td><td class="n ' + cls(pct) + '">' + (pct == null ? '—' : sgn(pct, 2)) + '</td><td>' + (series ? spark(series) : '') + '</td><td class="n mu">' + esc(when) + '</td></tr>';
     }).join('');
+    setHtml('av-macro', '<thead><tr><th>CÓDIGO</th><th>NOMBRE</th><th class="n">ÚLTIMO</th><th class="n">CAMBIO</th><th class="n">%</th><th>TENDENCIA</th><th class="n">FECHA</th></tr></thead><tbody>' + mhtml + '</tbody>');
+    setHtml('av-note-macro', avNote('macro'));
+    var anyM = AV_MACRO.map(function (m) { return avGet(m.fn, m.params); }).filter(Boolean).sort(function (a, b) { return a.at - b.at; })[0];
+    setText('av-foot-macro', avSourceLabel() + ' · ' + avStamp(anyM) + ' · TASAS Y PETRÓLEO: DATO DIARIO, PUBLICADO CON DÍAS DE RETRASO');
+
+    // 25 · US movers
+    var mv = avGet('TOP_GAINERS_LOSERS', {}), list = mv ? mv.data[av.mv] || [] : [];
+    setHtml('av-mv-chips', [['gainers', 'GANADORAS'], ['losers', 'PERDEDORAS'], ['active', 'MÁS ACTIVAS']].map(function (c) {
+      return '<button type="button" data-mv="' + c[0] + '" aria-pressed="' + (av.mv === c[0]) + '">' + c[1] + '</button>';
+    }).join(''));
+    setHtml('av-movers', '<thead><tr><th>TICKER</th><th class="n">PRECIO</th><th class="n">CAMBIO</th><th class="n">%</th><th class="n">VOLUMEN</th></tr></thead><tbody>' + list.map(function (r) {
+      return '<tr><td class="code-cell">' + esc(r.ticker) + '</td><td class="n px">' + fmtN(r.price, r.price < 1 ? 4 : 2) + '</td><td class="n ' + cls(r.change) + '">' + sgn(r.change, r.price < 1 ? 4 : 2) + '</td>' +
+        '<td class="n ' + cls(r.change_pct) + '">' + sgn(r.change_pct, 1) + '</td><td class="n mu">' + fmtN(r.volume, 0) + '</td></tr>';
+    }).join('') + '</tbody>');
+    setHtml('av-note-movers', avNote('movers') + (list.length ? '<p class="mkt-note">INCLUYE MICROCAPS, WARRANTS Y DERECHOS: UN +100% EN UN DÍA NO ES UNA SEÑAL. <button type="button" class="tbtn" data-load-mon="frequent_trading" style="padding:0 6px">EVAL ' + esc(TICK.frequent_trading) + '</button></p>' : ''));
+    setText('av-foot-movers', avSourceLabel() + (mv ? ' · CORTE DE ALPHA VANTAGE: ' + mv.data.updated.toUpperCase() + ' · ' + avStamp(mv) : ' · SIN DATOS AÚN'));
+  }
+  function avTickClocks() {
+    if (state.screen !== 'mercado') return;
+    document.querySelectorAll('#av-status [data-tz]').forEach(function (td) { var tz = td.getAttribute('data-tz'); if (tz) td.textContent = localNow(tz); });
+  }
+  setInterval(avTickClocks, 30000);
+
+  // ── Yahoo Finance (local app fallback) ──────────────────────────────────
+  var MKT_GROUPS = [
+    { key: 'mx', n: 26, name: 'MÉXICO', codes: [['IPC', 'S&P/BMV IPC'], ['USDMXN', 'Dólar / peso mexicano'], ['AMX', 'América Móvil'], ['WALMEX', 'Walmart de México'], ['GFNORTE', 'Banorte'], ['FEMSA', 'FEMSA'], ['GMEXICO', 'Grupo México'], ['CEMEX', 'Cemex']] },
+    { key: 'us', n: 27, name: 'EE. UU.', codes: [['SPX', 'S&P 500'], ['NASDAQ', 'Nasdaq Composite'], ['DJIA', 'Dow Jones Industrial'], ['RTY', 'Russell 2000'], ['UST10', 'Bono del Tesoro 10 años (rend. %)'], ['VIX', 'Volatilidad implícita S&P 500']] },
+    { key: 'global', n: 28, name: 'GLOBAL Y MATERIAS PRIMAS', codes: [['SX5E', 'Euro Stoxx 50'], ['UKX', 'FTSE 100'], ['DAX', 'DAX'], ['NKY', 'Nikkei 225'], ['HSI', 'Hang Seng'], ['EURUSD', 'Euro / dólar'], ['WTI', 'Petróleo WTI (futuro)'], ['ORO', 'Oro (futuro)'], ['COBRE', 'Cobre (futuro)'], ['BTC', 'Bitcoin']] },
+    { key: 'factors', n: 29, name: 'FACTORES (ETF)', codes: [['MTUM', 'iShares MSCI USA Momentum'], ['VLUE', 'iShares MSCI USA Value'], ['QUAL', 'iShares MSCI USA Quality'], ['USMV', 'iShares MSCI USA Min Vol'], ['SIZE', 'iShares MSCI USA Size'], ['SPY', 'SPDR S&P 500 (referencia)']] }
+  ];
+  state.market = null; state.marketErr = null; state.marketBusy = false; state.marketAt = 0; state.mktSrc = 'av';
+  var WC = '<span class="wc"><button data-wc="min" aria-label="Minimizar">_</button><button data-wc="max" aria-label="Maximizar">[ ]</button><button data-wc="close" class="x" aria-label="Cerrar">X</button></span>';
+  function mktPanel(n, set, title, extra, body, footId) {
+    return '<div class="panel" data-pid="' + n + '" data-set="' + set + '"><div class="ph"><span class="n">' + n + '</span><span class="t">' + title + '</span>' +
+      '<span class="r">' + extra + WC + '</span></div><div class="pb">' + body + '</div><div class="pf"><span id="' + footId + '"></span><b>&lt;MKT&gt;</b></div></div>';
+  }
+  function renderMarketShell() {
+    var tw = function (id, note) { return '<div id="' + note + '"></div><div class="tablewrap"><table class="t mkt-av" id="' + id + '"></table></div>'; };
+    var html = mktPanel(22, 'av', 'BOLSAS &lt;GO&gt; - BOLSAS DEL MUNDO', '<span data-srcsw></span><button type="button" class="tbtn" id="av-plan" aria-pressed="false" style="padding:0 6px"></button><button type="button" class="tbtn" data-av="status" style="padding:0 6px">ACTUALIZAR · 1</button>', tw('av-status', 'av-note-status'), 'av-foot-status') +
+      mktPanel(23, 'av', 'COT &lt;GO&gt; - COTIZACIONES', '<button type="button" class="tbtn" id="av-load-quotes" style="padding:0 6px"></button>', tw('av-quotes', 'av-note-quotes'), 'av-foot-quotes') +
+      mktPanel(24, 'av', 'FX &lt;GO&gt; - DIVISAS, TASAS Y MATERIAS PRIMAS', '<button type="button" class="tbtn" data-av="macro" style="padding:0 6px">ACTUALIZAR · ' + AV_MACRO.length + '</button>', tw('av-macro', 'av-note-macro'), 'av-foot-macro') +
+      mktPanel(25, 'av', 'MOVERS &lt;GO&gt; - MAYORES MOVIMIENTOS EN EE. UU.', '<button type="button" class="tbtn" data-av="movers" style="padding:0 6px">ACTUALIZAR · 1</button>', '<div class="chips" id="av-mv-chips" role="group" aria-label="Lista"></div>' + tw('av-movers', 'av-note-movers'), 'av-foot-movers');
+    html += MKT_GROUPS.map(function (g) {
+      return mktPanel(g.n, 'yf', 'MKT &lt;GO&gt; - ' + esc(g.name) + ' <em>YAHOO</em>', g.n === 26 ? '<span data-srcsw></span><button type="button" class="tbtn" id="mkt-refresh" style="padding:0 6px">ACTUALIZAR</button>' : '',
+        '<div id="mkt-note-' + g.key + '"></div><div class="tablewrap"><table class="t mkt" id="mkt-' + g.key + '"></table></div>', 'mkt-foot-' + g.key);
+    }).join('');
+    $('screen-mercado').innerHTML = html;
     $('mkt-refresh').addEventListener('click', function () { refreshMarket(true); });
-    renderMarket();
+    chooseSource(); renderAv(); renderMarket();
+  }
+  function chooseSource() {
+    var pref = store('qe.mkt.src');
+    state.mktSrc = pref === 'yf' && state.live ? 'yf' : av.mode ? 'av' : state.live ? 'yf' : 'av';
+    $('screen-mercado').setAttribute('data-src', state.mktSrc);
   }
   function pxFmt(r) {
     var v = r.last; if (v == null) return '—';
@@ -1667,7 +2153,7 @@ var CODE = /*__CODE_INDEX__*/null;
     });
   }
   function refreshMarket(force) {
-    if (!state.live || state.marketBusy) return;
+    if (!state.live || state.marketBusy || state.mktSrc !== 'yf') return;
     if (!force && state.market && Date.now() - state.marketAt < 55000) return;
     state.marketBusy = true;
     fetch('/api/market' + (force ? '?refresh=1' : ''), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
@@ -1679,8 +2165,15 @@ var CODE = /*__CODE_INDEX__*/null;
     });
   }
   function marketStatus() {
-    if (!state.market) return [];
     var out = [];
+    if (state.mktSrc === 'av' && av.mode) {
+      var fx = avGet('CURRENCY_EXCHANGE_RATE', { from_currency: 'USD', to_currency: 'MXN' }), spy = avGet('GLOBAL_QUOTE', { symbol: 'SPY' });
+      if (fx) out.push('USDMXN <b>' + fmtN(fx.data.rate, 4) + '</b>');
+      if (spy && spy.data.change_pct != null) out.push('SPY <b class="' + cls(spy.data.change_pct) + '">' + sgn(spy.data.change_pct, 2) + '%</b>');
+      out.push('ALPHA VANTAGE HOY <b>' + avCalls() + '</b>');
+      return out;
+    }
+    if (!state.market) return out;
     ['IPC', 'SPX', 'USDMXN'].forEach(function (code) {
       state.market.groups.forEach(function (g) { g.rows.forEach(function (r) {
         if (r.code === code && !r.error && r.change_pct != null) out.push(esc(code) + ' <b class="' + cls(r.change_pct) + '">' + pxFmt(r) + ' ' + sgn(r.change_pct, 2) + '%</b>');
@@ -1688,10 +2181,47 @@ var CODE = /*__CODE_INDEX__*/null;
     });
     return out;
   }
+  function openPermissions() {
+    var c = window.claude;
+    var fail = function () { log('ABRE EL MENÚ DE PERMISOS DE ESTA PÁGINA Y ACTIVA ALPHA VANTAGE.', 'er'); };
+    if (!c || typeof c.use !== 'function') { fail(); return; }
+    c.use('permissions').then(function (p) { if (!p) throw new Error('unavailable'); return p.manage(); })
+      .then(function () { av.halted = null; av.err = {}; renderAv(); }, fail);
+  }
   $('screen-mercado').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button');
+    if (b) {
+      if (b.hasAttribute('data-src')) {
+        store('qe.mkt.src', b.getAttribute('data-src')); chooseSource(); renderAv(); renderMarket(); renderStatus();
+        if (state.mktSrc === 'yf') refreshMarket(false); else avAutoLoad();
+        return;
+      }
+      if (b.id === 'av-plan') { av.plan = av.plan === 'premium' ? 'free' : 'premium'; store('qe.av.plan', av.plan); renderAv(); return; }
+      if (b.id === 'av-load-quotes') { avSection('quotes', avQuoteSymbols().concat(avWatch()).map(function (sym) { return ['GLOBAL_QUOTE', { symbol: sym }, 'q:' + sym]; }), true); return; }
+      var a = b.getAttribute('data-av');
+      if (a === 'status') { avSection('status', [['MARKET_STATUS', {}]], true); return; }
+      if (a === 'macro') { avSection('macro', AV_MACRO.map(function (m) { return [m.fn, m.params, 'm:' + m.code]; }), true); return; }
+      if (a === 'movers') { avSection('movers', [['TOP_GAINERS_LOSERS', {}]], true); return; }
+      if (a === 'perm') { openPermissions(); return; }
+      if (b.hasAttribute('data-avq')) { avQuote(b.getAttribute('data-avq'), false); return; }
+      if (b.hasAttribute('data-etf')) { avQuote(b.getAttribute('data-etf'), true); return; }
+      if (b.hasAttribute('data-mv')) { av.mv = b.getAttribute('data-mv'); renderAv(); return; }
+      return;
+    }
     var t = ev.target.closest('tr[data-load]'); if (t) { loadStrategy(t.getAttribute('data-load')); showScreen('monitor'); }
   });
-  setInterval(function () { if (state.screen === 'mercado' && !document.hidden) refreshMarket(false); }, 60000);
+  setInterval(function () {
+    if (state.screen !== 'mercado' || document.hidden) return;
+    if (state.mktSrc === 'yf') refreshMarket(false); else avAutoLoad();
+  }, 60000);
+  if (window.claude && typeof window.claude.use === 'function') {
+    window.claude.use('mcp').then(function (m) {
+      if (!m || av.mode) return;
+      av.mcp = m; av.mode = 'mcp';
+      chooseSource(); renderAv(); renderStatus();
+      if (state.screen === 'mercado') avAutoLoad();
+    }, function () { /* no connector bridge in this view */ });
+  }
 
   // ── Boot ────────────────────────────────────────────────────────────────
   function setLive(live) {
@@ -1714,7 +2244,7 @@ var CODE = /*__CODE_INDEX__*/null;
   showScreen(SCREENS.indexOf(startHash) >= 0 ? startHash : (SCREENS.indexOf(saved) >= 0 ? saved : 'monitor'));
   if (/^https?:$/.test(location.protocol)) {
     fetch('/api/health', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-      if (j && j.success && j.data && j.data.app === 'quant-studio') { setLive(true); renderTree(); render(); renderMarket(); if (state.screen === 'mercado') refreshMarket(false); log('CONECTADO AL MOTOR PYTHON EN ' + location.host + '. RUN HABILITADO.', 'ok'); }
+      if (j && j.success && j.data && j.data.app === 'quant-studio') { setLive(true); if (j.data.alpha_vantage && !av.mode) av.mode = 'local'; chooseSource(); renderTree(); render(); renderAv(); renderMarket(); if (state.screen === 'mercado') { if (state.mktSrc === 'yf') refreshMarket(false); else avAutoLoad(); } log('CONECTADO AL MOTOR PYTHON EN ' + location.host + '. RUN HABILITADO.', 'ok'); }
     }).catch(function () { /* static hosting: browser engine */ });
   }
 })();

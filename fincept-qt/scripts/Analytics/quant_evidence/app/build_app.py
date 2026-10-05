@@ -63,6 +63,8 @@ NEW_FILES = {
         'Servidor local: API del motor Python, explorador del repositorio y ejecución de CLIs.',
     'fincept-qt/scripts/Analytics/quant_evidence/app/market.py':
         'Cotizaciones en vivo para la pantalla MERCADO (solo app local); nunca rellena un dato que no llegó.',
+    'fincept-qt/scripts/Analytics/quant_evidence/app/alphavantage.py':
+        'Proxy de Alpha Vantage para la app local: lista cerrada de funciones, una consulta por segundo, la clave nunca sale.',
     'fincept-qt/scripts/Analytics/quant_evidence/app/build_app.py':
         'Empaqueta la app y el índice de código.',
     'fincept-qt/scripts/Analytics/quant_evidence/app/terminal.html':

@@ -22,9 +22,16 @@ The default interface (`terminal.html`, *Fincept Quant Terminal*) is a financial
 - **REPOSITORIO**: the category matrix (curated modules, keyword-scan hits, strategies, gaps), the 19 gaps and the modules per category.
 - **CÁLCULO**: Deflated Sharpe, Harvey-Liu haircut, MinBTL, cost drag, Bodie and Kelly calculators, plus the formulas and score weights.
 - **CONSOLA**: the command log, saved decisions and `RUN` (local app only).
-- **MERCADO**: live quotes for Mexico (S&P/BMV IPC, USD/MXN, large BMV stocks), the US (S&P 500, Nasdaq, Dow, Russell 2000, 10-year Treasury yield, VIX), global indices and commodities, and factor ETFs (momentum, value, quality, min-vol, size), each with change, 1-month change and a sparkline. Factor rows open the related strategy in MONITOR. Local app only (`app/market.py`, Yahoo Finance chart data via the standard library, cached 60 s); a symbol that fails to load shows "sin dato", never a number.
+- **MERCADO**: market data from **Alpha Vantage**. BOLSAS shows the world's stock exchanges (open or closed, local hours, the local time now, notes such as lunch breaks) with a button for each country's US-listed ETF. COTIZACIONES shows Mexico (the EWW ETF and the America Movil, FEMSA and Cemex ADRs), the US (SPY, QQQ, DIA, IWM), factor ETFs (MTUM, VLUE, QUAL, USMV) and any ticker queried with `Q <TICKER>`. DIVISAS, TASAS Y MATERIAS PRIMAS shows USD/MXN, EUR/USD, BTC/USD, the 10-year Treasury yield, WTI and spot gold. MOVERS shows the US top gainers, losers and most active. Quote rows marked › open the related strategy in MONITOR.
 
-The scores and curves are computed by the evaluator; the ticker shows the knowledge base's 0-100 evidence ratings. Market quotes appear only on the MERCADO screen of the local app; the static build shows none.
+  Where the data comes from:
+  - In a claude.ai artifact, from the viewer's own **Alpha Vantage connector** (the page asks for permission on the first call).
+  - In the local app, from `ALPHA_VANTAGE_API_KEY` (the same variable as `scripts/alphavantage_data.py`) through `app/alphavantage.py`. The proxy accepts only the seven functions above and never returns the key.
+  - Without either, the local app falls back to Yahoo Finance (`app/market.py`), and `FUENTE AV|YAHOO` switches between the two.
+
+  The free Alpha Vantage plan allows 25 requests a day and one per second, so the page queues calls 1.1 s apart and keeps the last answers in the browser with their time. On the free plan (`PLAN GRATIS`) it refreshes automatically only after 6 hours and loads quotes on request. Refusals are remembered so automatic refreshes never re-spend the quota. Rate-limit notes, premium-only answers (including the artificial sample data Alpha Vantage sends for premium endpoints) and errors are shown as notices, never as numbers.
+
+The scores and curves are computed by the evaluator; the ticker shows the knowledge base's 0-100 evidence ratings. Market data appears only on the MERCADO screen and only when it arrived from Alpha Vantage (or Yahoo in the local app); without a source the screen says so and shows no figures.
 
 `--studio` builds the alternative product-page interface (`template.html`): a configurator with activity rings, strategy cards, the code explorer and the method page. The local server also serves it at `/studio`.
 
@@ -34,6 +41,7 @@ Run it locally (stdlib only; the page then uses the Python engine, can browse ev
 cd fincept-qt/scripts/Analytics
 python quant_studio.py                 # http://127.0.0.1:8765
 python quant_studio.py --port 9000 --no-browser --no-scan
+ALPHA_VANTAGE_API_KEY=your_key python quant_studio.py   # MERCADO with Alpha Vantage
 ```
 
 The server binds to 127.0.0.1, accepts only localhost `Host` headers and JSON POST bodies, and refuses any path outside `fincept-qt/`. To produce a static copy (page plus `code/<id>.txt` sources) run `python -m quant_evidence.app.build_app [out_dir] [--fragment] [--studio]`; without the local server it runs the JavaScript engine and shows the curated files only.

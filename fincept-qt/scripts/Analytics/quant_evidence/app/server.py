@@ -15,6 +15,8 @@ reach the whole repository:
     GET  /api/repo/file?path=   text of a file under fincept-qt/
     GET  /api/run/list          repository CLIs that can be run
     GET  /api/market[?refresh=1] live quotes for the MERCADO screen (market.py)
+    POST /api/av                {"function", "params"} -> Alpha Vantage answer (alphavantage.py,
+                                needs ALPHA_VANTAGE_API_KEY; allowlisted functions only)
     POST /api/run               {"script", "command", "params"} -> CLI output
 
 It binds to 127.0.0.1 by default, accepts only localhost Host headers (DNS
@@ -211,8 +213,9 @@ class StudioHandler(BaseHTTPRequestHandler):
                     return self._err('No existe.', HTTPStatus.NOT_FOUND)
                 return self._send(200, read_text(e['path'])['text'].encode('utf-8'), 'text/plain; charset=utf-8')
             if path == '/api/health':
+                from . import alphavantage
                 return self._ok({'app': 'quant-studio', 'repo_root': REPO_ROOT, 'python': sys.version.split()[0],
-                                 'files_indexed': len(self.index)})
+                                 'files_indexed': len(self.index), 'alpha_vantage': alphavantage.configured()})
             if path == '/api/kb':
                 return self._ok(load_kb())
             if path == '/api/repo-map':
@@ -252,6 +255,9 @@ class StudioHandler(BaseHTTPRequestHandler):
                 if fn is None or m.group(1) == 'export_web':
                     return self._err('Herramienta desconocida.', HTTPStatus.NOT_FOUND)
                 return self._ok(fn(body))
+            if path == '/api/av':
+                from . import alphavantage
+                return self._ok(alphavantage.call(body.get('function'), body.get('params')))
             if path == '/api/run':
                 return self._ok(run_cli(body.get('script'), body.get('command'), body.get('params', {})))
             return self._err('Ruta desconocida.', HTTPStatus.NOT_FOUND)
