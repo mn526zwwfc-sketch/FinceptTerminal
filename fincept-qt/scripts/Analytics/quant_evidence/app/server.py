@@ -192,7 +192,10 @@ class StudioHandler(BaseHTTPRequestHandler):
         if n > MAX_BODY_BYTES:
             raise ValueError('Cuerpo demasiado grande.')
         raw = self.rfile.read(n) if n else b'{}'
-        return json.loads(raw.decode('utf-8') or '{}')
+        data = json.loads(raw.decode('utf-8') or '{}')
+        if not isinstance(data, dict):
+            raise ValueError('El cuerpo debe ser un objeto JSON.')
+        return data
 
     # ── routes ─────────────────────────────────────────────────────────────
     def do_GET(self):

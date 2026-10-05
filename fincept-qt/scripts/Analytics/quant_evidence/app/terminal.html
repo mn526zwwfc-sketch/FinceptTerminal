@@ -338,20 +338,27 @@ pre.formula { margin: 0; color: var(--text); white-space: pre; font-size: 11.5px
 .mkt-av td.px { color: var(--white); font-weight: 600; }
 .tag.closed { color: var(--muted); }
 .srcsw { display: inline-flex; gap: 2px; }
+.mkt-bar { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.mkt-bar:not(:has(button)) { display: none; }
+.tbtn:disabled { opacity: 0.45; cursor: not-allowed; }
+.tbtn:disabled:hover { background: transparent; }
 .srcsw button { background: transparent; border: 1px solid var(--line-2); color: var(--text); padding: 0 5px; cursor: pointer; font-size: 10.5px; }
 .srcsw button[aria-pressed="true"], #av-plan[aria-pressed="true"] { background: var(--amber); color: var(--amber-ink); border-color: var(--amber); }
 #av-status th:nth-child(2) { width: 13ch; } #av-status th:nth-child(3) { width: 10ch; } #av-status th:nth-child(4) { width: 7ch; }
 #av-status th:nth-child(5) { width: 7ch; } #av-status th:nth-child(6) { width: 27%; }
 #av-status td:nth-child(1), #av-status td:nth-child(6) { overflow: hidden; text-overflow: ellipsis; }
 #av-status td:nth-child(1) { line-height: 1.25; }
-#av-quotes th:nth-child(1) { width: 10ch; } #av-quotes th:nth-child(3) { width: 11ch; } #av-quotes th:nth-child(4) { width: 9ch; }
+#av-quotes th:nth-child(1) { width: 9ch; } #av-quotes th:nth-child(3) { width: 11ch; } #av-quotes th:nth-child(4) { width: 11ch; }
 #av-quotes th:nth-child(5) { width: 8ch; } #av-quotes th:nth-child(6) { width: 7ch; } #av-quotes th:nth-child(7) { width: 5ch; }
 #av-quotes td:nth-child(2), #av-macro td:nth-child(2) { overflow: hidden; text-overflow: ellipsis; }
 #av-macro th:nth-child(1) { width: 8ch; } #av-macro th:nth-child(3) { width: 12ch; } #av-macro th:nth-child(4) { width: 9ch; }
-#av-macro th:nth-child(5) { width: 8ch; } #av-macro th:nth-child(6) { width: 84px; } #av-macro th:nth-child(7) { width: 16ch; }
-#av-movers th:nth-child(1) { width: 11ch; }
+#av-macro th:nth-child(5) { width: 8ch; } #av-macro th:nth-child(6) { width: 84px; } #av-macro th:nth-child(7) { width: 12ch; }
+#av-movers th:nth-child(1) { width: 8ch; } #av-movers th:nth-child(5) { width: 15ch; }
 @media (max-width: 1300px) { #av-status th:nth-child(6), #av-status td:nth-child(6), #av-macro th:nth-child(6), #av-macro td:nth-child(6) { display: none; } }
-@media (max-width: 1100px) { #av-quotes th:nth-child(2), #av-quotes td:nth-child(2), #av-macro th:nth-child(2), #av-macro td:nth-child(2) { display: none; } }
+@media (max-width: 1100px) {
+  #av-macro th:nth-child(2), #av-macro td:nth-child(2) { display: none; }
+  #av-quotes th:nth-child(2) { width: 0; padding: 0; } #av-quotes td:nth-child(2) { padding: 0; font-size: 0; }   /* kept at 0 width: section rows span 7 columns */
+}
 
 /* ── Status bar ─────────────────────────────────────────────────────────── */
 .status { display: flex; gap: 14px; padding: 3px 10px; background: var(--chrome); border-top: 1px solid var(--line); white-space: nowrap; overflow: hidden; font-size: 11px; color: var(--muted); }
@@ -736,6 +743,7 @@ var CODE = /*__CODE_INDEX__*/null;
       updateGridState(screen); renderHiddenPanels();
       var rb = document.querySelector('[data-restore="' + panel.getAttribute('data-pid') + '"]'); if (rb) rb.focus();
     }
+    if (screen.id === 'screen-mercado') renderAv();
   });
   function renderHiddenPanels() {
     var hidden = Array.prototype.slice.call(document.querySelectorAll('#screen-' + state.screen + ' > .panel[hidden]'));
@@ -748,6 +756,7 @@ var CODE = /*__CODE_INDEX__*/null;
     var p = document.querySelector('.panel[data-pid="' + b.getAttribute('data-restore') + '"]');
     if (p) showPanel(p);
     renderHiddenPanels();
+    if (p && p.closest('#screen-mercado')) renderAv();
     if (p) { var x = p.querySelector('[data-wc="close"]'); if (x) x.focus(); }
   });
   function labelWindowControls() {
@@ -806,7 +815,7 @@ var CODE = /*__CODE_INDEX__*/null;
     '  1..7                CAMBIA DE PANTALLA (TAMBIÉN ALT+1..7 Y F2..F7; F1 AYUDA, F8 GUARDAR)',
     '  MKT [ACT]           MERCADO: ALPHA VANTAGE (TU CONECTOR O CLAVE LOCAL) O YAHOO (APP LOCAL); ACT ACTUALIZA TODO (GASTA CONSULTAS)',
     '  BOLSAS | MOVERS     BOLSAS DEL MUNDO ABIERTAS/CERRADAS Y MAYORES MOVIMIENTOS DE EE. UU. (AÑADE ACT PARA ACTUALIZAR)',
-    '  Q <TICKER>          COTIZACIÓN DE ALPHA VANTAGE (1 CONSULTA), P. EJ. Q AAPL O Q EWW',
+    '  Q <TICKER> [QUITAR] COTIZACIÓN DE ALPHA VANTAGE (1 CONSULTA), P. EJ. Q AAPL; QUITAR LA SACA DE CONSULTADAS',
     '  DIVISA <DE> <A>     TIPO DE CAMBIO DE ALPHA VANTAGE, P. EJ. DIVISA USD MXN',
     '  PLAN GRATIS|PREMIUM   RITMO DE CONSULTAS A ALPHA VANTAGE (GRATIS: 25 AL DÍA, 1 POR SEGUNDO)',
     '  FUENTE AV|YAHOO     FUENTE DE LA PANTALLA MERCADO (YAHOO SOLO CON LA APP LOCAL)',
@@ -863,28 +872,36 @@ var CODE = /*__CODE_INDEX__*/null;
       case 'CALC': case 'CALCULO': case 'CÁLCULO': showScreen('calc'); return;
       case 'CONS': case 'CONSOLA': case 'LOG': showScreen('consola'); return;
       case 'MKT': case 'MERCADO': case 'MARKET': {
-        showScreen('mercado');
-        if (/^(ACT|REFRESH|R)$/.test(tk[1] || '')) { if (state.mktSrc === 'yf') refreshMarket(true); else if (av.mode) avRefreshAll(); else log(avOffMessage(), 'er'); }
-        else if (state.mktSrc === 'av' && !av.mode) log(avOffMessage(), 'er');
+        // Forced refreshes start before the screen switch, so the screen's own auto-load finds them running.
+        if (/^(ACT|REFRESH|R)$/.test(tk[1] || '')) {
+          if (state.mktSrc === 'av' && av.mode) avRefreshAll();
+          showScreen('mercado');
+          if (state.mktSrc === 'yf') refreshMarket(true);
+        } else showScreen('mercado');
+        if (state.mktSrc === 'av' && !av.mode) log(avOffMessage());
         return;
       }
       case 'BOLSAS': case 'MOVERS': {
-        if (!av.mode) { showScreen('mercado'); log(avOffMessage(), 'er'); return; }
+        if (!av.mode) { showScreen('mercado'); log(avOffMessage()); return; }
         if (state.mktSrc !== 'av') { store('qe.mkt.src', 'av'); chooseSource(); renderAv(); renderMarket(); }
-        showScreen('mercado');
         if (tk[1] === 'ACT') { if (head === 'BOLSAS') avSection('status', [['MARKET_STATUS', {}]], true); else avSection('movers', [['TOP_GAINERS_LOSERS', {}]], true); }
+        showScreen('mercado');
         return;
       }
       case 'Q': case 'COT': {
         var sym = tk[1] || '';
-        if (!/^[A-Z0-9.\-]{1,12}$/.test(sym)) { log('USO: Q <TICKER>, P. EJ. Q AAPL O Q EWW', 'er'); return; }
+        if (!/^[A-Z0-9.\-]{1,12}$/.test(sym)) { log('USO: Q <TICKER> [QUITAR], P. EJ. Q AAPL O Q EWW', 'er'); return; }
+        if (tk[2] === 'QUITAR' || tk[2] === 'DEL') { avRemoveWatch(sym); log(sym + ' FUERA DE CONSULTADAS', 'ok'); return; }
         if (!av.mode) { log(avOffMessage(), 'er'); return; }
         if (state.mktSrc !== 'av') { store('qe.mkt.src', 'av'); chooseSource(); renderMarket(); }
-        showScreen('mercado'); log('CONSULTANDO ' + sym + ' EN ALPHA VANTAGE…');
-        avQuote(sym, true).then(function () {
+        log('CONSULTANDO ' + sym + ' EN ALPHA VANTAGE…');
+        var qp = avQuote(sym, true);           // queued before the screen's auto-load, so it goes first
+        showScreen('mercado');
+        qp.then(function () {
           var e = avGet('GLOBAL_QUOTE', { symbol: sym }), qerr = av.err['q:' + sym];
-          if (qerr || !e) log(sym + ': ' + (qerr ? qerr.message : av.halted ? av.halted.message : 'SIN DATO'), 'er');
-          else log(sym + '  ' + fmtN(e.data.price, 2) + '  ' + sgn(e.data.change, 2) + ' (' + sgn(e.data.change_pct, 2) + '%)  DÍA ' + e.data.day + '  · ALPHA VANTAGE', 'ok');
+          if (qerr || !e) { log(sym + ': ' + (qerr ? qerr.message : av.halted ? av.halted.message : 'SIN DATO'), 'er'); return; }
+          var dp = Math.abs(e.data.price) < 1 ? 4 : 2;
+          log(sym + '  ' + fmtN(e.data.price, dp) + '  ' + (e.data.change > 0 ? '+' : '') + fmtN(e.data.change, dp) + ' (' + sgn(e.data.change_pct, 2) + '%)  DÍA ' + e.data.day + '  · ALPHA VANTAGE', 'ok');
         });
         return;
       }
@@ -893,6 +910,7 @@ var CODE = /*__CODE_INDEX__*/null;
         if (!/^[A-Z]{3,5}$/.test(cf) || !/^[A-Z]{3,5}$/.test(ct)) { log('USO: DIVISA <DE> <A>, P. EJ. DIVISA USD MXN O DIVISA BTC USD', 'er'); return; }
         if (!av.mode) { log(avOffMessage(), 'er'); return; }
         log('CONSULTANDO ' + cf + '/' + ct + ' EN ALPHA VANTAGE…');
+        av.halted = null;                      // a typed command is a fresh request
         avFetch('CURRENCY_EXCHANGE_RATE', { from_currency: cf, to_currency: ct }).then(function (d) {
           var dp = d.rate < 10 ? 4 : 2;
           log(cf + '/' + ct + ' = ' + fmtN(d.rate, dp) + (d.bid != null && d.ask != null ? '  (COMPRA ' + fmtN(d.bid, dp) + ' · VENTA ' + fmtN(d.ask, dp) + ')' : '') + '  ' + d.refreshed + ' ' + d.tz + '  · ALPHA VANTAGE', 'ok');
@@ -903,7 +921,7 @@ var CODE = /*__CODE_INDEX__*/null;
       case 'PLAN': {
         if (!/^(GRATIS|GRATUITO|FREE|PREMIUM)$/.test(tk[1] || '')) { log('USO: PLAN GRATIS|PREMIUM (AHORA: ' + (av.plan === 'premium' ? 'PREMIUM' : 'GRATUITO') + ')', 'er'); return; }
         av.plan = tk[1] === 'PREMIUM' ? 'premium' : 'free'; store('qe.av.plan', av.plan); renderAv();
-        log('PLAN DE ALPHA VANTAGE: ' + (av.plan === 'premium' ? 'PREMIUM (ACTUALIZA CADA MINUTO)' : 'GRATUITO (ACTUALIZA AL PEDIRLO O CADA 6 HORAS)'), 'ok'); return;
+        log('PLAN DE ALPHA VANTAGE: ' + (av.plan === 'premium' ? 'PREMIUM (ACTUALIZA CADA MINUTO; SI LA CLAVE RESULTA GRATUITA VUELVE SOLO AL PLAN GRATUITO)' : 'GRATUITO (ACTUALIZA AL PEDIRLO O CADA 12 HORAS)'), 'ok'); return;
       }
       case 'FUENTE': {
         var src = /^(YAHOO|YF)$/.test(tk[1] || '') ? 'yf' : /^(AV|ALPHA|ALPHAVANTAGE)$/.test(tk[1] || '') ? 'av' : null;
@@ -1676,11 +1694,15 @@ var CODE = /*__CODE_INDEX__*/null;
   var AV_JSON = { GLOBAL_QUOTE: 1, CURRENCY_EXCHANGE_RATE: 1, TREASURY_YIELD: 1, WTI: 1 };
   var AV_GAP_MS = 1100;                       // free plan: one request per second
   var AV_TTL = {                              // automatic refresh age per plan; buttons always refresh
-    free: { status: 6 * 3600e3, macro: 6 * 3600e3, movers: 6 * 3600e3 },
+    free: { status: 12 * 3600e3, macro: 12 * 3600e3, movers: 12 * 3600e3 },
     premium: { status: 60e3, macro: 60e3, movers: 15 * 60e3, quotes: 60e3 }
   };
-  var AV_AUTHZ = /^(not_granted|capability_disabled|capability_removed|server_not_connected|server_not_found|needs_reauth|selection_required|not_in_manifest|blocked_by_policy|approval_required|consent_required|user_changed)$/;
-  var av = { mode: null, mcp: null, queue: Promise.resolve(), last: 0, halted: null, err: {}, busy: {}, mv: 'gainers',
+  var AV_AUTO_BUDGET = 16;                    // free plan: automatic refreshes stop once the day reaches this many calls
+  // Codes after which no call can succeed for this viewer: one page-wide notice, no further automatic calls.
+  var AV_AUTHZ = /^(server_not_connected|server_not_found|needs_reauth|selection_required|not_in_manifest|consent_required)$/;
+  var AV_GONE = /^(user_changed|not_granted|capability_disabled|capability_removed)$/;       // the connector is not usable in this view
+  var AV_TOOL_DENIED = /^(blocked_by_policy|approval_required)$/;                              // one tool refused by policy
+  var av = { mode: null, mcp: null, queue: Promise.resolve(), last: 0, halted: null, haltAt: 0, haltDay: '', err: {}, busy: {}, pend: {}, mv: 'gainers', autoPaused: false,
     plan: store('qe.av.plan') === 'premium' ? 'premium' : 'free' };
 
   /* AV-PARSE-BEGIN */
@@ -1704,7 +1726,7 @@ var CODE = /*__CODE_INDEX__*/null;
       : typeof p.error === 'string' ? p.error : typeof p.Information === 'string' ? p.Information : typeof p.Note === 'string' ? p.Note : null;
     if (note != null) {
       if (/not yet entitled|premium endpoint|is a premium/i.test(note)) return { ok: false, kind: 'premium' };
-      if (/rate limit|spreading out|requests per (day|second|minute)|call frequency/i.test(note)) return { ok: false, kind: 'rate_limit' };
+      if (/rate limit|spreading out|requests per (day|second|minute)|call frequency/i.test(note)) return { ok: false, kind: 'rate_limit', message: note.slice(0, 200) };
       return { ok: false, kind: 'notice', message: note.slice(0, 200) };
     }
     if (typeof p['Error Message'] === 'string') return { ok: false, kind: 'invalid' };
@@ -1792,17 +1814,34 @@ var CODE = /*__CODE_INDEX__*/null;
   var avMem = (function () { try { var v = JSON.parse(store(AV_CACHE_KEY) || '{}'); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch (e) { return {}; } })();
   function avKey(fn, params) { return fn + '|' + JSON.stringify(params || {}); }
   function avGet(fn, params) { var e = avMem[avKey(fn, params)]; return e && typeof e === 'object' && e.data ? e : null; }
+  // Re-read before deciding or writing, so several tabs share one cache instead of overwriting each other.
+  function avSync() {
+    var raw = store(AV_CACHE_KEY);
+    if (raw == null) return;
+    try { var v = JSON.parse(raw); if (v && typeof v === 'object' && !Array.isArray(v)) avMem = v; } catch (e) { /* keep the in-memory copy */ }
+  }
   function avPut(fn, params, data, at) {
+    avSync();
     avMem[avKey(fn, params)] = { at: at || Date.now(), data: data };
     delete avMem['x|' + avKey(fn, params)];
     store(AV_CACHE_KEY, JSON.stringify(avMem));
   }
   // Failures are remembered too, so automatic refreshes never re-spend the quota on a refused item.
-  function avMarkFail(fn, params, kind) { avMem['x|' + avKey(fn, params)] = { at: Date.now(), fail: kind }; store(AV_CACHE_KEY, JSON.stringify(avMem)); }
+  function avMarkFail(fn, params, kind) { avSync(); avMem['x|' + avKey(fn, params)] = { at: Date.now(), fail: kind }; store(AV_CACHE_KEY, JSON.stringify(avMem)); }
+  function avDropTool(fn) {
+    avSync();
+    Object.keys(avMem).forEach(function (k) { if (k.indexOf(fn + '|') === 0) delete avMem[k]; });
+    store(AV_CACHE_KEY, JSON.stringify(avMem));
+  }
   function avForget() { avMem = {}; store(AV_CACHE_KEY, '{}'); }
   function dayKey() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
-  function avCalls() { try { var v = JSON.parse(store('qe.av.calls') || 'null'); return v && v.day === dayKey() ? v.n : 0; } catch (e) { return 0; } }
-  function avCount() { store('qe.av.calls', JSON.stringify({ day: dayKey(), n: avCalls() + 1 })); }
+  var avCallMem = { day: dayKey(), n: 0 };   // used when the browser blocks storage
+  function avCalls() {
+    var today = dayKey(), raw = store('qe.av.calls');
+    if (raw != null) { try { var v = JSON.parse(raw); if (v && v.day === today && typeof v.n === 'number') return Math.max(v.n, avCallMem.day === today ? avCallMem.n : 0); } catch (e) { /* fall back */ } }
+    return avCallMem.day === today ? avCallMem.n : 0;
+  }
+  function avCount() { var n = avCalls() + 1; avCallMem = { day: dayKey(), n: n }; store('qe.av.calls', JSON.stringify(avCallMem)); }
   function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
   function avTransport(fn, params) {
@@ -1823,36 +1862,58 @@ var CODE = /*__CODE_INDEX__*/null;
   // One call at a time, at least AV_GAP_MS apart; a halt (quota or access) stops the rest of the queue.
   function avCall(fn, params) {
     var run = function () {
+      if (!av.mode) return Promise.reject({ kind: 'off', message: avOffMessage() });
       if (av.halted) return Promise.reject(av.halted);
       return delay(Math.max(0, av.last + AV_GAP_MS - Date.now())).then(function () {
+        if (!av.mode) throw { kind: 'off', message: avOffMessage() };
         if (av.halted) throw av.halted;
         av.last = Date.now();
         return avTransport(fn, params);
       }).then(function (res) { av.last = Date.now(); if (res.counted) avCount(); return res; },
-        function (e) { av.last = Date.now(); throw e; });
+        function (e) {
+          av.last = Date.now();
+          // Calls that reached Alpha Vantage's server count against the quota even when they failed.
+          if (e && (e.code === 'tool_error' || e.code === 'server_unavailable' || (e.code === 'upstream_error' && !e.retryable))) avCount();
+          throw e;
+        });
     };
     var p = av.queue.then(run, run);
     av.queue = p.then(function () {}, function () {});
     return p;
   }
+  function avHalt(err) { av.halted = err; av.haltAt = Date.now(); av.haltDay = dayKey(); }
   function avFetch(fn, params, retried) {
     if (!av.mode) return Promise.reject({ kind: 'off', message: avOffMessage() });
     return avCall(fn, params).then(function (res) {
       var r = avParse(fn, res.payload);
       if (r.ok) { avPut(fn, params, r.data, res.at); return r.data; }
+      if (r.kind === 'rate_limit' && av.plan === 'premium' && /25 requests per day|free api/i.test(r.message || '')) {
+        av.plan = 'free'; store('qe.av.plan', 'free');          // the answer proves a free key
+      }
       if (r.kind === 'rate_limit' && !retried) return delay(2500).then(function () { return avFetch(fn, params, true); });
       var err = { kind: r.kind, message: r.kind === 'notice' ? AV_MSG.notice + ' «' + r.message + '»' : AV_MSG[r.kind] };
-      if (r.kind === 'rate_limit') av.halted = err; else avMarkFail(fn, params, r.kind);
+      if (r.kind === 'rate_limit') avHalt(err); else avMarkFail(fn, params, r.kind);
       throw err;
     }, function (e) {
       if (e && e.kind) throw e;
       var code = (e && e.code) || 'upstream_error';
+      if (AV_GONE.test(code)) {
+        // The connector cannot be used in this view: show the no-connector screen and make no further calls.
+        avForget(); av.mcp = null; av.mode = null; av.halted = null; av.err = {};
+        chooseSource(); renderAv(); renderStatus();
+        throw { kind: 'off', message: avOffMessage() };
+      }
       if (e && e.retryable && !retried) return delay(Math.min(60000, e.retryAfterMs || 1500 + Math.random() * 1000)).then(function () { return avFetch(fn, params, true); });
       var err = { kind: 'mcp', code: code, message: avMcpMessage(code, e) };
       if (AV_AUTHZ.test(code)) {
-        av.halted = err;
+        avHalt(err);
         if (av.mode === 'mcp') avForget();      // an access denial withdraws what this viewer may see
-      } else avMarkFail(fn, params, code);
+      } else if (AV_TOOL_DENIED.test(code)) {
+        avDropTool(fn); avMarkFail(fn, params, code);           // only this tool is refused; the rest keeps working
+      } else {
+        avMarkFail(fn, params, code);
+        if (e && e.retryable) avHalt(err);                       // still down after one retry: stop this refresh
+      }
       throw err;
     });
   }
@@ -1861,9 +1922,10 @@ var CODE = /*__CODE_INDEX__*/null;
     return 'PARA VER DATOS DE ALPHA VANTAGE ABRE ESTA PÁGINA EN CLAUDE.AI CON EL CONECTOR ALPHA VANTAGE, O USA LA APP LOCAL CON ALPHA_VANTAGE_API_KEY. AQUÍ NO SE MUESTRA NI SE INVENTA NINGUNA CIFRA.';
   }
   function avSection(name, jobs, force) {
-    // jobs: [[fn, params]]; fetched in order, a failure is reported in this section only.
-    if (av.busy[name] || !av.mode) { renderAv(); return Promise.resolve(); }
-    if (force) av.halted = null;            // a button press is a fresh request: try again
+    // jobs: [[fn, params, rowKey]]; fetched in order, a failure is reported on its row or in this section only.
+    if (force) av.halted = null;            // a button press or a typed command is a fresh request: try again
+    if (!av.mode) { renderAv(); return Promise.resolve(); }
+    if (av.busy[name]) return av.pend[name] || Promise.resolve();
     av.busy[name] = true; av.err[name] = null;
     jobs.forEach(function (j) { if (j[2]) av.err[j[2]] = null; });
     renderAv();
@@ -1871,13 +1933,15 @@ var CODE = /*__CODE_INDEX__*/null;
     jobs.forEach(function (j) {
       chain = chain.then(function () {
         return avFetch(j[0], j[1]).then(null, function (e) {
+          if (e && e.kind === 'off') return;   // the page-wide note already explains it
           var err = { kind: e && e.kind || 'error', message: e && e.message ? e.message : String(e) };
-          // Halts (quota, access) belong to the whole section; anything else to its own row.
+          // Halts (quota, access, outage) belong to the whole section; anything else to its own row.
           if (j[2] && !(av.halted && av.halted.message === err.message)) av.err[j[2]] = err; else av.err[name] = err;
         });
       }).then(function () { renderAv(); renderStatus(); });
     });
-    return chain.then(function () { av.busy[name] = false; renderAv(); renderStatus(); });
+    av.pend[name] = chain.then(function () { av.busy[name] = false; av.pend[name] = null; renderAv(); renderStatus(); });
+    return av.pend[name];
   }
 
   var AV_QUOTES = [
@@ -1907,29 +1971,41 @@ var CODE = /*__CODE_INDEX__*/null;
     var w = avWatch().filter(function (x) { return x !== sym; }); w.unshift(sym);
     store('qe.av.watch', JSON.stringify(w.slice(0, AV_QMAX)));
   }
+  function avRemoveWatch(sym) { store('qe.av.watch', JSON.stringify(avWatch().filter(function (x) { return x !== sym; }))); renderAv(); }
+  function avInList(sym) { return AV_QUOTES.some(function (g) { return g[1].some(function (r) { return r[0] === sym; }); }); }
   function avQuote(sym, watch) {
-    if (watch && !AV_QUOTES.some(function (g) { return g[1].some(function (r) { return r[0] === sym; }); })) avAddWatch(sym);
-    renderAv();
-    return avSection('q:' + sym, [['GLOBAL_QUOTE', { symbol: sym }, 'q:' + sym]], true);
+    // A queried symbol joins CONSULTADAS only once Alpha Vantage has answered for it.
+    return avSection('q:' + sym, [['GLOBAL_QUOTE', { symbol: sym }, 'q:' + sym]], true).then(function () {
+      if (watch && !avInList(sym) && avGet('GLOBAL_QUOTE', { symbol: sym }) && avWatch().indexOf(sym) < 0) { avAddWatch(sym); renderAv(); }
+    });
   }
   function avQuoteSymbols() { var out = []; AV_QUOTES.forEach(function (g) { g[1].forEach(function (r) { out.push(r[0]); }); }); return out; }
   function avStale(fn, params, ttl) {
     var e = avGet(fn, params), f = avMem['x|' + avKey(fn, params)];
-    if (f && typeof f.at === 'number' && Date.now() - f.at < (/^(premium|invalid)$/.test(f.fail) ? Math.max(ttl, 24 * 3600e3) : ttl)) return false;
+    if (f && typeof f.at === 'number' && Date.now() - f.at < (/^(premium|invalid|blocked_by_policy|approval_required)$/.test(f.fail) ? Math.max(ttl, 24 * 3600e3) : ttl)) return false;
     return !e || Date.now() - e.at > ttl;
   }
   function avAutoLoad() {
     if (!av.mode || state.mktSrc !== 'av' || state.screen !== 'mercado') return;
+    avSync(); renderAv();                   // ages and counters stay current even when nothing is fetched
     var ttl = AV_TTL[av.plan];
-    if (avStale('MARKET_STATUS', {}, ttl.status)) avSection('status', [['MARKET_STATUS', {}]]);
+    if (av.halted && av.halted.kind === 'rate_limit' && (av.plan === 'premium' ? Date.now() - av.haltAt > 60e3 : av.haltDay !== dayKey())) av.halted = null;
+    if (av.halted && av.halted.code === 'server_unavailable' && Date.now() - av.haltAt > ttl.status) av.halted = null;
+    if (av.halted) return;                  // quota, access or outage: only a button or a command tries again
+    var jobs = {};
+    if (avStale('MARKET_STATUS', {}, ttl.status)) jobs.status = [['MARKET_STATUS', {}]];
     var macro = AV_MACRO.filter(function (m) { return avStale(m.fn, m.params, ttl.macro); }).map(function (m) { return [m.fn, m.params, 'm:' + m.code]; });
-    if (macro.length) avSection('macro', macro);
-    if (avStale('TOP_GAINERS_LOSERS', {}, ttl.movers)) avSection('movers', [['TOP_GAINERS_LOSERS', {}]]);
+    if (macro.length) jobs.macro = macro;
+    if (avStale('TOP_GAINERS_LOSERS', {}, ttl.movers)) jobs.movers = [['TOP_GAINERS_LOSERS', {}]];
     if (ttl.quotes) {
       var qs = avQuoteSymbols().concat(avWatch()).filter(function (sym) { return avStale('GLOBAL_QUOTE', { symbol: sym }, ttl.quotes); })
         .map(function (sym) { return ['GLOBAL_QUOTE', { symbol: sym }, 'q:' + sym]; });
-      if (qs.length) avSection('quotes', qs);
+      if (qs.length) jobs.quotes = qs;
     }
+    var n = Object.keys(jobs).reduce(function (a, k) { return a + (av.busy[k] ? 0 : jobs[k].length); }, 0);
+    av.autoPaused = av.plan === 'free' && n > 0 && avCalls() + n > AV_AUTO_BUDGET;
+    if (av.autoPaused) { renderAv(); return; }  // keep the rest of the free quota for what the user asks for
+    Object.keys(jobs).forEach(function (k) { avSection(k, jobs[k]); });
   }
   function avRefreshAll() {
     if (!av.mode) { renderAv(); return; }
@@ -1955,29 +2031,47 @@ var CODE = /*__CODE_INDEX__*/null;
   }
   function avNoteEs(n) {
     var m = /noon trading break from (\d{1,2}:\d{2}) to (\d{1,2}:\d{2}) local time/i.exec(n);
-    if (m) return ['PAUSA DE MEDIODÍA ' + m[1] + '–' + m[2], 'es'];
+    if (m) return ['PAUSA ' + m[1] + '–' + m[2], 'es'];
     if (/forex market is open 24 hours/i.test(n)) return ['24 H, SALVO DE VIERNES 16:00 A DOMINGO 17:00 (HORA DEL ESTE DE EE. UU.)', 'es'];
     if (/cryptocurrency market is open 24 hours/i.test(n)) return ['24 H TODOS LOS DÍAS', 'es'];
     return [n, 'en'];
   }
   function avSourceLabel() { return av.mode === 'local' ? 'ALPHA VANTAGE · CLAVE LOCAL' : av.mode === 'mcp' ? 'ALPHA VANTAGE · TU CONECTOR' : 'ALPHA VANTAGE'; }
+  var AV_SECS = ['status', 'quotes', 'macro', 'movers'];      // panels 22..25
+  function avPanelVisible(n) {
+    var p = document.querySelector('#screen-mercado > .panel[data-pid="' + n + '"]');
+    if (!p || p.hidden || p.classList.contains('min')) return false;
+    return !(p.parentElement.classList.contains('maxed') && !p.classList.contains('max'));
+  }
   function avNote(section) {
     var pageWide = !av.mode ? avOffMessage() : av.halted ? av.halted.message : '';
     var own = av.err[section] && !(av.halted && av.err[section].message === av.halted.message) ? av.err[section].message : '';
     var perm = av.mode === 'mcp' && av.halted && /^(not_in_manifest|consent_required)$/.test(av.halted.code || '');
     var out = av.busy[section] ? '<p class="mkt-note">CONSULTANDO ALPHA VANTAGE…</p>' : '';
     if (pageWide) {
-      var p22 = document.querySelector('#screen-mercado > .panel[data-pid="22"]'), here = section === 'status' || !p22 || p22.hidden;
-      out += here ? '<p class="mkt-note ' + (av.mode ? 'dn' : '') + '">' + esc(pageWide) + (perm ? ' <button type="button" class="tbtn" data-av="perm" style="padding:0 6px">PERMISOS</button>' : '') + '</p>'
-        : '<p class="mkt-note mu">' + (av.mode ? 'SIN DATOS NUEVOS DE ALPHA VANTAGE: VER EL AVISO DEL PANEL 22.' : 'SIN ALPHA VANTAGE EN ESTA VISTA: VER EL PANEL 22.') + '</p>';
+      // A condition that affects every section is written once, in the first visible panel.
+      var host = AV_SECS.filter(function (sec, i) { return avPanelVisible(22 + i); })[0] || 'status', hostN = 22 + AV_SECS.indexOf(host);
+      out += section === host ? '<p class="mkt-note ' + (av.mode ? 'dn' : '') + '">' + esc(pageWide) + (perm ? ' <button type="button" class="tbtn" data-av="perm" style="padding:0 6px">PERMISOS</button>' : '') + '</p>'
+        : '<p class="mkt-note mu">' + (av.mode ? 'SIN DATOS NUEVOS DE ALPHA VANTAGE: VER EL AVISO DEL PANEL ' : 'SIN ALPHA VANTAGE EN ESTA VISTA: VER EL PANEL ') + hostN + '.</p>';
     }
+    if (section === 'status' && av.autoPaused && !pageWide) out += '<p class="mkt-note">ACTUALIZACIÓN AUTOMÁTICA EN PAUSA: HOY YA VAN ' + avCalls() + ' CONSULTAS DESDE ESTE NAVEGADOR. EL RESTO DE LA CUOTA GRATUITA QUEDA PARA LO QUE PIDAS (ACTUALIZAR, Q, DIVISA).</p>';
     if (own) out += '<p class="mkt-note dn">' + esc(own) + '</p>';
+    var shown = section === 'quotes' ? avQuoteSymbols().concat(avWatch()).map(function (x) { return 'q:' + x; })
+      : section === 'macro' ? AV_MACRO.map(function (m) { return 'm:' + m.code; }) : [];
+    var rowErrs = shown.filter(function (k) { return av.err[k]; }).length;      // only rows on screen
+    if (rowErrs) out += '<p class="mkt-note dn">' + rowErrs + (rowErrs === 1 ? ' FILA NO SE ACTUALIZÓ' : ' FILAS NO SE ACTUALIZARON') + ' (⚠ O «SIN DATO»): EL CURSOR SOBRE LA FECHA MUESTRA EL MOTIVO.</p>';
     return out;
   }
   function avErrCell(key, cols) {
     var e = av.err[key];
     var lbl = !e ? '—' : e.kind === 'premium' ? 'DE PAGO' : 'SIN DATO';
     return '<td class="n mu"' + (e ? ' title="' + esc(e.message) + '"' : '') + '>' + lbl + '</td>' + new Array(cols).join('<td class="n mu">—</td>');
+  }
+  // Date cell of a row that has saved data: marked when its last refresh failed.
+  function avDateCell(key, text, e) {
+    var err = av.err[key];
+    if (err) return '<td class="n dn" title="' + esc('NO SE ACTUALIZÓ: ' + err.message + ' · ' + avStamp(e)) + '">⚠ ' + esc(text) + '</td>';
+    return '<td class="n mu" title="' + esc(avStamp(e)) + '">' + esc(text) + '</td>';
   }
   function srcSwitch() {
     if (!(av.mode && state.live)) return '';
@@ -1989,66 +2083,77 @@ var CODE = /*__CODE_INDEX__*/null;
 
   function renderAv() {
     if (!$('av-status')) return;
+    var fsrc = focusedKey('screen-mercado', 'data-src');
     document.querySelectorAll('[data-srcsw]').forEach(function (el) { el.innerHTML = srcSwitch(); });
+    restoreFocus('screen-mercado', 'data-src', fsrc);
     var planBtn = $('av-plan');
     planBtn.textContent = av.plan === 'premium' ? 'PLAN: PREMIUM' : 'PLAN: GRATUITO';
     planBtn.setAttribute('aria-pressed', String(av.plan === 'premium'));
-    planBtn.title = av.plan === 'premium' ? 'Actualiza solo cada minuto. Cambia a gratuito si tu clave tiene 25 consultas al día.' : 'Cuida las 25 consultas diarias: actualiza solo al pedirlo o cada 6 horas.';
+    planBtn.title = av.plan === 'premium' ? 'Pulsa para volver al plan gratuito (25 consultas al día).' : 'Plan gratuito: actualiza solo al pedirlo o cada 12 horas. Escribe PLAN PREMIUM si tu clave es de pago.';
+    document.querySelectorAll('#screen-mercado [data-av], #av-load-quotes').forEach(function (b) { b.disabled = !av.mode; });
 
     // 22 · Exchanges
     var st = avGet('MARKET_STATUS', {}), fk = focusedKey('av-status', 'data-etf');
+    var stale = st && Date.now() - st.at > 15 * 60e3;
     setHtml('av-note-status', avNote('status'));
     var rows = st ? st.data.markets.map(function (m) {
       var reg = AV_REGION[m.region] || [m.region.toUpperCase(), null, null], open = m.status === 'open', note = m.notes ? avNoteEs(m.notes) : null;
       var type = AV_TYPE[m.type.toLowerCase()] || m.type.toUpperCase();
+      var label = open ? 'ABIERTA' : m.status === 'closed' ? 'CERRADA' : (m.status.toUpperCase() || '—');
       return '<tr title="' + esc(m.exchanges) + '"><td><b class="wh">' + esc(reg[0]) + '</b>' + (type !== 'ACCIONES' ? ' <span class="mu">' + esc(type) + '</span>' : '') + '<br><span class="mu">' + esc(m.exchanges) + '</span></td>' +
-        '<td class="n">' + esc(m.open) + '–' + esc(m.close) + '</td><td><span class="tag ' + (open ? 'pass' : 'closed') + '">' + (open ? 'ABIERTA' : m.status === 'closed' ? 'CERRADA' : esc(m.status.toUpperCase() || '—')) + '</span></td>' +
+        '<td class="n">' + esc(m.open) + '–' + esc(m.close) + '</td>' +
+        '<td><span class="tag ' + (open && !stale ? 'pass' : 'closed') + '"' + (stale ? ' title="' + esc('ESTADO SEGÚN ALPHA VANTAGE · ' + avStamp(st)) + '"' : '') + '>' + esc(label) + (stale ? '?' : '') + '</span></td>' +
         '<td class="n" data-tz="' + esc(reg[1] || '') + '">' + localNow(reg[1]) + '</td>' +
         '<td>' + (reg[2] ? '<button type="button" class="tbtn" data-etf="' + reg[2] + '" style="padding:0 5px" title="Cotización del ETF del país en EE. UU. (1 consulta)">' + reg[2] + '</button>' : '') + '</td>' +
-        '<td class="mu"' + (note && note[1] === 'en' ? ' lang="en"' : '') + ' title="' + esc(note ? note[0] : '') + '">' + esc(note ? note[0] : '') + '</td></tr>';
+        '<td class="mu"' + (note && note[1] === 'en' ? ' lang="en"' : '') + ' title="' + esc(note ? (note[1] === 'es' && /^PAUSA /.test(note[0]) ? 'PAUSA DE MEDIODÍA ' + note[0].slice(6) + ' (HORA LOCAL)' : note[0]) : '') + '">' + esc(note ? note[0] : '') + '</td></tr>';
     }).join('') : '';
     setHtml('av-status', '<thead><tr><th>MERCADO</th><th class="n" title="Horario local de cada bolsa">HORARIO</th><th>ESTADO</th><th class="n">AHORA</th><th>ETF</th><th>NOTA</th></tr></thead><tbody>' + rows + '</tbody>');
     restoreFocus('av-status', 'data-etf', fk);
-    var nOpen = st ? st.data.markets.filter(function (m) { return m.status === 'open'; }).length : 0;
-    setText('av-foot-status', 'HOY: ' + avCalls() + ' CONSULTAS (ESTE NAVEGADOR) · ' + (st ? nOpen + '/' + st.data.markets.length + ' ABIERTOS · ' : '') + avStamp(st));
+    var nOpen = st ? st.data.markets.filter(function (m) { return m.status === 'open'; }).length : 0, nAll = st ? st.data.markets.length : 0;
+    var ft = avStamp(st) + ' · ' + (st ? nOpen + '/' + nAll + ' ABIERTOS · ' : '') + 'HOY: ' + avCalls() + ' CONSULTAS (ESTE NAVEGADOR)';
+    setText('av-foot-status', ft); $('av-foot-status').title = ft;
 
     // 23 · Quotes
-    fk = focusedKey('av-quotes', 'data-avq');
+    var fq = focusedKey('av-quotes', 'data-avq'), fr = focusedKey('av-quotes', 'data-sym');
     var qhtml = '', anyQ = false;
-    var qRow = function (sym, name, sid) {
+    var qRow = function (sym, name, sid, removable) {
       var e = avGet('GLOBAL_QUOTE', { symbol: sym }), q = e && e.data, link = sid && strat(sid);
       if (q) anyQ = true;
-      return '<tr' + (link ? ' class="click" tabindex="0" data-load="' + esc(sid) + '" title="Evaluar la estrategia relacionada: ' + esc(link.name) + '"' : '') + '>' +
+      var dp = q && Math.abs(q.price) < 1 ? 4 : 2;
+      var chg = q && q.change != null && isFinite(q.change) ? (q.change > 0 ? '+' : '') + fmtN(q.change, dp) : '—';
+      return '<tr data-sym="' + esc(sym) + '"' + (link ? ' class="click" tabindex="0" data-load="' + esc(sid) + '" title="Evaluar la estrategia relacionada: ' + esc(link.name) + '"' : '') + '>' +
         '<td class="code-cell">' + esc(sym) + (link ? '<span class="am" aria-hidden="true"> ›</span>' : '') + '</td><td>' + esc(name) + '</td>' +
-        (q ? '<td class="n px">' + fmtN(q.price, 2) + '</td><td class="n ' + cls(q.change) + '">' + sgn(q.change, 2) + '</td><td class="n ' + cls(q.change_pct) + '">' + sgn(q.change_pct, 2) + '</td><td class="n mu" title="' + esc(avStamp(e)) + '">' + shortDate(q.day) + '</td>'
+        (q ? '<td class="n px">' + fmtN(q.price, dp) + '</td><td class="n ' + cls(q.change) + '">' + chg + '</td><td class="n ' + cls(q.change_pct) + '">' + sgn(q.change_pct, 2) + '</td>' + avDateCell('q:' + sym, shortDate(q.day), e)
           : avErrCell('q:' + sym, 4)) +
-        '<td class="n"><button type="button" class="tbtn" data-avq="' + esc(sym) + '" style="padding:0 5px"' + (av.mode ? '' : ' disabled') + ' aria-label="Consultar ' + esc(sym) + ' (1 consulta)" title="Consultar ahora (1 consulta)">' + (av.busy['q:' + sym] ? '…' : '↻') + '</button></td></tr>';
+        '<td class="n"><button type="button" class="tbtn" data-avq="' + esc(sym) + '" style="padding:0 5px"' + (av.mode ? '' : ' disabled') + ' aria-label="Consultar ' + esc(sym) + ' (1 consulta)" title="Consultar ahora (1 consulta)' + (removable ? '. Para quitarla: Q ' + esc(sym) + ' QUITAR' : '') + '">' + (av.busy['q:' + sym] ? '…' : '↻') + '</button></td></tr>';
     };
     AV_QUOTES.forEach(function (g) {
-      qhtml += '<tr class="sec"><td colspan="7">' + esc(g[0]) + '</td></tr>' + g[1].map(function (r) { return qRow(r[0], r[1], r[2]); }).join('');
+      qhtml += '<tr class="sec"><td colspan="7">' + esc(g[0]) + '</td></tr>' + g[1].map(function (r) { return qRow(r[0], r[1], r[2], false); }).join('');
     });
     var watch = avWatch();
-    if (watch.length) qhtml += '<tr class="sec"><td colspan="7">CONSULTADAS (Q &lt;TICKER&gt;)</td></tr>' + watch.map(function (sym) { return qRow(sym, 'Consulta del usuario', null); }).join('');
+    if (watch.length) qhtml += '<tr class="sec"><td colspan="7">CONSULTADAS (Q &lt;TICKER&gt;)</td></tr>' + watch.map(function (sym) { return qRow(sym, 'Consulta del usuario', null, true); }).join('');
     setHtml('av-quotes', '<thead><tr><th>CÓDIGO</th><th>NOMBRE</th><th class="n">ÚLTIMO</th><th class="n">CAMBIO</th><th class="n">%</th><th class="n">DÍA</th><th></th></tr></thead><tbody>' + qhtml + '</tbody>');
-    restoreFocus('av-quotes', 'data-avq', fk);
+    restoreFocus('av-quotes', 'data-avq', fq); restoreFocus('av-quotes', 'data-sym', fr);
     setHtml('av-note-quotes', avNote('quotes') + (av.mode && av.plan === 'free' && !anyQ ? '<p class="mkt-note">PLAN GRATUITO: LAS COTIZACIONES SE PIDEN UNA POR UNA (↻) O CON «CARGAR LISTA» PARA CUIDAR TUS 25 CONSULTAS DIARIAS. DE MÉXICO SE MUESTRAN ETF Y ADR QUE COTIZAN EN EE. UU.: ALPHA VANTAGE NO DA LA BMV EN ESTE PLAN.</p>' : ''));
     setText('av-load-quotes', 'CARGAR LISTA · ' + (avQuoteSymbols().length + watch.length) + ' CONSULTAS');
-    $('av-load-quotes').disabled = !av.mode;
     setText('av-foot-quotes', avSourceLabel() + ' · CIERRE O ÚLTIMO PRECIO DEL DÍA INDICADO · PUEDE TENER RETRASO');
 
     // 24 · FX, rates and commodities
     var mhtml = AV_MACRO.map(function (m) {
       var e = avGet(m.fn, m.params), d = e && e.data, last = null, chg = null, pct = null, when = '—', series = null, title = '';
       if (d) {
-        if (m.fn === 'CURRENCY_EXCHANGE_RATE') { last = d.rate; when = d.refreshed ? d.refreshed.slice(5, 16).replace(/^(\d{2})-(\d{2}) /, '$2/$1 ') + ' ' + (d.tz || '') : '—'; title = d.bid != null && d.ask != null ? 'Compra ' + fmtN(d.bid, m.dp) + ' · venta ' + fmtN(d.ask, m.dp) : ''; }
-        else if (m.fn === 'GOLD_SILVER_SPOT') { last = d.price; when = d.timestamp ? d.timestamp.slice(5, 16).replace(/^(\d{2})-(\d{2}) /, '$2/$1 ') : '—'; }
+        if (m.fn === 'CURRENCY_EXCHANGE_RATE') {
+          last = d.rate; when = d.refreshed ? d.refreshed.slice(5, 16).replace(/^(\d{2})-(\d{2}) /, '$2/$1 ') : '—';
+          title = d.bid != null && d.ask != null ? 'Compra ' + fmtN(d.bid, m.dp) + ' · venta ' + fmtN(d.ask, m.dp) : '';
+          title = (title ? title + ' · ' : '') + 'HORA ' + (d.tz || 'UTC');
+        } else if (m.fn === 'GOLD_SILVER_SPOT') { last = d.price; when = d.timestamp ? d.timestamp.slice(5, 16).replace(/^(\d{2})-(\d{2}) /, '$2/$1 ') : '—'; }
         else { last = d.last; when = shortDate(d.date); series = d.series; if (d.prev != null) { chg = d.last - d.prev; pct = m.bp ? null : (d.prev ? chg / d.prev * 100 : null); } title = d.prev_date ? 'Frente al dato del ' + shortDate(d.prev_date) : ''; }
       }
       var chgTxt = chg == null ? '—' : m.bp ? (chg > 0 ? '+' : '') + Math.round(chg * 100) + ' PB' : sgn(chg, m.dp);
       var head = '<tr' + (title ? ' title="' + esc(title) + '"' : '') + '><td class="code-cell">' + esc(m.code) + '</td><td>' + esc(m.name) + '</td>';
       if (!d) return head + avErrCell('m:' + m.code, 5) + '</tr>';
       return head + '<td class="n px">' + fmtN(last, m.dp) + '</td>' +
-        '<td class="n ' + cls(chg) + '">' + chgTxt + '</td><td class="n ' + cls(pct) + '">' + (pct == null ? '—' : sgn(pct, 2)) + '</td><td>' + (series ? spark(series) : '') + '</td><td class="n mu">' + esc(when) + '</td></tr>';
+        '<td class="n ' + cls(chg) + '">' + chgTxt + '</td><td class="n ' + cls(pct) + '">' + (pct == null ? '—' : sgn(pct, 2)) + '</td><td>' + (series ? spark(series) : '') + '</td>' + avDateCell('m:' + m.code, when, e) + '</tr>';
     }).join('');
     setHtml('av-macro', '<thead><tr><th>CÓDIGO</th><th>NOMBRE</th><th class="n">ÚLTIMO</th><th class="n">CAMBIO</th><th class="n">%</th><th>TENDENCIA</th><th class="n">FECHA</th></tr></thead><tbody>' + mhtml + '</tbody>');
     setHtml('av-note-macro', avNote('macro'));
@@ -2056,10 +2161,11 @@ var CODE = /*__CODE_INDEX__*/null;
     setText('av-foot-macro', avSourceLabel() + ' · ' + avStamp(anyM) + ' · TASAS Y PETRÓLEO: DATO DIARIO, PUBLICADO CON DÍAS DE RETRASO');
 
     // 25 · US movers
-    var mv = avGet('TOP_GAINERS_LOSERS', {}), list = mv ? mv.data[av.mv] || [] : [];
+    var mv = avGet('TOP_GAINERS_LOSERS', {}), list = mv ? mv.data[av.mv] || [] : [], fm = focusedKey('av-mv-chips', 'data-mv');
     setHtml('av-mv-chips', [['gainers', 'GANADORAS'], ['losers', 'PERDEDORAS'], ['active', 'MÁS ACTIVAS']].map(function (c) {
       return '<button type="button" data-mv="' + c[0] + '" aria-pressed="' + (av.mv === c[0]) + '">' + c[1] + '</button>';
     }).join(''));
+    restoreFocus('av-mv-chips', 'data-mv', fm);
     setHtml('av-movers', '<thead><tr><th>TICKER</th><th class="n">PRECIO</th><th class="n">CAMBIO</th><th class="n">%</th><th class="n">VOLUMEN</th></tr></thead><tbody>' + list.map(function (r) {
       return '<tr><td class="code-cell">' + esc(r.ticker) + '</td><td class="n px">' + fmtN(r.price, r.price < 1 ? 4 : 2) + '</td><td class="n ' + cls(r.change) + '">' + sgn(r.change, r.price < 1 ? 4 : 2) + '</td>' +
         '<td class="n ' + cls(r.change_pct) + '">' + sgn(r.change_pct, 1) + '</td><td class="n mu">' + fmtN(r.volume, 0) + '</td></tr>';
@@ -2088,13 +2194,14 @@ var CODE = /*__CODE_INDEX__*/null;
   }
   function renderMarketShell() {
     var tw = function (id, note) { return '<div id="' + note + '"></div><div class="tablewrap"><table class="t mkt-av" id="' + id + '"></table></div>'; };
-    var html = mktPanel(22, 'av', 'BOLSAS &lt;GO&gt; - BOLSAS DEL MUNDO', '<span data-srcsw></span><button type="button" class="tbtn" id="av-plan" aria-pressed="false" style="padding:0 6px"></button><button type="button" class="tbtn" data-av="status" style="padding:0 6px">ACTUALIZAR · 1</button>', tw('av-status', 'av-note-status'), 'av-foot-status') +
+    var html = mktPanel(22, 'av', 'BOLSAS &lt;GO&gt; - BOLSAS DEL MUNDO', '<button type="button" class="tbtn" data-av="status" style="padding:0 6px">ACTUALIZAR · 1</button>',
+        '<div class="mkt-bar"><span data-srcsw></span><button type="button" class="tbtn" id="av-plan" aria-pressed="false" style="padding:0 6px"></button></div>' + tw('av-status', 'av-note-status'), 'av-foot-status') +
       mktPanel(23, 'av', 'COT &lt;GO&gt; - COTIZACIONES', '<button type="button" class="tbtn" id="av-load-quotes" style="padding:0 6px"></button>', tw('av-quotes', 'av-note-quotes'), 'av-foot-quotes') +
       mktPanel(24, 'av', 'FX &lt;GO&gt; - DIVISAS, TASAS Y MATERIAS PRIMAS', '<button type="button" class="tbtn" data-av="macro" style="padding:0 6px">ACTUALIZAR · ' + AV_MACRO.length + '</button>', tw('av-macro', 'av-note-macro'), 'av-foot-macro') +
       mktPanel(25, 'av', 'MOVERS &lt;GO&gt; - MAYORES MOVIMIENTOS EN EE. UU.', '<button type="button" class="tbtn" data-av="movers" style="padding:0 6px">ACTUALIZAR · 1</button>', '<div class="chips" id="av-mv-chips" role="group" aria-label="Lista"></div>' + tw('av-movers', 'av-note-movers'), 'av-foot-movers');
     html += MKT_GROUPS.map(function (g) {
-      return mktPanel(g.n, 'yf', 'MKT &lt;GO&gt; - ' + esc(g.name) + ' <em>YAHOO</em>', g.n === 26 ? '<span data-srcsw></span><button type="button" class="tbtn" id="mkt-refresh" style="padding:0 6px">ACTUALIZAR</button>' : '',
-        '<div id="mkt-note-' + g.key + '"></div><div class="tablewrap"><table class="t mkt" id="mkt-' + g.key + '"></table></div>', 'mkt-foot-' + g.key);
+      return mktPanel(g.n, 'yf', 'MKT &lt;GO&gt; - ' + esc(g.name) + ' <em>YAHOO</em>', g.n === 26 ? '<button type="button" class="tbtn" id="mkt-refresh" style="padding:0 6px">ACTUALIZAR</button>' : '',
+        (g.n === 26 ? '<div class="mkt-bar"><span data-srcsw></span></div>' : '') + '<div id="mkt-note-' + g.key + '"></div><div class="tablewrap"><table class="t mkt" id="mkt-' + g.key + '"></table></div>', 'mkt-foot-' + g.key);
     }).join('');
     $('screen-mercado').innerHTML = html;
     $('mkt-refresh').addEventListener('click', function () { refreshMarket(true); });
@@ -2168,8 +2275,8 @@ var CODE = /*__CODE_INDEX__*/null;
     var out = [];
     if (state.mktSrc === 'av' && av.mode) {
       var fx = avGet('CURRENCY_EXCHANGE_RATE', { from_currency: 'USD', to_currency: 'MXN' }), spy = avGet('GLOBAL_QUOTE', { symbol: 'SPY' });
-      if (fx) out.push('USDMXN <b>' + fmtN(fx.data.rate, 4) + '</b>');
-      if (spy && spy.data.change_pct != null) out.push('SPY <b class="' + cls(spy.data.change_pct) + '">' + sgn(spy.data.change_pct, 2) + '%</b>');
+      if (fx) out.push('USDMXN <b>' + fmtN(fx.data.rate, 4) + '</b> ' + avAge(fx.at).replace('HACE ', '').toLowerCase());
+      if (spy && spy.data.change_pct != null) out.push('SPY <b class="' + cls(spy.data.change_pct) + '">' + sgn(spy.data.change_pct, 2) + '%</b> ' + shortDate(spy.data.day));
       out.push('ALPHA VANTAGE HOY <b>' + avCalls() + '</b>');
       return out;
     }
@@ -2196,7 +2303,11 @@ var CODE = /*__CODE_INDEX__*/null;
         if (state.mktSrc === 'yf') refreshMarket(false); else avAutoLoad();
         return;
       }
-      if (b.id === 'av-plan') { av.plan = av.plan === 'premium' ? 'free' : 'premium'; store('qe.av.plan', av.plan); renderAv(); return; }
+      if (b.id === 'av-plan') {
+        if (av.plan === 'premium') { av.plan = 'free'; store('qe.av.plan', 'free'); }
+        else log('ESCRIBE PLAN PREMIUM <GO> SOLO SI TU CLAVE DE ALPHA VANTAGE ES DE PAGO: EL PLAN GRATUITO TIENE 25 CONSULTAS AL DÍA Y SE AGOTARÍAN EN MINUTOS.');
+        renderAv(); return;
+      }
       if (b.id === 'av-load-quotes') { avSection('quotes', avQuoteSymbols().concat(avWatch()).map(function (sym) { return ['GLOBAL_QUOTE', { symbol: sym }, 'q:' + sym]; }), true); return; }
       var a = b.getAttribute('data-av');
       if (a === 'status') { avSection('status', [['MARKET_STATUS', {}]], true); return; }
@@ -2204,7 +2315,17 @@ var CODE = /*__CODE_INDEX__*/null;
       if (a === 'movers') { avSection('movers', [['TOP_GAINERS_LOSERS', {}]], true); return; }
       if (a === 'perm') { openPermissions(); return; }
       if (b.hasAttribute('data-avq')) { avQuote(b.getAttribute('data-avq'), false); return; }
-      if (b.hasAttribute('data-etf')) { avQuote(b.getAttribute('data-etf'), true); return; }
+      if (b.hasAttribute('data-etf')) {
+        var es = b.getAttribute('data-etf');
+        avQuote(es, true).then(function () {
+          var row = document.querySelector('#av-quotes tr[data-sym="' + es + '"]');
+          if (row) row.scrollIntoView({ block: 'nearest' });
+          var e = avGet('GLOBAL_QUOTE', { symbol: es }), qerr = av.err['q:' + es];
+          if (e && !qerr) log(es + '  ' + fmtN(e.data.price, 2) + '  ' + sgn(e.data.change_pct, 2) + '%  DÍA ' + e.data.day + '  · ALPHA VANTAGE (ETF EN EE. UU.)', 'ok');
+          else log(es + ': ' + (qerr ? qerr.message : av.halted ? av.halted.message : 'SIN DATO'));
+        });
+        return;
+      }
       if (b.hasAttribute('data-mv')) { av.mv = b.getAttribute('data-mv'); renderAv(); return; }
       return;
     }
@@ -2213,7 +2334,8 @@ var CODE = /*__CODE_INDEX__*/null;
   setInterval(function () {
     if (state.screen !== 'mercado' || document.hidden) return;
     if (state.mktSrc === 'yf') refreshMarket(false); else avAutoLoad();
-  }, 60000);
+  }, 15000);
+  window.addEventListener('storage', function (e) { if (e.key === AV_CACHE_KEY) { avSync(); renderAv(); renderStatus(); } });
   if (window.claude && typeof window.claude.use === 'function') {
     window.claude.use('mcp').then(function (m) {
       if (!m || av.mode) return;

@@ -38,8 +38,10 @@ FUNCTIONS = {
     'GOLD_SILVER_SPOT': ('symbol',),
     'TOP_GAINERS_LOSERS': (),
 }
+# Parameters Alpha Vantage cannot answer without (the others have upstream defaults).
+REQUIRED = {'GLOBAL_QUOTE': ('symbol',), 'CURRENCY_EXCHANGE_RATE': ('from_currency', 'to_currency'), 'GOLD_SILVER_SPOT': ('symbol',)}
 JSON_DATATYPE = {'GLOBAL_QUOTE', 'CURRENCY_EXCHANGE_RATE', 'TREASURY_YIELD', 'WTI'}
-_VALUE = re.compile(r'^[A-Za-z0-9.\-^]{1,20}$')
+_VALUE = re.compile(r'[A-Za-z0-9.\-^]{1,20}')
 # Answers that explain a refusal instead of carrying data: never cached.
 _NOTICE_KEYS = ('Note', 'Information', 'Error Message', 'error', 'message')
 
@@ -72,9 +74,12 @@ def _clean_params(function: str, params) -> dict:
     for k, v in params.items():
         if k not in allowed:
             raise ValueError(f'Parámetro no permitido para {function}: {k!r}.')
-        if not isinstance(v, str) or not _VALUE.match(v):
+        if not isinstance(v, str) or not _VALUE.fullmatch(v):
             raise ValueError(f'Valor no válido para {k}.')
         out[k] = v
+    missing = [k for k in REQUIRED.get(function, ()) if k not in out]
+    if missing:
+        raise ValueError(f'Falta {missing[0]} para {function}.')
     return out
 
 
@@ -85,8 +90,15 @@ def _trim(payload):
 
 
 _lock = threading.Lock()
-_last_call = [0.0]
-_cache: dict = {}
+_last_call = [0.0]           # time.monotonic() of the last upstream call
+_cache: dict = {}            # ident -> (monotonic time, wall time, payload)
+
+
+def _cached(function: str, ident):
+    hit = _cache.get(ident)
+    if hit and time.monotonic() - hit[0] < CACHE_SECONDS:
+        return {'function': function, 'payload': hit[2], 'cached': True, 'fetched_at': int(hit[1])}
+    return None
 
 
 def call(function: str, params=None) -> dict:
@@ -97,13 +109,17 @@ def call(function: str, params=None) -> dict:
                               'antes de abrir la app (python quant_studio.py).')
     clean = _clean_params(function, params)
     ident = (function, tuple(sorted(clean.items())))
+    hit = _cached(function, ident)            # cached answers never wait behind an upstream call
+    if hit:
+        return hit
     with _lock:
-        hit = _cache.get(ident)
-        if hit and time.time() - hit[0] < CACHE_SECONDS:
-            return {'function': function, 'payload': hit[1], 'cached': True, 'fetched_at': int(hit[0])}
-        wait = _last_call[0] + MIN_INTERVAL - time.time()
+        hit = _cached(function, ident)        # another request may have fetched it meanwhile
+        if hit:
+            return hit
+        # Monotonic clock: a wall-clock step back must not stall every request behind a long sleep.
+        wait = _last_call[0] + MIN_INTERVAL - time.monotonic()
         if wait > 0:
-            time.sleep(wait)
+            time.sleep(min(wait, MIN_INTERVAL))
         query = dict(clean, function=function, apikey=key)
         if function in JSON_DATATYPE:
             query['datatype'] = 'json'
@@ -112,9 +128,9 @@ def call(function: str, params=None) -> dict:
         except Exception as e:  # noqa: BLE001 - reported to the page without the key
             raise OSError(f'Alpha Vantage no respondió: {type(e).__name__}: {e}'.replace(key, '***')[:300]) from None
         finally:
-            _last_call[0] = time.time()
+            _last_call[0] = time.monotonic()
         payload = _trim(payload)
         now = time.time()
         if isinstance(payload, dict) and not any(k in payload for k in _NOTICE_KEYS):
-            _cache[ident] = (now, payload)
+            _cache[ident] = (time.monotonic(), now, payload)
         return {'function': function, 'payload': payload, 'cached': False, 'fetched_at': int(now)}

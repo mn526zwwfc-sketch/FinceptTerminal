@@ -68,6 +68,10 @@ class TestProxy(unittest.TestCase):
                            ('GLOBAL_QUOTE', ['IBM'])):
             with self.assertRaises(ValueError, msg=(fn, params)):
                 av.call(fn, params)
+        for fn, params in (('GLOBAL_QUOTE', {}), ('GLOBAL_QUOTE', None), ('CURRENCY_EXCHANGE_RATE', {'from_currency': 'USD'}),
+                           ('GOLD_SILVER_SPOT', {}), ('GLOBAL_QUOTE', {'symbol': 'IBM\n'})):
+            with self.assertRaises(ValueError, msg=(fn, params)):
+                av.call(fn, params)
         self.assertEqual(self.calls, [])
 
     def test_adds_key_and_json_datatype_and_caches(self):
@@ -117,7 +121,7 @@ class TestRoute(unittest.TestCase):
     def req(self, method, path, body=None):
         import http.client
         c = http.client.HTTPConnection('127.0.0.1', self.port, timeout=30)
-        c.request(method, path, body=None if body is None else json.dumps(body),
+        c.request(method, path, body=None if method == 'GET' else json.dumps(body),
                   headers={'Host': f'127.0.0.1:{self.port}', 'Content-Type': 'application/json'})
         r = c.getresponse()
         data = json.loads(r.read())
@@ -143,6 +147,10 @@ class TestRoute(unittest.TestCase):
                 self.assertEqual(j['data']['payload']['markets'][0]['region'], 'Mexico')
                 st, j = self.req('POST', '/api/av', {'function': 'LISTING_STATUS', 'params': {}})
                 self.assertFalse(j['success'])
+                for body in ([], 'x', 5, None):
+                    st, j = self.req('POST', '/api/av', body)
+                    self.assertEqual(st, 400, body)
+                    self.assertFalse(j['success'])
         finally:
             av.fetch, av.MIN_INTERVAL = saved, gap
             av._cache.clear()
