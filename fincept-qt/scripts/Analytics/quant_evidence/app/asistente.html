@@ -1,0 +1,541 @@
+<title>Brújula Fincept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one guided column. Describe the idea, set three facts about yourself, and the answer, the
+   better alternatives and the changes that would help appear underneath on their own. */
+:root {
+  --bg: #eef2f5;
+  --card: #ffffff;
+  --ink: #15212b;
+  --soft: #4d5d6b;
+  --line: #d5dde4;
+  --accent: #0b5d7a;
+  --accent-soft: #dcebf1;
+  --good: #1d7a46;
+  --good-bg: #e2f2e8;
+  --warn: #9a6200;
+  --warn-bg: #fbefd9;
+  --bad: #b23a2b;
+  --bad-bg: #f8e3df;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f171e; --card: #16212b; --ink: #e6edf2; --soft: #9fb0bd; --line: #2a3a47;
+    --accent: #5fb7d6; --accent-soft: #17323f; --good: #5ccf8d; --good-bg: #163323;
+    --warn: #e8b55a; --warn-bg: #3a2c12; --bad: #f08a7b; --bad-bg: #3d1d19; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f171e; --card: #16212b; --ink: #e6edf2; --soft: #9fb0bd; --line: #2a3a47;
+  --accent: #5fb7d6; --accent-soft: #17323f; --good: #5ccf8d; --good-bg: #163323;
+  --warn: #e8b55a; --warn-bg: #3a2c12; --bad: #f08a7b; --bad-bg: #3d1d19; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.55 var(--body); }
+.wrap { max-width: 980px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; display: grid; gap: 22px; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 22px; font-weight: 700; }
+h3 { font-size: 17px; font-weight: 700; font-family: var(--body); }
+p { margin: 0; }
+a { color: var(--accent); }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.soft { color: var(--soft); }
+.small { font-size: 14px; }
+.label { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--soft); font-weight: 700; }
+
+header { display: grid; gap: 8px; }
+header p { color: var(--soft); max-width: 62ch; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: grid; gap: 16px; min-width: 0; }
+.step { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: baseline; }
+.step b { font-family: var(--display); color: var(--accent); font-size: 15px; }
+
+/* Step 1 */
+.ask { position: relative; }
+.ask input { width: 100%; font-size: 19px; padding: 14px 16px; border: 2px solid var(--line); border-radius: 12px; background: var(--bg); outline: none; }
+.ask input:focus { border-color: var(--accent); }
+.matches { display: grid; gap: 6px; }
+.match { display: flex; gap: 10px; align-items: center; text-align: left; width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: transparent; cursor: pointer; }
+.match:hover, .match[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.match span { flex: 1; min-width: 0; }
+.match em { font-style: normal; font-size: 13px; color: var(--soft); white-space: nowrap; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 6px 14px; cursor: pointer; font-size: 15px; }
+.chip:hover { border-color: var(--accent); }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--card); }
+
+/* Step 2 */
+.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.fact { display: grid; gap: 8px; min-width: 0; }
+.seg { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.seg button { flex: 1; border: 0; background: transparent; padding: 8px 6px; cursor: pointer; font-size: 15px; border-right: 1px solid var(--line); }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--card); font-weight: 700; }
+details.adv { border-top: 1px solid var(--line); padding-top: 12px; }
+details.adv summary { cursor: pointer; color: var(--accent); font-weight: 700; }
+.advgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 16px; margin-top: 14px; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field label { font-size: 14px; color: var(--soft); }
+.field input, .field select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); min-width: 0; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 18px; grid-column: 1 / -1; }
+.toggles label { display: flex; gap: 8px; align-items: center; cursor: pointer; font-size: 15px; }
+
+/* Answer */
+.answer { grid-template-columns: 220px minmax(0, 1fr); align-items: start; gap: 22px; }
+.dial svg { display: block; width: 100%; height: auto; }
+.dial text { font-family: var(--mono); fill: var(--soft); font-size: 11px; }
+.dial .score { font-size: 40px; fill: var(--ink); font-weight: 500; }
+.verdict { display: grid; gap: 10px; min-width: 0; }
+.pill { justify-self: start; border-radius: 999px; padding: 4px 12px; font-weight: 700; font-size: 14px; }
+.pill.respaldada { background: var(--good-bg); color: var(--good); }
+.pill.condicionada { background: var(--accent-soft); color: var(--accent); }
+.pill.debil { background: var(--warn-bg); color: var(--warn); }
+.pill.no_respaldada { background: var(--bad-bg); color: var(--bad); }
+.verdict h2 { font-size: 26px; }
+.reasons { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.reasons li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; }
+.reasons li i { width: 12px; height: 12px; border-radius: 50%; margin-top: 7px; }
+.reasons li.fail i { background: var(--bad); }
+.reasons li.warn i { background: var(--warn); }
+.reasons li.pass i { background: var(--good); }
+.reasons small { display: block; color: var(--soft); font-size: 14px; }
+.edge { display: flex; flex-wrap: wrap; gap: 8px 22px; padding-top: 12px; border-top: 1px solid var(--line); }
+.edge div { display: grid; }
+
+/* Lists */
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.rows { display: grid; gap: 8px; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; }
+.row.me { border-color: var(--accent); background: var(--accent-soft); }
+.row .score { font-family: var(--mono); font-size: 18px; min-width: 2.5ch; text-align: right; }
+.row button, .btn { border: 1px solid var(--accent); background: transparent; color: var(--accent); border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 14px; font-weight: 700; white-space: nowrap; }
+.row button:hover, .btn:hover { background: var(--accent-soft); }
+.btn.solid { background: var(--accent); color: var(--card); }
+.delta { font-family: var(--mono); color: var(--good); font-size: 15px; white-space: nowrap; }
+.tag { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.tag.respaldada { background: var(--good-bg); color: var(--good); }
+.tag.condicionada { background: var(--accent-soft); color: var(--accent); }
+.tag.debil { background: var(--warn-bg); color: var(--warn); }
+.tag.no_respaldada { background: var(--bad-bg); color: var(--bad); }
+.whatif { display: grid; gap: 8px; margin: 0; padding-left: 20px; }
+.empty { color: var(--soft); font-size: 15px; }
+.hist { display: flex; flex-wrap: wrap; gap: 8px; }
+.hist button { border: 1px solid var(--line); background: transparent; border-radius: 10px; padding: 8px 12px; cursor: pointer; text-align: left; display: grid; font-size: 14px; }
+.hist button:hover { border-color: var(--accent); }
+.hist b { font-family: var(--mono); font-weight: 500; }
+footer { color: var(--soft); font-size: 14px; display: grid; gap: 6px; }
+.sources { margin: 0; padding-left: 18px; font-size: 15px; }
+
+@media (max-width: 780px) {
+  .facts, .advgrid, .grid2 { grid-template-columns: minmax(0, 1fr); }
+  .answer { grid-template-columns: minmax(0, 1fr); }
+  .dial { max-width: 240px; }
+}
+@media (prefers-reduced-motion: no-preference) { .dial .arc { transition: stroke-dashoffset 0.4s ease; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Brújula Fincept</h1>
+    <p>Cuéntame qué quieres hacer con tu dinero. Te digo qué dice la investigación académica, qué alternativas te convienen más y qué tendría que cambiar para que tu idea funcione. Todo se calcula solo mientras escribes.</p>
+  </header>
+
+  <section class="card" aria-labelledby="s1">
+    <div class="step"><b>1</b><h2 id="s1">¿Qué quieres hacer con tu dinero?</h2></div>
+    <div class="ask">
+      <label for="q" class="soft small">Descríbelo con tus palabras</label>
+      <input id="q" type="text" autocomplete="off" placeholder="Por ejemplo: comprar acciones que van subiendo, o invertir cada mes en un fondo indexado">
+    </div>
+    <div class="matches" id="matches" aria-live="polite"></div>
+    <div>
+      <p class="label" style="margin-bottom:8px">O elige una idea común</p>
+      <div class="chips" id="chips"></div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="s2">
+    <div class="step"><b>2</b><h2 id="s2">Sobre ti</h2></div>
+    <div class="facts">
+      <div class="fact"><span class="label" id="l-h">¿Cuánto tiempo vas a invertir?</span><div class="seg" role="group" aria-labelledby="l-h" id="f-h"></div></div>
+      <div class="fact"><span class="label" id="l-m">¿En qué mercado?</span><div class="seg" role="group" aria-labelledby="l-m" id="f-m"></div></div>
+      <div class="fact"><span class="label" id="l-i">¿Quién invierte?</span><div class="seg" role="group" aria-labelledby="l-i" id="f-i"></div></div>
+    </div>
+    <details class="adv" id="adv">
+      <summary>Ya probé esta idea con datos históricos (opcional)</summary>
+      <div class="advgrid">
+        <div class="field"><label for="a-sr">Sharpe anual de la prueba</label><input id="a-sr" type="number" step="0.05" inputmode="decimal" placeholder="por ejemplo 1.2"></div>
+        <div class="field"><label for="a-y">Años de datos</label><input id="a-y" type="number" step="0.5" min="0" inputmode="decimal" placeholder="por ejemplo 8"></div>
+        <div class="field"><label for="a-n">Variantes que probaste</label><input id="a-n" type="number" step="1" min="1" inputmode="numeric" placeholder="1"></div>
+        <div class="field"><label for="a-t">Cuánto de la cartera cambias al mes (%)</label><input id="a-t" type="number" step="5" min="0" inputmode="decimal"></div>
+        <div class="field"><label for="a-c">Costo por comprar y vender (puntos base)</label><input id="a-c" type="number" step="1" min="0" inputmode="decimal" placeholder="automático"></div>
+        <div class="field"><label for="a-f">Frecuencia de los datos</label><select id="a-f"><option value="252">Diaria</option><option value="52">Semanal</option><option value="12">Mensual</option></select></div>
+        <div class="toggles">
+          <label><input type="checkbox" id="a-pub" checked> La idea viene de un libro, paper o internet</label>
+          <label><input type="checkbox" id="a-oos"> La validé con datos que no usé para diseñarla</label>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section class="card answer" aria-labelledby="ans" id="answer">
+    <div class="dial" id="dial"></div>
+    <div class="verdict">
+      <span class="pill" id="pill"></span>
+      <h2 id="ans"></h2>
+      <p id="summary" class="soft"></p>
+      <ul class="reasons" id="reasons"></ul>
+      <div class="edge" id="edge"></div>
+    </div>
+  </section>
+
+  <div class="grid2">
+    <section class="card" aria-labelledby="h-fix">
+      <div><h2 id="h-fix">Cambios que más te ayudarían</h2><p class="soft small">Probé cada ajuste por separado con el mismo motor.</p></div>
+      <div class="rows" id="fixes"></div>
+      <ul class="whatif" id="whatif"></ul>
+    </section>
+    <section class="card" aria-labelledby="h-alt">
+      <div><h2 id="h-alt">Mejores alternativas para ti</h2><p class="soft small">Las 44 estrategias evaluadas con tu plazo, tu mercado y tu perfil.</p></div>
+      <div class="rows" id="alts"></div>
+    </section>
+  </div>
+
+  <section class="card" aria-labelledby="h-hist">
+    <div><h2 id="h-hist">Tus revisiones</h2><p class="soft small">Se guardan solas en este navegador.</p></div>
+    <div class="hist" id="hist"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-src">
+    <h2 id="h-src">De dónde sale esto</h2>
+    <p id="claim"></p>
+    <ul class="sources" id="sources"></ul>
+  </section>
+
+  <footer>
+    <p>Material educativo. No es asesoría financiera ni recomienda comprar o vender ningún valor. Las valoraciones de 0 a 100 son una síntesis de la literatura, no cifras publicadas por un estudio.</p>
+    <p id="more"></p>
+  </footer>
+</div>
+
+<script>
+/*__ENGINE__*/
+</script>
+<script>
+var KB = /*__KB__*/null;
+var REPO = /*__REPO__*/null;
+var CODE = /*__CODE_INDEX__*/null;
+</script>
+<script>
+(function () {
+  'use strict';
+  var E = window.QuantEvidence, $ = function (id) { return document.getElementById(id); };
+  var BY_ID = {}; KB.strategies.forEach(function (s) { BY_ID[s.id] = s; });
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); return true; } catch (e) { return v === undefined ? null : false; } }
+  function fmt(x, d) { return x == null || !isFinite(x) ? '—' : Number(x).toLocaleString('es-MX', { minimumFractionDigits: d, maximumFractionDigits: d }); }
+
+  // ── Plain-language search: everyday words for each strategy ────────────
+  var WORDS = {
+    buy_hold_global: 'comprar y mantener fondo indexado etf mundial global diversificado largo plazo pasivo indice internacional',
+    buy_hold_single_country: 'comprar y mantener un solo pais sp500 s&p mexico ipc indice local etf de un pais',
+    factor_model_tilt: 'factores inclinacion smart beta modelo de factores fama french',
+    profitability_quality: 'calidad rentabilidad empresas rentables quality',
+    value: 'valor acciones baratas value comprar barato multiplos bajos',
+    momentum: 'momentum acciones que suben tendencia ganadoras comprar lo que sube',
+    value_momentum_combo: 'valor y momentum combinado mezcla',
+    betting_against_beta: 'baja volatilidad acciones tranquilas beta bajo minima volatilidad',
+    anomaly_single: 'anomalia senal de un paper una anomalia',
+    anomaly_combo: 'combinar anomalias muchas senales',
+    factor_fund_long_only: 'fondo de factores etf de factores solo largo',
+    ml_cross_section: 'machine learning inteligencia artificial algoritmo predecir acciones redes neuronales',
+    complexity_timing: 'modelo complejo machine learning para el mercado timing con ia',
+    llm_news: 'noticias chatgpt llm sentimiento de noticias ia leer noticias',
+    technical_rules: 'analisis tecnico graficas indicadores rsi macd soportes velas',
+    markowitz_sample: 'markowitz optimizar cartera frontera eficiente media varianza',
+    naive_1n: 'repartir por igual 1/n partes iguales equiponderado',
+    shrinkage_min_variance: 'minima varianza covarianzas cartera de menor riesgo',
+    risk_parity_levered: 'paridad de riesgo risk parity apalancamiento bonos',
+    kelly_full: 'kelly apostar todo maximo tamano de apuesta',
+    kelly_fractional: 'medio kelly kelly fraccionario tamano de posicion',
+    all_equity_lifetime: 'todo en acciones toda la vida 100% acciones',
+    lifecycle_glidepath: 'ciclo de vida reducir acciones con la edad afore fondo de retiro target date',
+    periodic_contributions: 'aportar cada mes ahorrar cada quincena aportaciones periodicas ahorro constante',
+    dca_lump_sum: 'promediar costo dca invertir de golpe o en partes',
+    rebalancing: 'rebalancear rebalanceo volver a pesos objetivo',
+    frequent_trading: 'day trading trading diario comprar y vender seguido especular intradia scalping',
+    retail_options: 'opciones calls puts opciones semanales derivados',
+    active_funds: 'fondos activos fondo de inversion gestor administrador activo',
+    concentrated_stock_picking: 'escoger acciones pocas acciones seleccionar empresas stock picking',
+    predictive_regressions: 'predecir el mercado regresiones dividend yield',
+    cape_timing: 'cape shiller valuacion del mercado salir cuando esta caro',
+    trend_index_ma: 'media movil 200 dias tendencia del indice salir cuando baja',
+    tsmom_futures: 'seguimiento de tendencia futuros cta trend following',
+    vol_managed_market: 'volatilidad gestionada reducir cuando hay volatilidad vix',
+    yield_curve_exit: 'curva de rendimientos invertida recesion salir',
+    regime_switching: 'regimenes ciclo economico cambio de regimen',
+    sentiment_signals: 'sentimiento miedo codicia encuestas put call',
+    calendar_index: 'calendario mes de enero sell in may efecto dia de la semana',
+    turn_of_month: 'cambio de mes fin de mes inicio de mes',
+    pre_fomc: 'fed fomc antes de la reserva federal tasas',
+    cross_sectional_seasonality: 'estacionalidad mismo mes cada ano',
+    ipc_calendar: 'calendario bolsa mexicana ipc efecto calendario mexico',
+    mexico_factors: 'factores en mexico bmv valor momentum mexico emisoras'
+  };
+  var CHIPS = [['buy_hold_global', 'Fondo indexado mundial'], ['periodic_contributions', 'Ahorrar cada mes'], ['momentum', 'Comprar lo que sube'],
+    ['value', 'Comprar acciones baratas'], ['frequent_trading', 'Trading diario'], ['technical_rules', 'Análisis técnico'],
+    ['cape_timing', 'Salir cuando el mercado está caro'], ['concentrated_stock_picking', 'Escoger pocas acciones'], ['ml_cross_section', 'Inteligencia artificial']];
+  function norm(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9&/% ]+/g, ' '); }
+  var STOP = { de: 1, la: 1, el: 1, en: 1, que: 1, y: 1, a: 1, los: 1, las: 1, un: 1, una: 1, con: 1, por: 1, para: 1, mi: 1, mis: 1, quiero: 1, invertir: 1, dinero: 1, lo: 1, se: 1, o: 1, es: 1, al: 1, del: 1 };
+  var INDEX = KB.strategies.map(function (s) { return { id: s.id, words: norm(WORDS[s.id] || ''), name: norm(s.name), claim: norm(s.claim) }; });
+  function search(q) {
+    var toks = norm(q).split(/\s+/).filter(function (t) { return t.length > 1 && !STOP[t]; });
+    if (!toks.length) return [];
+    return INDEX.map(function (e) {
+      var sc = 0;
+      toks.forEach(function (t) {
+        var stem = t.length > 5 ? t.slice(0, t.length - 2) : t;   // "suben" ≈ "sube", "baratas" ≈ "barat"
+        if (e.words.indexOf(stem) >= 0) sc += 3;
+        if (e.name.indexOf(stem) >= 0) sc += 2;
+        if (e.claim.indexOf(stem) >= 0) sc += 1;
+      });
+      return { id: e.id, sc: sc };
+    }).filter(function (x) { return x.sc > 0; }).sort(function (a, b) { return b.sc - a.sc; }).slice(0, 3);
+  }
+
+  // ── State ────────────────────────────────────────────────────────────────
+  var H = [['corto', 'Menos de 3 años', 2], ['medio', '3 a 10 años', 5], ['largo', 'Más de 10 años', 15]];
+  var M = [['mx', 'México'], ['us', 'EE. UU.'], ['global', 'Global']];
+  var I = [['retail', 'Yo, una persona'], ['institutional', 'Una institución']];
+  var st = (function () {
+    var d = { id: 'buy_hold_global', h: 'largo', m: 'mx', i: 'retail' };
+    try { var v = JSON.parse(store('qe.bruj.state') || 'null'); if (v && BY_ID[v.id]) { d.id = v.id; d.h = v.h || d.h; d.m = v.m || d.m; d.i = v.i || d.i; } } catch (e) { /* defaults */ }
+    return d;
+  })();
+
+  function seg(id, opts, key) {
+    $(id).innerHTML = opts.map(function (o) { return '<button type="button" data-k="' + key + '" data-v="' + o[0] + '" aria-pressed="' + (st[key] === o[0]) + '">' + esc(o[1]) + '</button>'; }).join('');
+  }
+  function renderFacts() { seg('f-h', H, 'h'); seg('f-m', M, 'm'); seg('f-i', I, 'i'); }
+  document.addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-k]'); if (b) { st[b.getAttribute('data-k')] = b.getAttribute('data-v'); renderFacts(); update(); return; }
+    var p = ev.target.closest('[data-pick]'); if (p) { pick(p.getAttribute('data-pick'), p.hasAttribute('data-keep')); return; }
+    var f = ev.target.closest('[data-fix]'); if (f) { applyFix(Number(f.getAttribute('data-fix'))); return; }
+    var h = ev.target.closest('[data-hist]'); if (h) { loadHist(Number(h.getAttribute('data-hist'))); }
+  });
+
+  function pick(id, keepAdvanced) {
+    if (!BY_ID[id]) return;
+    st.id = id;
+    if (!keepAdvanced) defaultsFor(id);
+    renderChips(); renderMatches(); update();
+    if (!keepAdvanced) $('answer').scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  }
+  // Each strategy brings its own typical turnover; the user only overrides it if they want.
+  function defaultsFor(id) {
+    var ev = BY_ID[id].evidence;
+    $('a-t').value = Math.round((ev.typical_turnover_monthly || 0) * 100);
+    // A backtest belongs to the idea it was run on: a new idea starts without one.
+    ['a-sr', 'a-y', 'a-n', 'a-c'].forEach(function (f) { $(f).value = ''; });
+    $('a-oos').checked = false;
+  }
+  function renderChips() {
+    $('chips').innerHTML = CHIPS.map(function (c) { return '<button type="button" class="chip" data-pick="' + c[0] + '" aria-pressed="' + (st.id === c[0]) + '">' + esc(c[1]) + '</button>'; }).join('');
+  }
+  var lastMatches = [];
+  function renderMatches() {
+    var q = $('q').value.trim();
+    if (!q) { $('matches').innerHTML = '<p class="empty">Revisando ahora: <b>' + esc(BY_ID[st.id].name) + '</b></p>'; return; }
+    lastMatches = search(q);
+    if (!lastMatches.length) { $('matches').innerHTML = '<p class="empty">No reconocí la idea. Prueba con otras palabras o elige una idea común.</p>'; return; }
+    $('matches').innerHTML = '<p class="small soft">Creo que te refieres a:</p>' + lastMatches.map(function (m) {
+      var s = BY_ID[m.id];
+      return '<button type="button" class="match" data-pick="' + s.id + '" aria-pressed="' + (st.id === s.id) + '"><span>' + esc(s.name) + '</span><em>' + (st.id === s.id ? 'revisando' : 'revisar') + '</em></button>';
+    }).join('');
+  }
+  var qTimer = null;
+  $('q').addEventListener('input', function () {
+    clearTimeout(qTimer);
+    qTimer = setTimeout(function () {
+      renderMatches();
+      // The best match is picked on its own once it clearly stands out.
+      if (lastMatches[0] && (!lastMatches[1] || lastMatches[0].sc >= lastMatches[1].sc + 2) && lastMatches[0].id !== st.id) { st.id = lastMatches[0].id; defaultsFor(st.id); renderChips(); renderMatches(); update(); }
+    }, 350);
+  });
+
+  // ── Evaluation ───────────────────────────────────────────────────────────
+  function numVal(id) { var v = $(id).value; if (v === '') return null; var x = Number(v); return isFinite(x) ? x : null; }
+  function profile(id) {
+    var h = H.filter(function (x) { return x[0] === st.h; })[0];
+    return { strategy_id: id, horizon_years: h ? h[2] : 15, market: st.m, investor: st.i };
+  }
+  function inputs() {
+    var d = profile(st.id), sr = numVal('a-sr'), y = numVal('a-y'), n = numVal('a-n'), t = numVal('a-t'), c = numVal('a-c');
+    if (sr != null && y != null && y > 0) { d.sharpe_annual = sr; d.years = y; d.n_trials = n && n >= 1 ? n : 1; d.periods_per_year = Number($('a-f').value); }
+    if (t != null) d.turnover_monthly = t / 100;
+    if (c != null) d.roundtrip_cost_bps = c;
+    d.published = $('a-pub').checked; d.out_of_sample = $('a-oos').checked;
+    return d;
+  }
+  function evalD(d) { return E.evaluateDecision(d, KB, null); }     // related modules are not shown here
+  // Smallest integer in [lo, hi] (step) where the net edge is gone; the edge only falls as cost or turnover rise.
+  function firstLoss(d, key, lo, hi, step, scale) {
+    var gone = function (v) { var o = {}; o[key] = v * scale; var x = evalD(Object.assign({}, d, o)); return x.net_monthly_bps != null && x.net_monthly_bps <= 0; };
+    if (gone(lo)) return lo;
+    if (!gone(hi)) return null;
+    var a = lo, b = hi;                     // gone(a) false, gone(b) true
+    while (b - a > step) { var m = a + Math.round((b - a) / 2 / step) * step; if (m <= a) m = a + step; if (m >= b) break; if (gone(m)) b = m; else a = m; }
+    return b;
+  }
+  var rankCache = {};
+
+  var HEAD = { respaldada: 'Va por buen camino', condicionada: 'Puede funcionar, con condiciones', debil: 'La evidencia es débil', no_respaldada: 'La evidencia dice que no' };
+  var SHORT = { respaldada: 'Respaldada', condicionada: 'Con condiciones', debil: 'Débil', no_respaldada: 'No respaldada' };
+  var PLAIN = {
+    evidence: { fail: 'Los estudios con datos reales encuentran que este tipo de estrategia no gana después de costos.', warn: 'La evidencia a favor de este tipo de estrategia es mixta.', pass: 'La evidencia académica respalda este tipo de estrategia.' },
+    net_edge: { fail: 'Después de costos, y de que la idea ya sea pública, no queda ganancia esperada.', warn: 'La ganancia esperada después de costos es muy pequeña.', pass: 'Queda una ganancia esperada después de costos.' },
+    turnover: { fail: 'Compras y vendes demasiado: los costos se comen la ganancia.', warn: 'Cambias más de la mitad de la cartera cada mes; eso suele salir caro.', pass: 'La rotación es moderada.' },
+    decay: { warn: 'Las ideas publicadas suelen rendir la mitad o menos una vez que todos las conocen.', fail: 'Las ideas publicadas suelen dejar de funcionar cuando todos las conocen.', pass: 'La idea no depende de un hallazgo publicado.' },
+    microcaps: { fail: 'La mayor parte de la ganancia vendría de acciones diminutas, difíciles y caras de operar.', warn: 'Parte de la ganancia vendría de acciones diminutas, caras de operar.', pass: 'No depende de acciones diminutas.' },
+    access: { fail: 'Necesita vender en corto y apalancarte: caro y riesgoso para una persona.', warn: 'Necesita vender en corto o apalancarte, algo caro para una persona.', pass: 'Se puede hacer con una cuenta normal.' },
+    market_mx: { warn: 'La bolsa mexicana tiene pocas emisoras: los resultados son más frágiles y los costos más altos.', fail: 'En la bolsa mexicana esta idea es muy frágil.', pass: 'El mercado no es un obstáculo.' },
+    horizon: { warn: 'Con un plazo corto, el riesgo de terminar perdiendo es alto.', fail: 'Con un plazo tan corto, el riesgo de perder es muy alto.', pass: 'Tu plazo largo juega a tu favor.' },
+    live: { fail: 'Todavía no la has probado en vivo; ese es el único examen real.', warn: 'Llevas poco tiempo probándola en vivo.', pass: 'Ya tiene historial en vivo.' },
+    kelly: { fail: 'Arriesgas demasiado por operación: podrías perder mucho de golpe.', warn: 'El tamaño de tus apuestas es alto.', pass: 'El tamaño de tus apuestas es prudente.' },
+    dsr: { fail: 'Tu resultado histórico se explica fácilmente por suerte, por las variantes que probaste.', warn: 'Tu resultado histórico podría ser en parte suerte.', pass: 'Tu resultado histórico resiste el ajuste por suerte.' },
+    haircut: { fail: 'Al corregir por todas las pruebas que hiciste, el rendimiento esperado casi desaparece.', warn: 'Al corregir por las pruebas que hiciste, el rendimiento esperado baja bastante.', pass: 'El rendimiento resiste la corrección por pruebas múltiples.' },
+    minbtl: { fail: 'Tienes muy pocos años de datos para tantas variantes probadas.', warn: 'Tienes pocos años de datos para las variantes que probaste.', pass: 'Tienes suficientes años de datos.' },
+    t3: { fail: 'La señal no es estadísticamente fuerte.', warn: 'La señal es estadísticamente débil.', pass: 'La señal es estadísticamente fuerte.' }
+  };
+  function plain(c) { var p = PLAIN[c.id]; return (p && p[c.status]) || c.label; }
+
+  function dial(score, code) {
+    var R = 80, C = Math.PI * R, val = Math.max(0, Math.min(100, score));
+    var col = code === 'respaldada' ? 'var(--good)' : code === 'condicionada' ? 'var(--accent)' : code === 'debil' ? 'var(--warn)' : 'var(--bad)';
+    var tick = function (v) { var a = Math.PI * (1 - v / 100), x = 100 + Math.cos(a) * 96, y = 100 - Math.sin(a) * 96; return '<text x="' + x.toFixed(1) + '" y="' + (y + 2).toFixed(1) + '" text-anchor="middle">' + v + '</text>'; };
+    return '<svg viewBox="-16 -10 232 132" role="img" aria-label="Puntaje ' + Math.floor(val) + ' de 100">' +
+      '<path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="var(--line)" stroke-width="14" stroke-linecap="round"/>' +
+      '<path class="arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="' + col + '" stroke-width="14" stroke-linecap="round" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + (C * (1 - val / 100)).toFixed(1) + '"/>' +
+      tick(0) + tick(30) + tick(50) + tick(70) + tick(100) +
+      '<text class="score" x="100" y="96" text-anchor="middle">' + Math.floor(val) + '</text><text x="100" y="114" text-anchor="middle">DE 100</text></svg>';
+  }
+
+  // Single changes tried on the user's own inputs; only those that raise the score are shown.
+  var lastFixes = [];
+  function fixes(d, r) {
+    var cand = [];
+    var add = function (label, over, applyFn) { var nd = Object.assign({}, d, over), nr = evalD(nd); cand.push({ label: label, delta: nr.scores.final - r.scores.final, r: nr, apply: applyFn }); };
+    if (!d.out_of_sample) add('Validarla con datos que no usaste para diseñarla', { out_of_sample: true }, function () { $('a-oos').checked = true; });
+    if (r.inputs.turnover_monthly > 0.2) add('Bajar a la mitad cuánto de la cartera cambias al mes', { turnover_monthly: r.inputs.turnover_monthly / 2 }, function () { $('a-t').value = Math.round(r.inputs.turnover_monthly * 50); });
+    if (r.inputs.long_short || r.inputs.uses_leverage) add('Hacerla sin ventas en corto ni apalancamiento', { long_short: false, uses_leverage: false }, null);
+    if (r.inputs.microcap_share > 0.1) add('Evitar las acciones diminutas', { microcap_share: 0.05 }, null);
+    if (d.n_trials && d.n_trials > 5) add('Probar menos variantes (una quinta parte)', { n_trials: Math.max(1, Math.round(d.n_trials / 5)) }, function () { $('a-n').value = Math.max(1, Math.round(d.n_trials / 5)); });
+    if (d.horizon_years < 10) add('Invertir a más de 10 años', { horizon_years: 15 }, function () { st.h = 'largo'; renderFacts(); });
+    if (d.market === 'mx' && d.investor === 'retail') add('Hacerla en un mercado global en lugar de solo México', { market: 'global' }, function () { st.m = 'global'; renderFacts(); });
+    return cand.filter(function (c) { return c.delta >= 1; }).sort(function (a, b) { return b.delta - a.delta; }).slice(0, 4);
+  }
+  function applyFix(i) {
+    var f = lastFixes[i]; if (!f) return;
+    if (f.apply) { f.apply(); update(); }
+  }
+  // Break-even points found by sweeping one input with the same engine.
+  function whatIf(d, r) {
+    var out = [];
+    if (r.net_monthly_bps != null && r.cascade && r.cascade.some(function (c) { return /costos/i.test(c.stage); })) {
+      var cost = r.inputs.roundtrip_cost_bps, be = firstLoss(d, 'roundtrip_cost_bps', 0, 300, 1, 1);
+      if (be === 0) out.push('Aun sin costos de operación no queda ganancia esperada: el problema no son las comisiones.');
+      else if (be != null) out.push('Deja ganancia solo si comprar y vender te cuesta menos de <b class="num">' + be + '</b> puntos base por operación completa; hoy se calcula con <b class="num">' + fmt(cost, 0) + '</b>.');
+      var tv = firstLoss(d, 'turnover_monthly', 0, 300, 5, 0.01);
+      if (tv != null && tv > 0) out.push('Con tus costos, deja ganancia mientras cambies menos de <b class="num">' + tv + '%</b> de la cartera al mes.');
+    }
+    if (r.stats) {
+      if (r.stats.min_backtest_years != null && isFinite(r.stats.min_backtest_years)) out.push('Con ' + fmt(d.n_trials, 0) + ' variante(s) probada(s), tu prueba necesitaría al menos <b class="num">' + fmt(r.stats.min_backtest_years, 1) + '</b> años de datos; tienes ' + fmt(d.years, 1) + '.');
+      if (r.stats.max_trials_for_length != null) out.push('Con ' + fmt(d.years, 1) + ' años de datos no deberías probar más de <b class="num">' + fmt(r.stats.max_trials_for_length, 0) + '</b> variantes.');
+    }
+    return out;
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────────
+  var histTimer = null;
+  function update() {
+    store('qe.bruj.state', JSON.stringify(st));
+    var d = inputs(), r = evalD(d), s = BY_ID[st.id], code = r.verdict.code;
+    $('dial').innerHTML = dial(r.scores.final, code);
+    $('pill').className = 'pill ' + code; $('pill').textContent = SHORT[code];
+    $('ans').textContent = HEAD[code] + ': ' + s.name.charAt(0).toLowerCase() + s.name.slice(1);
+    $('summary').textContent = s.survives;
+    var bad = r.checks.filter(function (c) { return c.status === 'fail'; }), warn = r.checks.filter(function (c) { return c.status === 'warn'; }), good = r.checks.filter(function (c) { return c.status === 'pass'; });
+    var shown = bad.concat(warn).slice(0, 4).concat(good.slice(0, bad.length + warn.length > 3 ? 1 : 2));
+    $('reasons').innerHTML = shown.map(function (c) {
+      return '<li class="' + c.status + '"><i aria-hidden="true"></i><div><span class="sr-only">' + ({ fail: 'En contra: ', warn: 'Cuidado: ', pass: 'A favor: ' })[c.status] + '</span>' + esc(plain(c)) + '<small>' + esc(c.detail) + '</small></div></li>';
+    }).join('');
+    $('edge').innerHTML = (r.net_monthly_bps != null
+      ? '<div><span class="label">Ganancia neta esperada</span><span class="num" style="color:' + (r.net_monthly_bps > 0 ? 'var(--good)' : 'var(--bad)') + '">' + (r.net_monthly_bps > 0 ? '+' : '') + fmt(r.net_monthly_bps * 12 / 100, 2) + '% al año</span></div>'
+      : '<div><span class="label">Ganancia neta esperada</span><span class="soft">No aplica: se juzga por evidencia, costos y contexto</span></div>') +
+      '<div><span class="label">Valoración de la evidencia</span><span class="num">' + s.prior.score + ' de 100</span></div>';
+
+    lastFixes = fixes(d, r);
+    $('fixes').innerHTML = lastFixes.length ? lastFixes.map(function (f, i) {
+      return '<div class="row"><span>' + esc(f.label) + ' <span class="tag ' + f.r.verdict.code + '">' + SHORT[f.r.verdict.code] + '</span></span><span class="delta">+' + Math.floor(f.delta) + '</span>' +
+        (f.apply ? '<button type="button" data-fix="' + i + '">Aplicar</button>' : '<span class="small soft">cambia cómo operas</span>') + '</div>';
+    }).join('') : '<p class="empty">Ningún ajuste sencillo sube el puntaje de forma clara.</p>';
+    var wi = whatIf(d, r);
+    $('whatif').innerHTML = wi.map(function (t) { return '<li>' + t + '</li>'; }).join('');
+
+    var pk = st.h + '|' + st.m + '|' + st.i;   // the ranking depends only on the profile
+    var ranked = rankCache[pk] || (rankCache[pk] = KB.strategies.map(function (x) { var rr = evalD(profile(x.id)); return { s: x, score: rr.scores.final, code: rr.verdict.code }; })
+      .sort(function (a, b) { return b.score - a.score; }));
+    var mine = ranked.map(function (x) { return x.s.id; }).indexOf(st.id);
+    var top = ranked.slice(0, 5);
+    $('alts').innerHTML = top.map(function (x, i) {
+      return '<div class="row' + (x.s.id === st.id ? ' me' : '') + '"><span><span class="soft small">' + (i + 1) + '.</span> ' + esc(x.s.name) + ' <span class="tag ' + x.code + '">' + SHORT[x.code] + '</span></span><span class="score">' + Math.floor(x.score) + '</span>' +
+        (x.s.id === st.id ? '<span class="small soft">tu idea</span>' : '<button type="button" data-pick="' + x.s.id + '">Revisar</button>') + '</div>';
+    }).join('') + (mine >= 5 ? '<p class="small soft">Tu idea queda en el lugar <b class="num">' + (mine + 1) + '</b> de ' + ranked.length + ' con tu perfil (sin contar tu prueba histórica).</p>' : '');
+
+    $('claim').innerHTML = '<b>Lo que afirman los estudios:</b> ' + esc(s.claim) + ' <b>La crítica:</b> ' + esc(s.critique);
+    $('sources').innerHTML = s.sources.map(function (x) { return '<li><a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.label) + '</a></li>'; }).join('');
+
+    clearTimeout(histTimer);
+    histTimer = setTimeout(function () { saveHist(d, r); }, 1500);   // saved once the inputs stop changing
+  }
+
+  function getHist() { try { var v = JSON.parse(store('qe.bruj.hist') || '[]'); return Array.isArray(v) ? v.filter(function (x) { return x && x.st && BY_ID[x.st.id]; }) : []; } catch (e) { return []; } }
+  function saveHist(d, r) {
+    var key = JSON.stringify(d), rows = getHist().filter(function (x) { return x.key !== key; });
+    rows.unshift({ key: key, st: Object.assign({}, st), adv: advValues(), score: r.scores.final, code: r.verdict.code, at: Date.now() });
+    store('qe.bruj.hist', JSON.stringify(rows.slice(0, 8)));
+    renderHist();
+  }
+  function advValues() { var o = {}; ['a-sr', 'a-y', 'a-n', 'a-t', 'a-c', 'a-f'].forEach(function (id) { o[id] = $(id).value; }); o.pub = $('a-pub').checked; o.oos = $('a-oos').checked; return o; }
+  function renderHist() {
+    var rows = getHist();
+    $('hist').innerHTML = rows.length ? rows.map(function (x, i) {
+      var dt = new Date(x.at);
+      return '<button type="button" data-hist="' + i + '"><span>' + esc(BY_ID[x.st.id].name.split(/[,(]/)[0]) + '</span><span><b>' + Math.floor(x.score) + '</b> · <span class="soft">' + dt.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }) + ' ' + dt.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) + '</span></span></button>';
+    }).join('') : '<p class="empty">Aún no hay revisiones. Cada idea que revises aparecerá aquí.</p>';
+  }
+  function loadHist(i) {
+    var x = getHist()[i]; if (!x) return;
+    st.id = x.st.id; st.h = x.st.h; st.m = x.st.m; st.i = x.st.i;
+    var a = x.adv || {};
+    ['a-sr', 'a-y', 'a-n', 'a-t', 'a-c', 'a-f'].forEach(function (id) { if (a[id] != null) $(id).value = a[id]; });
+    $('a-pub').checked = a.pub !== false; $('a-oos').checked = !!a.oos;
+    if (a['a-sr']) $('adv').open = true;
+    renderFacts(); renderChips(); renderMatches(); update();
+  }
+
+  ['a-sr', 'a-y', 'a-n', 'a-t', 'a-c', 'a-f', 'a-pub', 'a-oos'].forEach(function (id) { $(id).addEventListener('input', update); $(id).addEventListener('change', update); });
+  var sro = document.createElement('style'); sro.textContent = '.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}'; document.head.appendChild(sro);
+  $('more').innerHTML = /^https?:$/.test(location.protocol) && /^(127\.0\.0\.1|localhost)/.test(location.host)
+    ? '¿Quieres el detalle técnico? Abre la <a href="/">terminal completa</a>.'
+    : '¿Quieres el detalle técnico y datos de mercado? Abre la <a href="https://claude.ai/artifact/QoC9bs58aAF2M4geRLFxmc" target="_blank" rel="noopener">Fincept Quant Terminal</a>.';
+  $('a-t').value = Math.round((BY_ID[st.id].evidence.typical_turnover_monthly || 0) * 100); renderFacts(); renderChips(); renderMatches(); renderHist(); update();
+})();
+</script>

@@ -47,12 +47,14 @@ class TestBuild(unittest.TestCase):
         studio = build_app.render_page([], scan_repo=False, standalone=False, ui='studio')
         self.assertIn('MONITOR &lt;1&gt;', term)
         self.assertIn('Decide con', studio)
+        guide = build_app.render_page([], scan_repo=False, standalone=False, ui='asistente')
+        self.assertTrue(guide.startswith('<title>Brújula Fincept</title>'))
         with self.assertRaises(ValueError):
             build_app.render_page([], scan_repo=False, ui='nope')
 
     @unittest.skipUnless(shutil.which('node'), 'Node.js not installed')
     def test_inline_scripts_parse(self):
-        for ui in ('terminal', 'studio'):
+        for ui in ('terminal', 'studio', 'asistente'):
             html = build_app.render_page([], scan_repo=False, standalone=False, ui=ui)
             scripts = re.findall(r'<script>([\s\S]*?)</script>', html)
             js = ("let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{"
@@ -172,6 +174,9 @@ class TestServer(unittest.TestCase):
         st, html = self.req('GET', '/studio')
         self.assertEqual(st, 200)
         self.assertIn('Fincept Quant Studio', html)
+        st, html = self.req('GET', '/asistente')
+        self.assertEqual(st, 200)
+        self.assertIn('Brújula Fincept', html)
         st, j = self.req('GET', '/api/health')
         self.assertEqual(j['data']['app'], 'quant-studio')
 

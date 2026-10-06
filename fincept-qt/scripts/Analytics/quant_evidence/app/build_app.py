@@ -10,9 +10,10 @@ Output directory layout:
                       index inlined)
     code/<id>.txt     source of every file in the code index, fetched on demand
 
-    python -m quant_evidence.app.build_app [out_dir] [--fragment] [--no-scan] [--studio]
+    python -m quant_evidence.app.build_app [out_dir] [--fragment] [--no-scan] [--studio | --asistente]
 
---studio builds the product-page style interface instead of the default terminal.
+--studio builds the product-page style interface instead of the default terminal;
+--asistente builds Brújula Fincept, the guided plain-language assistant.
 
 --fragment omits the <!doctype html>/<html> wrapper, for hosts that add their
 own document skeleton (such as a claude.ai artifact). The local server
@@ -32,6 +33,7 @@ APP_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES = {
     'terminal': os.path.join(APP_DIR, 'terminal.html'),   # default: market-terminal interface
     'studio': os.path.join(APP_DIR, 'template.html'),     # product-page style interface
+    'asistente': os.path.join(APP_DIR, 'asistente.html'), # guided, plain-language assistant (Brújula Fincept)
 }
 TEMPLATE = TEMPLATES['terminal']
 ENGINE = os.path.join(PACKAGE_DIR, 'web', 'engine.js')
@@ -69,6 +71,8 @@ NEW_FILES = {
         'Empaqueta la app y el índice de código.',
     'fincept-qt/scripts/Analytics/quant_evidence/app/terminal.html':
         'Interfaz de terminal financiera (predeterminada).',
+    'fincept-qt/scripts/Analytics/quant_evidence/app/asistente.html':
+        'Brújula Fincept: interfaz guiada en lenguaje llano con alternativas y ajustes automáticos.',
     'fincept-qt/scripts/Analytics/quant_evidence/app/template.html':
         'Interfaz alternativa con estilo de página de producto.',
     'fincept-qt/scripts/Analytics/quant_evidence/build_web.py':
@@ -180,6 +184,6 @@ def build(out_dir: str | None = None, standalone: bool = True, scan_repo: bool =
 
 if __name__ == '__main__':
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
-    ui = 'studio' if '--studio' in sys.argv else 'terminal'
+    ui = 'studio' if '--studio' in sys.argv else 'asistente' if '--asistente' in sys.argv else 'terminal'
     print(json.dumps(build(args[0] if args else None, standalone='--fragment' not in sys.argv,
                            scan_repo='--no-scan' not in sys.argv, ui=ui)))
