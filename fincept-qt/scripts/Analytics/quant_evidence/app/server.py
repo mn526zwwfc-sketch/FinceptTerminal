@@ -7,6 +7,7 @@ reach the whole repository:
     GET  /                      the app (terminal interface)
     GET  /studio                the product-page style interface
     GET  /asistente             Brújula Fincept, the guided assistant
+    GET  /agente                Agente Fincept (its chat needs claude.ai; locally only the page shows)
     GET  /api/health            {"app": "quant-studio", ...}
     GET  /api/kb | /api/repo-map
     POST /api/evaluate          quant_evidence.evaluate_decision(body)
@@ -212,6 +213,8 @@ class StudioHandler(BaseHTTPRequestHandler):
                 return self._send(200, self.studio_page.encode('utf-8'), 'text/html; charset=utf-8')
             if path in ('/asistente', '/asistente/'):
                 return self._send(200, self.asistente_page.encode('utf-8'), 'text/html; charset=utf-8')
+            if path in ('/agente', '/agente/'):
+                return self._send(200, self.agente_page.encode('utf-8'), 'text/html; charset=utf-8')
             m = re.match(r'^/code/(\d+)\.txt$', path)
             if m:
                 e = self.by_id.get(int(m.group(1)))
@@ -284,6 +287,7 @@ def make_server(host: str = '127.0.0.1', port: int = 8765, scan_repo: bool = Tru
     Handler.page = render_page(index, scan_repo=scan_repo, standalone=True, ui='terminal')
     Handler.studio_page = render_page(index, scan_repo=scan_repo, standalone=True, ui='studio')
     Handler.asistente_page = render_page(index, scan_repo=False, standalone=True, ui='asistente')
+    Handler.agente_page = render_page(index, scan_repo=False, standalone=True, ui='agente')
     return ThreadingHTTPServer((host, port), Handler)
 
 

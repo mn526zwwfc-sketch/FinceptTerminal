@@ -54,7 +54,7 @@ class TestBuild(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which('node'), 'Node.js not installed')
     def test_inline_scripts_parse(self):
-        for ui in ('terminal', 'studio', 'asistente'):
+        for ui in ('terminal', 'studio', 'asistente', 'agente'):
             html = build_app.render_page([], scan_repo=False, standalone=False, ui=ui)
             scripts = re.findall(r'<script>([\s\S]*?)</script>', html)
             js = ("let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{"
@@ -177,6 +177,8 @@ class TestServer(unittest.TestCase):
         st, html = self.req('GET', '/asistente')
         self.assertEqual(st, 200)
         self.assertIn('Brújula Fincept', html)
+        st, html = self.req('GET', '/agente')
+        self.assertIn('Agente Fincept', html)
         st, j = self.req('GET', '/api/health')
         self.assertEqual(j['data']['app'], 'quant-studio')
 

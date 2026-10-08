@@ -1,0 +1,320 @@
+<title>Agente Fincept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: a chat column. The conversation fills the page; each answer shows the engine tools the
+   agent called, so every figure can be traced to the code that produced it. */
+:root {
+  --bg: #eef2f5;
+  --card: #ffffff;
+  --ink: #15212b;
+  --soft: #4d5d6b;
+  --line: #d5dde4;
+  --accent: #0b5d7a;
+  --accent-soft: #dcebf1;
+  --bad: #b23a2b;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0f171e; --card: #16212b; --ink: #e6edf2; --soft: #9fb0bd; --line: #2a3a47; --accent: #5fb7d6; --accent-soft: #17323f; --bad: #f08a7b; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #0f171e; --card: #16212b; --ink: #e6edf2; --soft: #9fb0bd; --line: #2a3a47; --accent: #5fb7d6; --accent-soft: #17323f; --bad: #f08a7b; color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.55 var(--body); }
+.app { height: 100%; max-width: 860px; margin: 0 auto; padding-inline: 18px; padding-block: 18px; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 14px; }
+header { display: grid; gap: 4px; }
+h1 { font-family: var(--display); font-size: 30px; line-height: 1.1; margin: 0; }
+header p { margin: 0; color: var(--soft); font-size: 15px; max-width: 64ch; }
+button, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.log { overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding-right: 4px; min-height: 0; }
+.msg { max-width: 92%; min-width: 0; }
+.msg.user { align-self: flex-end; background: var(--accent); color: var(--card); padding: 10px 14px; border-radius: 14px 14px 4px 14px; white-space: pre-wrap; }
+.msg.bot { align-self: flex-start; background: var(--card); border: 1px solid var(--line); padding: 14px 16px; border-radius: 14px 14px 14px 4px; display: grid; gap: 8px; }
+.msg.bot .text { overflow-wrap: anywhere; }
+.msg.bot .text p { margin: 0 0 8px; }
+.msg.bot .text p:last-child { margin: 0; }
+.msg.bot .text ul, .msg.bot .text ol { margin: 0 0 8px; padding-left: 22px; }
+.msg.bot .text h4 { font-family: var(--display); font-size: 17px; margin: 6px 0 4px; }
+.msg.bot .text code { font-family: var(--mono); font-size: 14px; }
+.thinking { color: var(--soft); font-style: italic; }
+.steps { display: flex; flex-wrap: wrap; gap: 6px; }
+.step { font-family: var(--mono); font-size: 12px; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 2px 10px; }
+.note { font-size: 14px; color: var(--soft); }
+.note.err { color: var(--bad); }
+.welcome { display: grid; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.welcome b { font-family: var(--display); font-size: 18px; }
+.ideas { display: flex; flex-wrap: wrap; gap: 8px; }
+.ideas button { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 6px 12px; cursor: pointer; text-align: left; font-size: 15px; }
+.ideas button:hover { border-color: var(--accent); }
+form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 8px; }
+textarea { resize: none; border: 0; background: transparent; padding: 8px; min-height: 48px; max-height: 160px; outline: none; }
+.send { border: 0; background: var(--accent); color: var(--card); border-radius: 10px; padding: 10px 16px; cursor: pointer; font-weight: 700; }
+.send[disabled] { opacity: 0.5; cursor: not-allowed; }
+.foot { font-size: 13px; color: var(--soft); display: flex; flex-wrap: wrap; gap: 4px 14px; justify-content: space-between; }
+.link { background: none; border: 0; color: var(--accent); cursor: pointer; padding: 0; text-decoration: underline; font-size: 13px; }
+</style>
+
+<div class="app">
+  <header>
+    <h1>Agente Fincept</h1>
+    <p>Pregúntale por cualquier idea de inversión. El agente usa el motor de Fincept para buscar la evidencia, evaluar tu caso, comparar alternativas y hacer los cálculos; cada cifra sale del código, no de una suposición.</p>
+  </header>
+
+  <div class="log" id="log" aria-live="polite">
+    <div class="welcome" id="welcome">
+      <b>¿Por dónde empezamos?</b>
+      <span class="note">Escribe tu pregunta o toca un ejemplo. Puedes darle tus propios números (Sharpe, años de datos, variantes probadas, costos).</span>
+      <div class="ideas" id="ideas"></div>
+    </div>
+  </div>
+
+  <div>
+    <form id="form">
+      <label for="box" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Tu pregunta</label>
+      <textarea id="box" rows="2" placeholder="Por ejemplo: tengo 25 años y quiero invertir cada mes en México, ¿qué me conviene?"></textarea>
+      <button type="submit" class="send" id="send">Enviar</button>
+    </form>
+    <div class="foot"><span id="status">Material educativo; no es asesoría financiera.</span><span><button type="button" class="link" id="stop" hidden>Detener</button> <button type="button" class="link" id="clear">Nueva conversación</button></span></div>
+  </div>
+</div>
+
+<script>
+/*__ENGINE__*/
+</script>
+<script>
+var KB = /*__KB__*/null;
+var REPO = /*__REPO__*/null;
+var CODE = /*__CODE_INDEX__*/null;
+</script>
+<script>
+(function () {
+  'use strict';
+  var E = window.QuantEvidence, $ = function (id) { return document.getElementById(id); };
+  var BY_ID = {}; KB.strategies.forEach(function (s) { BY_ID[s.id] = s; });
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function r2(x, d) { return x == null || !isFinite(x) ? null : Math.round(x * Math.pow(10, d == null ? 2 : d)) / Math.pow(10, d == null ? 2 : d); }
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); return true; } catch (e) { return v === undefined ? null : false; } }
+
+  // ── Engine tools (all numbers come from here) ──────────────────────────
+  function norm(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]+/g, ' '); }
+  function search(text) {
+    var toks = norm(text).split(/\s+/).filter(function (t) { return t.length > 2; });
+    return KB.strategies.map(function (s) {
+      // A word in the id or name counts three times as much as one in the description.
+      var head = norm(s.id.replace(/_/g, ' ') + ' ' + s.name), rest = norm(s.claim + ' ' + s.categories.join(' ').replace(/_/g, ' ') + ' ' + s.family), sc = 0;
+      toks.forEach(function (t) { var stem = t.length > 5 ? t.slice(0, -2) : t; if (head.indexOf(stem) >= 0) sc += 3; else if (rest.indexOf(stem) >= 0) sc += 1; });
+      return { s: s, sc: sc };
+    }).filter(function (x) { return x.sc > 0; }).sort(function (a, b) { return b.sc - a.sc || b.s.prior.score - a.s.prior.score; }).slice(0, 6);
+  }
+  function decisionFrom(input) {
+    var d = {}, n = function (k) { var v = Number(input[k]); return input[k] == null || input[k] === '' || !isFinite(v) ? undefined : v; };
+    d.strategy_id = String(input.strategy_id || '');
+    if (!BY_ID[d.strategy_id]) throw new Error('strategy_id desconocido: usa buscar_estrategias para obtener un id válido.');
+    ['horizon_years', 'sharpe_annual', 'years', 'n_trials', 'periods_per_year', 'skew', 'kurtosis', 'turnover_monthly', 'roundtrip_cost_bps', 'microcap_share', 'volatility_annual', 'gross_alpha_monthly_bps', 'live_months', 'kelly_multiple']
+      .forEach(function (k) { var v = n(k); if (v !== undefined) d[k] = v; });
+    if (input.market) d.market = String(input.market);
+    if (input.investor) d.investor = String(input.investor);
+    ['published', 'out_of_sample', 'long_short', 'uses_leverage'].forEach(function (k) { if (typeof input[k] === 'boolean') d[k] = input[k]; });
+    return d;
+  }
+  function compact(r) {
+    return {
+      estrategia: r.strategy.name, veredicto: r.verdict.label, codigo_veredicto: r.verdict.code, puntaje: Math.floor(r.scores.final),
+      subpuntajes: { evidencia: r2(r.scores.prior, 0), estadistica: r2(r.scores.statistical, 0), implementacion: r2(r.scores.implementability, 0), contexto: r2(r.scores.context, 0) },
+      ventaja_neta_pb_mes: r2(r.net_monthly_bps, 1), ventaja_neta_pct_anual: r.net_monthly_bps == null ? null : r2(r.net_monthly_bps * 12 / 100, 2),
+      cascada: (r.cascade || []).map(function (c) { return { etapa: c.stage, pb_mes: r2(c.monthly_bps, 1), nota: c.note }; }),
+      topes: r.caps, chequeos: r.checks.map(function (c) { return { id: c.id, estado: c.status, que: c.label, detalle: c.detail, fuente: c.source ? c.source.label : null }; }),
+      estadistica: r.stats ? { dsr: r2(r.stats.dsr, 3), t: r2(r.stats.t_stat, 2), sharpe_con_recorte: r2(r.stats.sharpe_haircut, 2), recorte_pct: r2(r.stats.haircut_pct * 100, 1), anos_minimos: r2(r.stats.min_backtest_years, 1), max_variantes: r.stats.max_trials_for_length } : null,
+      supuestos_usados: { rotacion_mensual: r.inputs.turnover_monthly, costo_ida_vuelta_pb: r.inputs.roundtrip_cost_bps, cortos: r.inputs.long_short, apalancamiento: r.inputs.uses_leverage, microcaps: r.inputs.microcap_share, mercado: r.inputs.market, inversionista: r.inputs.investor, horizonte_anos: r.inputs.horizon_years }
+    };
+  }
+  function firstLoss(d, key, lo, hi, step, scale) {
+    var gone = function (v) { var o = {}; o[key] = v * scale; var x = E.evaluateDecision(Object.assign({}, d, o), KB, null); return x.net_monthly_bps != null && x.net_monthly_bps <= 0; };
+    if (gone(lo)) return lo;
+    if (!gone(hi)) return null;
+    var a = lo, b = hi;
+    while (b - a > step) { var m = a + Math.round((b - a) / 2 / step) * step; if (m <= a) m = a + step; if (m >= b) break; if (gone(m)) b = m; else a = m; }
+    return b;
+  }
+  var DECISION_PROPS = {
+    strategy_id: { type: 'string', description: 'id devuelto por buscar_estrategias' },
+    horizon_years: { type: 'number', description: 'años de inversión' },
+    market: { type: 'string', enum: ['mx', 'us', 'global', 'other'] },
+    investor: { type: 'string', enum: ['retail', 'institutional'] },
+    sharpe_annual: { type: 'number', description: 'Sharpe anual del backtest (solo si el usuario lo dio)' },
+    years: { type: 'number', description: 'años de datos del backtest' },
+    n_trials: { type: 'number', description: 'variantes probadas' },
+    periods_per_year: { type: 'number', description: '252 diaria, 52 semanal, 12 mensual' },
+    turnover_monthly: { type: 'number', description: 'fracción de la cartera que se cambia al mes, 0.6 = 60%' },
+    roundtrip_cost_bps: { type: 'number', description: 'costo de comprar y vender, en puntos base' },
+    microcap_share: { type: 'number', description: 'fracción del alfa en microcaps, 0 a 1' },
+    published: { type: 'boolean' }, out_of_sample: { type: 'boolean' }, long_short: { type: 'boolean' }, uses_leverage: { type: 'boolean' },
+    live_months: { type: 'number' }, kelly_multiple: { type: 'number' }
+  };
+  var TOOLS = [
+    { name: 'buscar_estrategias', description: 'Busca en la base de 44 estrategias por palabras (español). Devuelve hasta 6 con id, nombre, familia y valoración de la evidencia (0-100). Úsala primero para obtener el strategy_id.',
+      inputSchema: { type: 'object', properties: { texto: { type: 'string' } }, required: ['texto'] },
+      execute: function (i) { var res = search(i.texto); if (!res.length) return { resultados: [], nota: 'Sin coincidencias. Lista de ids: ' + KB.strategies.map(function (s) { return s.id; }).join(', ') }; return { resultados: res.map(function (x) { return { id: x.s.id, nombre: x.s.name, familia: x.s.family, valoracion: x.s.prior.score }; }) }; } },
+    { name: 'ver_estrategia', description: 'Devuelve lo que dice la literatura sobre una estrategia: afirmación, cifra clave, crítica, qué sobrevive, valoración y fuentes.',
+      inputSchema: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] },
+      execute: function (i) { var s = BY_ID[String(i.id)]; if (!s) throw new Error('id desconocido'); return { id: s.id, nombre: s.name, familia: s.family, afirma: s.claim, cifra_clave: s.key_figure, critica: s.critique, sobrevive: s.survives, valoracion: s.prior.score, razon_valoracion: s.prior.rationale, marcas: s.marks, fuentes: s.sources.map(function (x) { return x.label; }) }; } },
+    { name: 'evaluar_decision', description: 'Evalúa una decisión con el motor (puntaje 0-100, veredicto, ventaja neta, cascada, chequeos con fuente). Pasa solo los datos que el usuario dio; el resto usa valores típicos de la estrategia.',
+      inputSchema: { type: 'object', properties: DECISION_PROPS, required: ['strategy_id'] },
+      execute: function (i) { var d = decisionFrom(i), r = E.evaluateDecision(d, KB, null), out = compact(r); log.step('evaluar ' + d.strategy_id + ' → ' + out.puntaje); return out; } },
+    { name: 'comparar_alternativas', description: 'Evalúa las 44 estrategias con el mismo perfil (horizonte, mercado, inversionista, sin backtest) y devuelve las mejores ordenadas por puntaje, más la posición de una estrategia dada.',
+      inputSchema: { type: 'object', properties: { horizon_years: { type: 'number' }, market: { type: 'string', enum: ['mx', 'us', 'global', 'other'] }, investor: { type: 'string', enum: ['retail', 'institutional'] }, limite: { type: 'number' }, strategy_id: { type: 'string', description: 'opcional: para saber su lugar' } } },
+      execute: function (i) {
+        var prof = { horizon_years: Number(i.horizon_years) || 15, market: String(i.market || 'global'), investor: String(i.investor || 'retail') };
+        var ranked = KB.strategies.map(function (s) { var r = E.evaluateDecision(Object.assign({ strategy_id: s.id }, prof), KB, null); return { id: s.id, nombre: s.name, puntaje: Math.floor(r.scores.final), veredicto: r.verdict.label }; }).sort(function (a, b) { return b.puntaje - a.puntaje; });
+        var pos = i.strategy_id ? ranked.map(function (x) { return x.id; }).indexOf(String(i.strategy_id)) : -1;
+        return { perfil: prof, mejores: ranked.slice(0, Math.min(10, Math.max(1, Number(i.limite) || 5))), posicion_de_la_consultada: pos >= 0 ? pos + 1 : null, total: ranked.length };
+      } },
+    { name: 'puntos_de_equilibrio', description: 'Para una decisión, calcula el costo por operación (pb) y la rotación mensual a partir de los cuales la ventaja neta desaparece. Solo aplica a estrategias con ventaja medible.',
+      inputSchema: { type: 'object', properties: DECISION_PROPS, required: ['strategy_id'] },
+      execute: function (i) {
+        var d = decisionFrom(i), r = E.evaluateDecision(d, KB, null);
+        if (r.net_monthly_bps == null) return { aplica: false, nota: 'La estrategia no tiene ventaja medible en pb; se juzga por evidencia y contexto.' };
+        return { aplica: true, costo_actual_pb: r.inputs.roundtrip_cost_bps, costo_de_equilibrio_pb: firstLoss(d, 'roundtrip_cost_bps', 0, 300, 1, 1), rotacion_actual: r.inputs.turnover_monthly, rotacion_de_equilibrio_pct: firstLoss(d, 'turnover_monthly', 0, 300, 5, 0.01), nota: 'null = no se pierde la ventaja dentro del rango probado; 0 = no hay ventaja ni sin costos.' };
+      } },
+    { name: 'calcular', description: 'Fórmulas de la literatura. tipo: "dsr" (sharpe, variantes, anos, periodos, var_sr opcional, asimetria, curtosis), "recorte" (sharpe, anos, pruebas), "minbtl" (variantes, sharpe_objetivo), "costo" (rotacion_pct, costo_pb, largo_corto), "bodie" (volatilidad_pct, anos), "kelly" (rendimiento_pct, tasa_libre_pct, volatilidad_pct, multiplo).',
+      inputSchema: { type: 'object', properties: { tipo: { type: 'string', enum: ['dsr', 'recorte', 'minbtl', 'costo', 'bodie', 'kelly'] }, sharpe: { type: 'number' }, variantes: { type: 'number' }, anos: { type: 'number' }, periodos: { type: 'number' }, var_sr: { type: 'number' }, asimetria: { type: 'number' }, curtosis: { type: 'number' }, pruebas: { type: 'number' }, sharpe_objetivo: { type: 'number' }, rotacion_pct: { type: 'number' }, costo_pb: { type: 'number' }, largo_corto: { type: 'boolean' }, volatilidad_pct: { type: 'number' }, rendimiento_pct: { type: 'number' }, tasa_libre_pct: { type: 'number' }, multiplo: { type: 'number' } }, required: ['tipo'] },
+      execute: function (i) {
+        var N = function (k, d) { var v = Number(i[k]); if (i[k] == null || !isFinite(v)) { if (d === undefined) throw new Error('Falta ' + k); return d; } return v; };
+        switch (i.tipo) {
+          case 'dsr': { var x = E.deflatedSharpeRatio(N('sharpe'), N('variantes'), N('anos'), N('periodos', 252), i.var_sr == null ? null : N('var_sr'), N('asimetria', 0), N('curtosis', 3)); return { dsr: r2(x.dsr, 4), mejor_sharpe_sin_habilidad: r2(x.sr0_annual, 3), observaciones: x.n_obs }; }
+          case 'recorte': { var h = E.haircutSharpe(N('sharpe'), N('anos'), N('pruebas')); return { sharpe_con_recorte: r2(h.sharpe_haircut, 3), recorte_pct: r2(h.haircut_pct * 100, 1), t: r2(h.t_stat, 2), p_ajustado: r2(h.p_adjusted, 4) }; }
+          case 'minbtl': return { anos_minimos: r2(E.minBacktestLength(N('variantes'), N('sharpe_objetivo')), 2) };
+          case 'costo': { var c = E.monthlyCostBps(N('rotacion_pct') / 100, N('costo_pb'), !!i.largo_corto); return { costo_mensual_pb: r2(c, 1), costo_anual_pct: r2(c * 12 / 100, 2), regla_50: N('rotacion_pct') <= 50 ? 'dentro' : 'fuera' }; }
+          case 'bodie': if (N('volatilidad_pct') < 0 || N('anos') < 0) throw new Error('volatilidad y años deben ser ≥ 0'); return { costo_seguro_pct: r2(E.bodieShortfallPutCost(N('volatilidad_pct') / 100, N('anos')) * 100, 2) };
+          case 'kelly': { var f = E.kellyFraction(N('rendimiento_pct') / 100, N('tasa_libre_pct') / 100, N('volatilidad_pct') / 100), m = N('multiplo', 0.5); return { fraccion_kelly: r2(f, 3), tu_fraccion: r2(f * m, 3), crecimiento_conservado_pct: r2(E.kellyGrowthShare(m) * 100, 1) }; }
+        }
+        throw new Error('tipo desconocido');
+      } },
+    { name: 'modulos_del_repositorio', description: 'Lista los módulos de FinceptTerminal relacionados con una estrategia (por sus categorías de evidencia) y las brechas conocidas del repositorio en esas categorías.',
+      inputSchema: { type: 'object', properties: { strategy_id: { type: 'string' } }, required: ['strategy_id'] },
+      execute: function (i) {
+        var s = BY_ID[String(i.strategy_id)]; if (!s) throw new Error('id desconocido');
+        var mods = (REPO.modules || []).filter(function (m) { return (m.categories || []).some(function (c) { return s.categories.indexOf(c) >= 0; }); }).slice(0, 12);
+        var gaps = (REPO.gaps || []).filter(function (g) { return typeof g === 'object' && s.categories.indexOf(g.category) >= 0; });
+        return { modulos: mods.map(function (m) { return { ruta: m.path, resumen: (m.summary_es || m.summary || '').slice(0, 220) }; }), brechas: gaps.map(function (g) { return { severidad: g.severity, texto: g.text.slice(0, 260), cubierta_por: g.covered_by || null }; }) };
+      } }
+  ];
+
+  var RULES = [
+    'Eres el Agente Fincept, un analista que ayuda a personas (sobre todo en México) a revisar ideas de inversión contra la evidencia académica. Responde siempre en español claro, sin jerga innecesaria.',
+    'Reglas:',
+    '1. Toda cifra (puntajes, rendimientos, costos, DSR, Kelly, años) debe salir de una herramienta. Nunca inventes números ni cites datos de mercado actuales: no tienes acceso a precios.',
+    '2. Flujo típico: buscar_estrategias → evaluar_decision con los datos que dio la persona → si hace falta, comparar_alternativas y puntos_de_equilibrio. Usa ver_estrategia para citar la evidencia y sus fuentes.',
+    '3. Si faltan datos importantes (plazo, mercado), asume valores razonables (15 años, México, persona) y dilo en una línea.',
+    '4. Respuesta: empieza con el veredicto en una frase, luego 3 a 5 viñetas con las razones y lo que conviene hacer, y cierra con las fuentes por nombre. Sé breve.',
+    '5. Es material educativo, no asesoría: no digas qué valor concreto comprar. Si preguntan por una acción específica, explica cómo evaluarla con estas herramientas.',
+    '6. Puedes usar ## para títulos cortos, viñetas con "- " y **negritas**. Nada de tablas largas.'
+  ].join('\n');
+
+  // ── Chat ─────────────────────────────────────────────────────────────────
+  var turns = [];
+  try { var saved = JSON.parse(store('qe.agent.turns') || '[]'); if (Array.isArray(saved)) turns = saved.filter(function (t) { return t && (t.role === 'user' || t.role === 'assistant') && typeof t.content === 'string' && t.content; }).slice(-12); } catch (e) { /* new chat */ }
+  var sample = null, ctl = null, busy = false;
+  var IDEAS = ['Quiero invertir cada mes para mi retiro en México, ¿qué me conviene?', 'Mi estrategia de momentum dio Sharpe 1.2 en 8 años, probé 50 variantes y cambio 60% de la cartera al mes. ¿Sirve?',
+    '¿El day trading funciona para una persona?', '¿Qué tanto debo apostar con Kelly si espero 8% de rendimiento, tasa libre 2% y volatilidad 20%?', '¿Qué módulos del repositorio sirven para backtesting y qué les falta?'];
+  $('ideas').innerHTML = IDEAS.map(function (t, i) { return '<button type="button" data-idea="' + i + '">' + esc(t) + '</button>'; }).join('');
+
+  // Small, safe Markdown: headings, bold, lists, paragraphs. Everything is escaped first.
+  function md(t) {
+    var lines = esc(t).split('\n'), out = '', list = null;
+    var inline = function (s) { return s.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>'); };
+    var close = function () { if (list) { out += '</' + list + '>'; list = null; } };
+    lines.forEach(function (l) {
+      var m;
+      if ((m = /^#{1,4}\s+(.*)$/.exec(l))) { close(); out += '<h4>' + inline(m[1]) + '</h4>'; }
+      else if ((m = /^\s*[-*•]\s+(.*)$/.exec(l))) { if (list !== 'ul') { close(); out += '<ul>'; list = 'ul'; } out += '<li>' + inline(m[1]) + '</li>'; }
+      else if ((m = /^\s*\d+[.)]\s+(.*)$/.exec(l))) { if (list !== 'ol') { close(); out += '<ol>'; list = 'ol'; } out += '<li>' + inline(m[1]) + '</li>'; }
+      else if (!l.trim()) close();
+      else { close(); out += '<p>' + inline(l) + '</p>'; }
+    });
+    close();
+    return out;
+  }
+  function addUser(t) { var d = document.createElement('div'); d.className = 'msg user'; d.textContent = t; $('log').appendChild(d); }
+  function addBot(t, steps) {
+    var d = document.createElement('div'); d.className = 'msg bot';
+    d.innerHTML = (steps && steps.length ? '<div class="steps">' + steps.map(function (s) { return '<span class="step">' + esc(s) + '</span>'; }).join('') + '</div>' : '') + '<div class="text">' + md(t) + '</div>';
+    $('log').appendChild(d); return d;
+  }
+  function scrollDown() { var l = $('log'); l.scrollTop = l.scrollHeight; }
+  function renderHistory() {
+    if (turns.length) $('welcome').hidden = true;
+    turns.forEach(function (t) { if (t.role === 'user') addUser(t.content); else addBot(t.content); });
+    scrollDown();
+  }
+  var log = { step: function () {} };
+  var ERR = { not_granted: 'No se permitió que esta página use Claude. Puedes activarlo desde los permisos de la página.', sampling_disabled: 'Claude no está disponible para esta cuenta.',
+    rate_limited: 'Llegaste al límite de uso por ahora. Intenta de nuevo en un rato.', session_expired: 'Tu sesión expiró: vuelve a iniciar sesión en claude.ai.',
+    refused: 'Claude no respondió a esa pregunta. Prueba a formularla de otra manera.', tools_unavailable: 'Esta vista no puede usar las herramientas del motor.',
+    empty_completion: 'No llegó respuesta. Prueba con una pregunta más concreta.', prompt_too_large: 'La conversación es demasiado larga: empieza una nueva.' };
+
+  function ask(text) {
+    if (busy || !text.trim()) return;
+    if (!sample) { $('status').textContent = 'El agente funciona dentro de claude.ai: abre esta página como artefacto.'; return; }
+    $('welcome').hidden = true; busy = true; $('send').disabled = true; $('stop').hidden = false;
+    turns.push({ role: 'user', content: text.trim() }); addUser(text.trim());
+    var bubble = addBot(''), body = bubble.querySelector('.text'), steps = [];
+    var stepsEl = document.createElement('div'); stepsEl.className = 'steps'; bubble.insertBefore(stepsEl, body);
+    body.innerHTML = '<p class="thinking">Pensando…</p>'; scrollDown();
+    var tools = TOOLS.map(function (t) {
+      return { name: t.name, description: t.description, inputSchema: t.inputSchema, execute: function (input) {
+        var label = t.name.replace(/_/g, ' '); steps.push(label);
+        stepsEl.innerHTML = steps.map(function (s) { return '<span class="step">' + esc(s) + '</span>'; }).join(''); scrollDown();
+        return t.execute(input || {});
+      } };
+    });
+    ctl = new AbortController();
+    var convo = [{ role: 'user', content: RULES }].concat(turns.slice(-10));
+    sample(convo, { tools: tools, signal: ctl.signal, onText: function (u) { body.innerHTML = md(u.text); scrollDown(); } })
+      .then(function (res) {
+        turns.push({ role: 'assistant', content: res.text });
+        body.innerHTML = md(res.text) + (res.truncated ? '<p class="note">La respuesta se cortó: pide menos a la vez.</p>' : '');
+      }, function (e) {
+        var code = e && e.code;
+        body.innerHTML = (e && e.text ? md(e.text) : '') + (code === 'cancelled' ? '<p class="note">Detenido.</p>' : '<p class="note err">' + esc(ERR[code] || 'Hubo un problema de conexión. Puedes volver a enviar la pregunta.') + '</p>');
+        if (e && e.text && code !== 'refused') turns.push({ role: 'assistant', content: e.text });
+        if (code === 'not_granted' || code === 'sampling_disabled' || code === 'tools_unavailable') { $('send').disabled = true; $('status').textContent = ERR[code]; }
+      })
+      .then(function () {
+        busy = false; $('stop').hidden = true; ctl = null;
+        if (!/no se permitió|no está disponible|no puede usar/i.test($('status').textContent)) $('send').disabled = false;
+        store('qe.agent.turns', JSON.stringify(turns.slice(-12)));
+        scrollDown();
+      });
+  }
+
+  $('form').addEventListener('submit', function (ev) { ev.preventDefault(); var t = $('box').value; $('box').value = ''; ask(t); });
+  $('box').addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); $('form').requestSubmit(); } });
+  $('ideas').addEventListener('click', function (ev) { var b = ev.target.closest('[data-idea]'); if (b) ask(IDEAS[Number(b.getAttribute('data-idea'))]); });
+  $('stop').addEventListener('click', function () { if (ctl) ctl.abort(); });
+  $('clear').addEventListener('click', function () {
+    if (ctl) ctl.abort(); turns = []; store('qe.agent.turns', '[]');
+    Array.prototype.slice.call($('log').querySelectorAll('.msg')).forEach(function (m) { m.remove(); });
+    $('welcome').hidden = false;
+  });
+
+  renderHistory();
+  $('send').disabled = true;
+  if (window.claude && typeof window.claude.use === 'function') {
+    window.claude.use('sample').then(function (s) {
+      if (!s) { $('status').textContent = 'Esta vista no puede usar Claude: abre la página en claude.ai.'; return; }
+      sample = s; $('send').disabled = false;
+      if (s.limits) s.limits().then(function (lim) { if (lim && !lim.tools) { $('send').disabled = true; $('status').textContent = ERR.tools_unavailable; } }, function () {});
+    }, function () { $('status').textContent = 'Esta vista no puede usar Claude.'; });
+  } else {
+    $('status').textContent = 'El agente funciona dentro de claude.ai (abre esta página como artefacto). Aquí puedes ver la interfaz.';
+  }
+  // Exposed for tests: the engine tools, without Claude.
+  window.__agentTools = TOOLS;
+})();
+</script>
