@@ -1,0 +1,2167 @@
+{
+  "meta": {
+    "title": "La academia quant desinfla sus propias estrategias",
+    "source_document": "Informe \"La academia quant desinfla sus propias estrategias\" (Modelos quant académicos de inversión), 2026",
+    "version": "2026-10-04",
+    "language": "es",
+    "disclaimer": "Material educativo e informativo. No es asesoría financiera, fiscal ni legal personalizada, no recomienda comprar ni vender ningún valor o fondo y no contiene predicciones de mercado.",
+    "marks": {
+      "WP": "La cifra viene de un working paper o borrador; la versión publicada puede diferir.",
+      "ext.": "Cifra extraída automáticamente de una tabla del PDF; plausible pero no cotejada a mano.",
+      "sec.": "Fuente secundaria (resumen, nota de prensa, material docente).",
+      "1p": "Cifra de la sección 'Para armar la cartera', que el informe advierte que descansa en notas de una sola pasada de investigación que no se volvieron a verificar."
+    },
+    "prior_note": "El campo prior.score es una valoración sintética de 0 a 100 construida a partir de las conclusiones del informe para ordenar las estrategias; no es una cifra publicada por ningún paper.",
+    "evidence_note": "Los campos evidence.gross_monthly_bps y net_monthly_bps se derivan de cifras del informe (anual/12 cuando la fuente da una cifra anual). typical_turnover_monthly y oos_retention son aproximaciones del modelo para precargar el evaluador (oos_retention = 1 - 0.58 cuando la señal está publicada, según McLean y Pontiff); reemplácelas con los datos reales de la estrategia."
+  },
+  "categories": [
+    {
+      "key": "factor_models",
+      "name": "Modelos de factores",
+      "family": "factores"
+    },
+    {
+      "key": "quality_profitability",
+      "name": "Rentabilidad y calidad",
+      "family": "factores"
+    },
+    {
+      "key": "value",
+      "name": "Valor",
+      "family": "factores"
+    },
+    {
+      "key": "momentum",
+      "name": "Momentum",
+      "family": "factores"
+    },
+    {
+      "key": "low_beta_bab",
+      "name": "Beta baja / BAB",
+      "family": "factores"
+    },
+    {
+      "key": "anomaly_zoo",
+      "name": "Zoológico de anomalías",
+      "family": "factores"
+    },
+    {
+      "key": "ml_cross_section",
+      "name": "Machine learning de corte transversal",
+      "family": "machine learning"
+    },
+    {
+      "key": "llm_text_signals",
+      "name": "LLM y señales de texto",
+      "family": "machine learning"
+    },
+    {
+      "key": "backtest_overfitting",
+      "name": "Backtesting y sobreajuste",
+      "family": "método"
+    },
+    {
+      "key": "technical_rules",
+      "name": "Reglas técnicas",
+      "family": "timing"
+    },
+    {
+      "key": "portfolio_construction",
+      "name": "Construcción de carteras",
+      "family": "cartera"
+    },
+    {
+      "key": "position_sizing_kelly",
+      "name": "Tamaño de la apuesta (Kelly)",
+      "family": "cartera"
+    },
+    {
+      "key": "long_horizon_lifecycle",
+      "name": "Largo plazo y ciclo de vida",
+      "family": "cartera"
+    },
+    {
+      "key": "trading_costs_turnover",
+      "name": "Costos y rotación",
+      "family": "método"
+    },
+    {
+      "key": "market_timing_predictors",
+      "name": "Predictores del mercado",
+      "family": "timing"
+    },
+    {
+      "key": "trend_following_tsmom",
+      "name": "Tendencia (TSMOM)",
+      "family": "timing"
+    },
+    {
+      "key": "volatility_managed",
+      "name": "Volatilidad gestionada",
+      "family": "timing"
+    },
+    {
+      "key": "regimes_business_cycle",
+      "name": "Regímenes y ciclo económico",
+      "family": "timing"
+    },
+    {
+      "key": "sentiment_options_short",
+      "name": "Sentimiento, opciones y cortos",
+      "family": "timing"
+    },
+    {
+      "key": "calendar_effects",
+      "name": "Efectos de calendario",
+      "family": "calendario"
+    },
+    {
+      "key": "active_funds_retail",
+      "name": "Fondos activos y minoristas",
+      "family": "comportamiento"
+    },
+    {
+      "key": "mexico_latam",
+      "name": "México y América Latina",
+      "family": "regional"
+    }
+  ],
+  "cascade": {
+    "label": "Cascada de la anomalía promedio (Chen y Velikov)",
+    "steps": [
+      {
+        "stage": "Bruto dentro de muestra",
+        "monthly_bps": 66,
+        "mark": "WP"
+      },
+      {
+        "stage": "Neto de costos",
+        "monthly_bps": 38,
+        "mark": "WP"
+      },
+      {
+        "stage": "Neto tras la publicación",
+        "monthly_bps": 13,
+        "mark": "WP"
+      },
+      {
+        "stage": "Era post-2005, equiponderada",
+        "monthly_bps": 8,
+        "mark": "WP"
+      },
+      {
+        "stage": "Era post-2005, ponderada por capitalización",
+        "monthly_bps": 4,
+        "mark": null
+      }
+    ],
+    "sources": [
+      {
+        "label": "Chen y Velikov, JFQA 2023",
+        "url": "https://www.cambridge.org/core/services/aop-cambridge-core/content/view/945133D5A3ECEEAF466AEE91551FD225/S0022109022000874a.pdf/zeroing_in_on_the_expected_returns_of_anomalies.pdf"
+      },
+      {
+        "label": "FEDS 2020-039 (working paper)",
+        "url": "https://www.federalreserve.gov/econres/feds/files/2020039pap.pdf"
+      }
+    ]
+  },
+  "decay": {
+    "mclean_pontiff_oos": 0.26,
+    "mclean_pontiff_post_publication": 0.58,
+    "jkp_oos_slope": [
+      0.25,
+      0.43
+    ],
+    "microcap_alpha_loss_ml": [
+      0.48,
+      0.71
+    ],
+    "turnover_survival_threshold_monthly": 0.5,
+    "non_microcap_median_post_2006_bps": 7,
+    "anomaly_combo_net_bps": 20,
+    "sources": [
+      {
+        "label": "McLean y Pontiff (CFA Digest)",
+        "url": "https://rpc.cfainstitute.org/research/cfa-digest/2016/06/does-academic-research-destroy-stock-return-predictability-digest-summary"
+      },
+      {
+        "label": "Jensen, Kelly y Pedersen, NBER w28432 [WP]",
+        "url": "https://www.nber.org/system/files/working_papers/w28432/w28432.pdf"
+      },
+      {
+        "label": "Avramov, Cheng y Metzker, Management Science 2023",
+        "url": "https://si-cheng.net/wp-content/uploads/2023/05/2023-ms-avramov_cheng_metzker-machine-learning-vs.-economic-restrictions.pdf"
+      },
+      {
+        "label": "Novy-Marx y Velikov, RFS 2016",
+        "url": "https://ideas.repec.org/a/oup/rfinst/v29y2016i1p104-147..html"
+      },
+      {
+        "label": "Chen y Welch, arXiv 2607.06502 [WP]",
+        "url": "https://arxiv.org/abs/2607.06502"
+      }
+    ]
+  },
+  "habits": [
+    "Preguntar cuántas variantes se probaron antes de creer en un backtest.",
+    "Descontar los costos, la rotación y los impuestos antes de comparar.",
+    "Suponer que lo publicado rinde la mitad o menos en adelante.",
+    "Desconfiar de los resultados que dependen de acciones diminutas o de un solo periodo."
+  ],
+  "strategies": [
+    {
+      "id": "buy_hold_global",
+      "name": "Comprar y mantener una cartera amplia, barata y diversificada internacionalmente",
+      "family": "base",
+      "categories": [
+        "portfolio_construction",
+        "long_horizon_lifecycle",
+        "active_funds_retail"
+      ],
+      "claim": "Ninguna estrategia ni regla de calendario supera de forma confiable, después de costos, a comprar y mantener una cartera amplia, barata y diversificada entre países.",
+      "key_figure": "Acciones domésticas: 13% de probabilidad de pérdida real a 30 años; acciones internacionales: 4% [WP]. Con 39 países desarrollados, 12% de probabilidad de pérdida real a 30 años.",
+      "critique": "El plazo largo reduce la probabilidad de perder, no el tamaño de la pérdida; Estados Unidos fue la excepción (4.3% real anual contra una mediana de 0.8% en 39 mercados, sin dividendos, 1921-1996).",
+      "survives": "Es el punto de comparación de todo el informe; la diversificación internacional pesa más de lo que sugiere la historia de Estados Unidos.",
+      "marks": [
+        "WP",
+        "1p"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.01,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": 1.0,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 85,
+        "rationale": "Es la referencia contra la que ninguna alternativa gana de forma confiable neto de costos; el riesgo de largo plazo sigue existiendo."
+      },
+      "sources": [
+        {
+          "label": "Anarkulova, Cederburg y O'Doherty, JFE 2022",
+          "url": "https://repository.arizona.edu/handle/10150/661101"
+        },
+        {
+          "label": "Jorion y Goetzmann, JF 1999",
+          "url": "https://ideas.repec.org/a/bla/jfinan/v54y1999i3p953-980.html"
+        },
+        {
+          "label": "Anarkulova, investigación 2025 [WP]",
+          "url": "https://www.anarkulova.com/research"
+        }
+      ],
+      "section": "Para armar la cartera, estimar menos funciona mejor que optimizar más"
+    },
+    {
+      "id": "buy_hold_single_country",
+      "name": "Comprar y mantener solo el índice de un país (p. ej. el IPC)",
+      "family": "base",
+      "categories": [
+        "long_horizon_lifecycle",
+        "mexico_latam"
+      ],
+      "claim": "Un índice local amplio y barato captura la prima accionaria de ese mercado.",
+      "key_figure": "Acciones del propio país: 13% de probabilidad de pérdida real a 30 años contra 4% de las internacionales [WP] (cifra de la sección no reverificada 'Para armar la cartera'). Correlación IPC-S&P 500 de 0.49 en régimen bajo y 0.63 en régimen alto.",
+      "critique": "Es un mercado de un solo país, con 71 a 130 emisoras en las muestras académicas; la diversificación dentro de Norteamérica se reduce cuando más se necesita.",
+      "survives": "Mejor que la gestión activa local (el índice superó a 75.56% de los fondos mexicanos a un año), pero menos diversificado que una cartera internacional.",
+      "marks": [
+        "WP",
+        "1p"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.01,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": 1.0,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 60,
+        "rationale": "Barato y pasivo, pero concentrado en un país con un universo pequeño."
+      },
+      "sources": [
+        {
+          "label": "Rodríguez Benavides y Perrotini (SciELO)",
+          "url": "https://www.scielo.org.mx/scielo.php?script=sci_arttext&pid=S1665-53462019000200151"
+        },
+        {
+          "label": "SPIVA Latin America Year-End 2025",
+          "url": "https://www.spglobal.com/spdji/en/documents/spiva/spiva-latin-america-year-end-2025.pdf"
+        },
+        {
+          "label": "Anarkulova, investigación 2025 [WP]",
+          "url": "https://www.anarkulova.com/research"
+        }
+      ],
+      "section": "México y América Latina: la evidencia existe, es delgada y cambia de signo"
+    },
+    {
+      "id": "factor_model_tilt",
+      "name": "Inclinación multifactor (FF5/FF6, q5, mispricing, conductual)",
+      "family": "factores",
+      "categories": [
+        "factor_models",
+        "anomaly_zoo"
+      ],
+      "claim": "Pocos factores explican cientos de anomalías.",
+      "key_figure": "q5 deja 23 alfas significativas de 150; el modelo q, 52; el FF6, 74 (según una tabla que solo se recuperó en parte).",
+      "critique": "Cada modelo gana con las anomalías que eligen sus autores.",
+      "survives": "Con costos vuelve a ganar el FF5 (Detzel, Novy-Marx y Velikov, JF 2023); rentabilidad e inversión son el núcleo común.",
+      "marks": [],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.2,
+        "requires_short": true,
+        "requires_leverage": false,
+        "microcap_dependence": "media",
+        "oos_retention": 0.42,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 40,
+        "rationale": "Herramienta explicativa sólida; como estrategia, las primas netas son pequeñas e inciertas."
+      },
+      "sources": [
+        {
+          "label": "q5, Review of Finance 2021",
+          "url": "https://theinvestmentcapm.com/uploads/1/2/2/6/122679606/q5rf2021.pdf"
+        },
+        {
+          "label": "Detzel, Novy-Marx y Velikov, JF 2023",
+          "url": "https://ideas.repec.org/a/bla/jfinan/v78y2023i3p1743-1775.html"
+        },
+        {
+          "label": "Fama y French, JFE 2018",
+          "url": "https://ideas.repec.org/a/eee/jfinec/v128y2018i2p234-252.html"
+        }
+      ],
+      "section": "Cinco modelos compiten y cada uno gana la carrera que diseñan sus autores"
+    },
+    {
+      "id": "profitability_quality",
+      "name": "Rentabilidad y calidad (GP/A, QMJ)",
+      "family": "factores",
+      "categories": [
+        "quality_profitability",
+        "factor_models"
+      ],
+      "claim": "Las empresas rentables rinden más.",
+      "key_figure": "GP/A: alfa de tres factores de 0.52% mensual (t = 4.49), 1963-2010. QMJ: alfa de cuatro factores de 60 pb mensuales (t = 9.95) en Estados Unidos y rendimientos positivos en 23 de 24 países.",
+      "critique": "No existía antes de 1963: las primas de rentabilidad e inversión eran de 0.09% y 0.02% mensuales, indistinguibles de cero (Linnainmaa y Roberts) [WP].",
+      "survives": "Única categoría con mediana cercana a 25 pb mensuales brutos después de 2005 [WP]; es lenta y barata de operar.",
+      "marks": [
+        "WP"
+      ],
+      "evidence": {
+        "gross_monthly_bps": 25,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.1,
+        "requires_short": true,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": 0.5,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 50,
+        "rationale": "Lo que mejor resiste dentro de los factores: lento, barato, con alfa reciente; aun así primas netas pequeñas."
+      },
+      "sources": [
+        {
+          "label": "Novy-Marx, JFE 2013",
+          "url": "https://oldschoolvalue-files.s3.amazonaws.com/pdf/Novy-Marx_Gross-Profitability-Anomaly_JFE_2013.pdf"
+        },
+        {
+          "label": "Asness, Frazzini y Pedersen, RAS 2019",
+          "url": "https://link.springer.com/article/10.1007/s11142-018-9470-2"
+        },
+        {
+          "label": "Gordon, Schneider y Strauss, FRL 2025",
+          "url": "https://www.sciencedirect.com/science/article/abs/pii/S154461232501904X"
+        },
+        {
+          "label": "Linnainmaa y Roberts, NBER w22894 [WP]",
+          "url": "https://www.nber.org/system/files/working_papers/w22894/w22894.pdf"
+        },
+        {
+          "label": "Chen y Welch, arXiv 2607.06502 [WP]",
+          "url": "https://arxiv.org/abs/2607.06502"
+        }
+      ],
+      "section": "Los factores existen en los datos, pero su prima neta ronda cuatro puntos base al mes"
+    },
+    {
+      "id": "value",
+      "name": "Valor (HML)",
+      "family": "factores",
+      "categories": [
+        "value",
+        "factor_models"
+      ],
+      "claim": "Lo barato rinde más que lo caro.",
+      "key_figure": "0.42% mensual (t = 3.25) en 1963-1991 contra 0.11% (t = 0.60) en 1991-2019.",
+      "critique": "\"Essentially dead\" en acciones no microcap después de 2005 [WP]. Las defensas más enfáticas vienen de autores vinculados a gestoras con productos de valor; la corrección académica por intangibles (Eisfeldt, Kim y Papanikolaou) obtiene un alfa de 3.86% anual (t = 6.10) frente al HML en 1975-2018.",
+      "survives": "Indeterminado: la estadística no distingue 0.1% de 0.4% mensual.",
+      "marks": [
+        "WP"
+      ],
+      "evidence": {
+        "gross_monthly_bps": 11,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.1,
+        "requires_short": true,
+        "requires_leverage": false,
+        "microcap_dependence": "media",
+        "oos_retention": 0.26,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 30,
+        "rationale": "Prima histórica real pero desplomada en la segunda mitad de la muestra."
+      },
+      "sources": [
+        {
+          "label": "Fama y French, RAPS 2021",
+          "url": "https://ebicapital.nl/wp-content/uploads/2022/05/The-Value-Premium.pdf"
+        },
+        {
+          "label": "Eisfeldt, Kim y Papanikolaou, CFR",
+          "url": "https://cfr.ivo-welch.org/forthcoming/papers/eisfeldt2021intangible.pdf"
+        },
+        {
+          "label": "Chen y Welch [WP]",
+          "url": "https://arxiv.org/abs/2607.06502"
+        }
+      ],
+      "section": "Valor y momentum, las dos primas más famosas, siguen en disputa"
+    },
+    {
+      "id": "momentum",
+      "name": "Momentum de acciones",
+      "family": "factores",
+      "categories": [
+        "momentum"
+      ],
+      "claim": "Las ganadoras siguen ganando.",
+      "key_figure": "17.9% anual, Sharpe 0.60 y asimetría mensual de −4.70 (1927-2013). Entre marzo y mayo de 2009 las perdedoras subieron 163% y las ganadoras 8% (cifras de la versión NBER).",
+      "critique": "Desplomes; sería timing de otros factores (alfa 0.01% mensual, t = 0.07, controlando por momentum de factores).",
+      "survives": "Fondos reales: \"no returns to momentum\" tras costos (Patton y Weller).",
+      "marks": [],
+      "evidence": {
+        "gross_monthly_bps": 149,
+        "net_monthly_bps": 0,
+        "typical_turnover_monthly": 0.6,
+        "requires_short": true,
+        "requires_leverage": false,
+        "microcap_dependence": "media",
+        "oos_retention": 0.42,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 20,
+        "rationale": "Mejor Sharpe histórico, peor cola, y nada neto en fondos reales."
+      },
+      "sources": [
+        {
+          "label": "Daniel y Moskowitz, NBER w20439",
+          "url": "https://www.nber.org/system/files/working_papers/w20439/w20439.pdf"
+        },
+        {
+          "label": "Ehsani y Linnainmaa, NBER w25551",
+          "url": "https://www.nber.org/system/files/working_papers/w25551/w25551.pdf"
+        },
+        {
+          "label": "Patton y Weller, JFE 2020",
+          "url": "https://ideas.repec.org/a/eee/jfinec/v137y2020i2p515-549.html"
+        },
+        {
+          "label": "Barroso y Santa-Clara, JFE 2015",
+          "url": "https://www.sciencedirect.com/science/article/abs/pii/S0304405X14002566"
+        }
+      ],
+      "section": "Valor y momentum, las dos primas más famosas, siguen en disputa"
+    },
+    {
+      "id": "value_momentum_combo",
+      "name": "Combinación de valor y momentum",
+      "family": "factores",
+      "categories": [
+        "value",
+        "momentum"
+      ],
+      "claim": "La correlación negativa entre valor y momentum hace más robusta la combinación que cualquiera de las dos primas.",
+      "key_figure": "Correlación de −0.53 en Estados Unidos, −0.43 en Reino Unido, −0.52 en Europa y −0.60 en Japón.",
+      "critique": "El informe no reporta una prima neta de la combinación; en fondos reales, tras costos de implementación, Patton y Weller hallan \"low returns to value and no returns to momentum\".",
+      "survives": "Lo más estable entre mercados es la correlación negativa, no el nivel de las primas.",
+      "marks": [],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.35,
+        "requires_short": true,
+        "requires_leverage": false,
+        "microcap_dependence": "media",
+        "oos_retention": 0.42,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 30,
+        "rationale": "Diversificación entre primas débiles; requiere vender en corto."
+      },
+      "sources": [
+        {
+          "label": "Asness, Moskowitz y Pedersen, JF 2013",
+          "url": "https://w4.stern.nyu.edu/facdir/lpederse/papers/ValMomEverywhere.pdf"
+        },
+        {
+          "label": "Patton y Weller, JFE 2020",
+          "url": "https://ideas.repec.org/a/eee/jfinec/v137y2020i2p515-549.html"
+        }
+      ],
+      "section": "Valor y momentum, las dos primas más famosas, siguen en disputa"
+    },
+    {
+      "id": "betting_against_beta",
+      "name": "Betting Against Beta",
+      "family": "factores",
+      "categories": [
+        "low_beta_bab"
+      ],
+      "claim": "La beta baja rinde más por unidad de riesgo.",
+      "key_figure": "0.71% mensual (t = 6.76) en Estados Unidos, 1926-2009 [WP].",
+      "critique": "Por cada dólar, 1.05 dólares van al 1% más pequeño del mercado; costos de unos 60 pb mensuales.",
+      "survives": "Alfa neta frente al FF5 de 16 pb mensuales (t = 1.20), no significativa.",
+      "marks": [
+        "WP"
+      ],
+      "evidence": {
+        "gross_monthly_bps": 71,
+        "net_monthly_bps": 16,
+        "typical_turnover_monthly": 0.5,
+        "requires_short": true,
+        "requires_leverage": true,
+        "microcap_dependence": "alta",
+        "oos_retention": 0.42,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 15,
+        "rationale": "La señal vive en microcaps y no sobrevive costos."
+      },
+      "sources": [
+        {
+          "label": "Frazzini y Pedersen, NBER w16601",
+          "url": "https://www.nber.org/system/files/working_papers/w16601/w16601.pdf"
+        },
+        {
+          "label": "Novy-Marx y Velikov, JFE 2022",
+          "url": "https://mysimon.rochester.edu/novy-marx/research/BABAB.pdf"
+        }
+      ],
+      "section": "Los factores existen en los datos, pero su prima neta ronda cuatro puntos base al mes"
+    },
+    {
+      "id": "anomaly_single",
+      "name": "Una anomalía publicada del \"factor zoo\"",
+      "family": "factores",
+      "categories": [
+        "anomaly_zoo",
+        "backtest_overfitting"
+      ],
+      "claim": "Cientos de señales predicen rendimientos.",
+      "key_figure": "66 pb mensuales brutos dentro de muestra [WP]; mediana bruta de 7 pb en no-microcaps desde 2006 [WP].",
+      "critique": "−26% fuera de muestra y −58% tras publicarse; con metodología estricta 65% no alcanza |t| ≥ 1.96.",
+      "survives": "4 pb mensuales netos para la anomalía promedio.",
+      "marks": [
+        "WP"
+      ],
+      "evidence": {
+        "gross_monthly_bps": 66,
+        "net_monthly_bps": 4,
+        "typical_turnover_monthly": 0.5,
+        "requires_short": true,
+        "requires_leverage": false,
+        "microcap_dependence": "alta",
+        "oos_retention": 0.42,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 12,
+        "rationale": "Hecho estadístico, no fuente de dinero neto."
+      },
+      "sources": [
+        {
+          "label": "Chen y Velikov, JFQA 2023",
+          "url": "https://www.cambridge.org/core/services/aop-cambridge-core/content/view/945133D5A3ECEEAF466AEE91551FD225/S0022109022000874a.pdf/zeroing_in_on_the_expected_returns_of_anomalies.pdf"
+        },
+        {
+          "label": "Hou, Xue y Zhang, RFS 2020",
+          "url": "https://theinvestmentcapm.com/uploads/1/2/2/6/122679606/houxuezhang2019rfs.pdf"
+        },
+        {
+          "label": "Chen y Zimmermann, FEDS 2021-037",
+          "url": "https://www.federalreserve.gov/econres/feds/files/2021-037pap.pdf"
+        },
+        {
+          "label": "Chen y Velikov, FEDS 2020-039 [WP]",
+          "url": "https://www.federalreserve.gov/econres/feds/files/2020039pap.pdf"
+        },
+        {
+          "label": "McLean y Pontiff (CFA Digest)",
+          "url": "https://rpc.cfainstitute.org/research/cfa-digest/2016/06/does-academic-research-destroy-stock-return-predictability-digest-summary"
+        },
+        {
+          "label": "Chen y Welch, arXiv 2607.06502 [WP]",
+          "url": "https://arxiv.org/abs/2607.06502"
+        }
+      ],
+      "section": "Después de costos quedan entre 4 y 20 puntos base al mes"
+    },
+    {
+      "id": "anomaly_combo",
+      "name": "Combinación de muchas anomalías",
+      "family": "factores",
+      "categories": [
+        "anomaly_zoo",
+        "factor_models"
+      ],
+      "claim": "Combinar señales diversifica el ruido de cada una.",
+      "key_figure": "Unos 20 pb mensuales netos combinando señales; unos 15 factores bastan para abarcar 153.",
+      "critique": "Las cifras son de carteras largo-corto institucionales; las versiones solo-largo rinden \"at most zero net of selection bias\" [WP].",
+      "survives": "Unos 20 pb mensuales para un institucional con ventas en corto.",
+      "marks": [
+        "WP"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": 20,
+        "typical_turnover_monthly": 0.4,
+        "requires_short": true,
+        "requires_leverage": false,
+        "microcap_dependence": "media",
+        "oos_retention": 0.42,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 28,
+        "rationale": "Algo queda para institucionales; casi nada para un minorista solo-largo."
+      },
+      "sources": [
+        {
+          "label": "Chen y Velikov, JFQA 2023",
+          "url": "https://www.cambridge.org/core/services/aop-cambridge-core/content/view/945133D5A3ECEEAF466AEE91551FD225/S0022109022000874a.pdf/zeroing_in_on_the_expected_returns_of_anomalies.pdf"
+        },
+        {
+          "label": "Swade, Hanauer, Lohre y Blitz, JPM",
+          "url": "https://www.pm-research.com/content/iijpormgmt/50/3/11"
+        },
+        {
+          "label": "Chen y Welch, arXiv 2607.06502 [WP]",
+          "url": "https://arxiv.org/abs/2607.06502"
+        }
+      ],
+      "section": "Después de costos quedan entre 4 y 20 puntos base al mes"
+    },
+    {
+      "id": "factor_fund_long_only",
+      "name": "Fondo o ETF de factores solo-largo (minorista)",
+      "family": "factores",
+      "categories": [
+        "factor_models",
+        "active_funds_retail",
+        "trading_costs_turnover"
+      ],
+      "claim": "Un fondo permite a un minorista cobrar las primas de factores.",
+      "key_figure": "Chen y Welch: las versiones solo-largo rinden \"at most zero net of selection bias\" [WP].",
+      "critique": "Los investigadores no encontraron ningún estudio académico que mida el resultado neto de los ETF de factores para minoristas con datos hasta 2025.",
+      "survives": "Sin evidencia académica directa; según Chen y Welch, las versiones solo-largo rinden a lo sumo cero netas de sesgo de selección [WP], y el fondo cobra su comisión aparte.",
+      "marks": [
+        "WP"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": 0,
+        "typical_turnover_monthly": 0.05,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": 0.42,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 30,
+        "rationale": "No daña mucho si es barato y diversificado, pero no hay prueba de que agregue."
+      },
+      "sources": [
+        {
+          "label": "Chen y Welch [WP]",
+          "url": "https://arxiv.org/abs/2607.06502"
+        }
+      ],
+      "section": "Después de costos quedan entre 4 y 20 puntos base al mes"
+    },
+    {
+      "id": "ml_cross_section",
+      "name": "Machine learning de corte transversal (árboles, redes, IPCA)",
+      "family": "machine learning",
+      "categories": [
+        "ml_cross_section"
+      ],
+      "claim": "Las no linealidades mejoran la predicción del rendimiento por acción.",
+      "key_figure": "R² mensual fuera de muestra de 0.33% a 0.40% [ext.]; Sharpe bruto de 1.35 (ponderado) a 2.45 (equiponderado).",
+      "critique": "El alfa cae 66% (71%, 48%) al excluir microcaps; rotación mensual de 87% a 168% [ext.]; ninguna señal de deep learning conserva significancia al excluir empresas en apuros.",
+      "survives": "En la versión de 2024 del paper [ext.; la versión publicada puede diferir]: Sharpe neto cercano a 1.4 (1.43 bruto, 1.38 neto) solo para un institucional que integra los costos en el objetivo; una cartera Markowitz-ML con Sharpe bruto de 2.00 queda con Sharpe neto negativo.",
+      "marks": [
+        "ext.",
+        "WP"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 1.2,
+        "requires_short": true,
+        "requires_leverage": false,
+        "microcap_dependence": "alta",
+        "oos_retention": 0.42,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 18,
+        "rationale": "Brilla en el papel; lo que sobrevive es institucional."
+      },
+      "sources": [
+        {
+          "label": "Gu, Kelly y Xiu, RFS 2020",
+          "url": "https://dachxiu.chicagobooth.edu/download/ML.pdf"
+        },
+        {
+          "label": "Avramov, Cheng y Metzker, MS 2023",
+          "url": "https://si-cheng.net/wp-content/uploads/2023/05/2023-ms-avramov_cheng_metzker-machine-learning-vs.-economic-restrictions.pdf"
+        },
+        {
+          "label": "Jensen, Kelly, Malamud y Pedersen, RFS 2026",
+          "url": "https://academic.oup.com/rfs/article/39/10/3035/8524346"
+        },
+        {
+          "label": "Jensen, Kelly, Malamud y Pedersen, versión AFA 2024 [WP]",
+          "url": "https://www.aeaweb.org/conference/2024/program/paper/SYTF3aaz"
+        },
+        {
+          "label": "Gu, Kelly y Xiu, NBER w25398 [ext.]",
+          "url": "https://www.nber.org/system/files/working_papers/w25398/w25398.pdf"
+        }
+      ],
+      "section": "El machine learning predice mejor en el papel, y lo que queda tras costos es institucional"
+    },
+    {
+      "id": "complexity_timing",
+      "name": "Timing con modelos sobreparametrizados (\"Virtue of Complexity\")",
+      "family": "machine learning",
+      "categories": [
+        "ml_cross_section",
+        "market_timing_predictors"
+      ],
+      "claim": "Más parámetros que datos mejoran el timing del mercado.",
+      "key_figure": "Sharpe cercano a 0.47 anual aunque el R² predictivo sea sustancialmente negativo en la mayoría de los modelos [ext.].",
+      "critique": "Sería momentum con ajuste de volatilidad, mecánico (Nagel): correlación de 0.99 entre los pesos del modelo complejo y los de una regresión kernel equivalente; con predictores sin contenido el information ratio apenas baja de 0.255 a 0.228 [ext.].",
+      "survives": "Disputa abierta; los autores mantienen su resultado.",
+      "marks": [
+        "ext."
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.5,
+        "requires_short": true,
+        "requires_leverage": true,
+        "microcap_dependence": "baja",
+        "oos_retention": 0.42,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 18,
+        "rationale": "Resultado disputado y probablemente mecánico."
+      },
+      "sources": [
+        {
+          "label": "Kelly, Malamud y Zhou, JF 2024",
+          "url": "https://economics.yale.edu/sites/default/files/2024-01/The%20Journal%20of%20Finance%20-%202023%20-%20KELLY%20-%20The%20Virtue%20of%20Complexity%20in%20Return%20Prediction%20(1).pdf"
+        },
+        {
+          "label": "Nagel, NBER w34104",
+          "url": "https://www.nber.org/papers/w34104"
+        },
+        {
+          "label": "Buncic, SSRN 5239006",
+          "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5239006"
+        }
+      ],
+      "section": "\"The Virtue of Complexity\" divide a Yale, Chicago, Oxford y Estocolmo"
+    },
+    {
+      "id": "llm_news",
+      "name": "LLM y texto de noticias",
+      "family": "machine learning",
+      "categories": [
+        "llm_text_signals"
+      ],
+      "claim": "Leer noticias predice el rendimiento del día siguiente.",
+      "key_figure": "Sharpe bruto de 2.97 a 4.9 [ext.]; el Sharpe de GPT-4 cayó de 6.54 (fines de 2021) a 1.22 (enero-mayo 2024).",
+      "critique": "Memorización del modelo (sesgo de look-ahead); es más fuerte en acciones pequeñas; rotación diaria.",
+      "survives": "Deja de ganar con 20 pb de costo por ida y vuelta.",
+      "marks": [
+        "ext."
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": 0,
+        "typical_turnover_monthly": 20,
+        "requires_short": true,
+        "requires_leverage": false,
+        "microcap_dependence": "alta",
+        "oos_retention": 0.2,
+        "realtime_sharpe": [
+          1.22,
+          null
+        ]
+      },
+      "prior": {
+        "score": 8,
+        "rationale": "Se desvanece rápido y no resiste costos realistas."
+      },
+      "sources": [
+        {
+          "label": "Lopez-Lira y Tang, arXiv 2304.07619",
+          "url": "https://arxiv.org/pdf/2304.07619"
+        },
+        {
+          "label": "Glasserman y Lin, arXiv 2309.17322",
+          "url": "https://arxiv.org/abs/2309.17322"
+        },
+        {
+          "label": "He, Lv, Manela y Wu, arXiv 2502.21206",
+          "url": "https://arxiv.org/pdf/2502.21206"
+        }
+      ],
+      "section": "Los LLM leen noticias con Sharpe brutos de 3 a 5, y parte puede ser memoria"
+    },
+    {
+      "id": "technical_rules",
+      "name": "Reglas técnicas (medias móviles, rupturas, patrones gráficos)",
+      "family": "timing",
+      "categories": [
+        "technical_rules",
+        "backtest_overfitting"
+      ],
+      "claim": "Las señales de precio superan a comprar y mantener.",
+      "key_figure": "Predicen el Dow en 1897-1986; entre 7,846 reglas, la mejor en futuros del S&P tenía p nominal de 0.04 y p ajustado por data snooping de 0.90.",
+      "critique": "No se repite en 1987-1996; ex ante nunca se pudo elegir la mejor regla. En el IPC (2014-2019) un filtro de 10% perdió 51.99% contra una pérdida de 3.17% de comprar y mantener, antes de costos.",
+      "survives": "Nada tras costos bajos.",
+      "marks": [],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": 0,
+        "typical_turnover_monthly": 1.0,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": 0.0,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 6,
+        "rationale": "Contiene información en muestras antiguas, no es explotable neto de costos."
+      },
+      "sources": [
+        {
+          "label": "Sullivan, Timmermann y White, JF 1999",
+          "url": "https://www.kevinsheppard.com/files/teaching/mfe/advanced-econometrics/Sullivan_Timmermann_White.pdf"
+        },
+        {
+          "label": "Bajgrowicz y Scaillet, JFE 2012",
+          "url": "https://ideas.repec.org/a/eee/jfinec/v106y2012i3p473-491.html"
+        },
+        {
+          "label": "Ruiz Dávila y García Muñoz (IPC)",
+          "url": "https://www.scielo.org.mx/scielo.php?script=sci_arttext&pid=S2448-66552020000300067"
+        }
+      ],
+      "section": "Las reglas técnicas ganaron en el Dow hasta 1986 y nunca fuera de muestra"
+    },
+    {
+      "id": "markowitz_sample",
+      "name": "Optimización de Markowitz con rendimientos históricos",
+      "family": "cartera",
+      "categories": [
+        "portfolio_construction"
+      ],
+      "claim": "Optimizar media-varianza mejora la cartera.",
+      "key_figure": "Harían falta unos 3,000 meses (25 activos) o 6,000 meses (50 activos) para que gane a 1/N. Sharpe mensual de 0.38 en muestra y 0.08 fuera contra 0.19 de 1/N [WP].",
+      "critique": "μ se estima muy mal; según el resumen de Ziemba de su trabajo con Chopra, los errores en rendimientos, varianzas y covarianzas pesan aproximadamente 20:2:1 [sec.].",
+      "survives": "Pesos simples y estables; optimizar solo el riesgo.",
+      "marks": [
+        "WP",
+        "sec.",
+        "1p"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.3,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": 0.2,
+        "realtime_sharpe": [
+          0.08,
+          0.19
+        ]
+      },
+      "prior": {
+        "score": 15,
+        "rationale": "Convierte errores de estimación en posiciones extremas."
+      },
+      "sources": [
+        {
+          "label": "DeMiguel, Garlappi y Uppal, RFS 2009",
+          "url": "https://econpapers.repec.org/RePEc:oup:rfinst:v:22:y:2009:i:5:p:1915-1953"
+        },
+        {
+          "label": "Kirby y Ostdiek, SSRN 1530022",
+          "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1530022"
+        },
+        {
+          "label": "DeMiguel, Garlappi y Uppal, borrador NBER 2006 [WP]",
+          "url": "https://users.nber.org/~confer/2006/si2006/ap/uppal.pdf"
+        },
+        {
+          "label": "MacLean, Thorp y Ziemba 2010 [sec.]",
+          "url": "https://www.stat.berkeley.edu/~aldous/157/Papers/Good_Bad_Kelly.pdf"
+        }
+      ],
+      "section": "Harían falta 3,000 meses de datos para que Markowitz le gane a repartir por igual"
+    },
+    {
+      "id": "naive_1n",
+      "name": "Repartir por igual (1/N) con rebalanceo",
+      "family": "cartera",
+      "categories": [
+        "portfolio_construction"
+      ],
+      "claim": "Ninguno de 14 modelos optimizados supera a 1/N de forma consistente.",
+      "key_figure": "1/N: Sharpe mensual de 0.19 contra 0.08 de Markowitz fuera de muestra [WP].",
+      "critique": "Kirby y Ostdiek: el resultado \"is largely due to their research design\"; reglas de baja rotación basadas en volatilidad sí superan a 1/N.",
+      "survives": "Regla robusta por no estimar rendimientos; mezclarla con reglas sofisticadas (Tu y Zhou) mejora a ambas en la mayoría de los escenarios.",
+      "marks": [
+        "WP",
+        "1p"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.03,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": 1.0,
+        "realtime_sharpe": [
+          0.19,
+          null
+        ]
+      },
+      "prior": {
+        "score": 70,
+        "rationale": "Estimar menos funciona mejor que optimizar más."
+      },
+      "sources": [
+        {
+          "label": "DeMiguel, Garlappi y Uppal, RFS 2009",
+          "url": "https://econpapers.repec.org/RePEc:oup:rfinst:v:22:y:2009:i:5:p:1915-1953"
+        },
+        {
+          "label": "Tu y Zhou, JFE 2011",
+          "url": "https://ideas.repec.org/a/eee/jfinec/v99y2011i1p204-215.html"
+        },
+        {
+          "label": "Kirby y Ostdiek, SSRN 1530022",
+          "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1530022"
+        }
+      ],
+      "section": "Harían falta 3,000 meses de datos para que Markowitz le gane a repartir por igual"
+    },
+    {
+      "id": "shrinkage_min_variance",
+      "name": "Encogimiento de covarianzas, mínima varianza sin cortos, Black-Litterman",
+      "family": "cartera",
+      "categories": [
+        "portfolio_construction"
+      ],
+      "claim": "Renunciar a estimar con precisión los rendimientos esperados rescata parte de la optimización.",
+      "key_figure": "Ledoit-Wolf: Σ̂ = δ·F + (1 − δ)·S con varianza fuera de muestra significativamente menor; prohibir cortos equivale a encoger la matriz (Jagannathan y Ma).",
+      "critique": "Kirby y Ostdiek: la ventaja de optimizar \"can easily be eroded by transactions costs\".",
+      "survives": "Optimizar el riesgo, no el rendimiento esperado.",
+      "marks": [
+        "1p"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.1,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": 0.8,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 60,
+        "rationale": "Reduce varianza fuera de muestra sin depender de pronósticos de rendimiento."
+      },
+      "sources": [
+        {
+          "label": "Ledoit y Wolf 2003",
+          "url": "https://ideas.repec.org/a/eee/empfin/v10y2003i5p603-621.html"
+        },
+        {
+          "label": "Jagannathan y Ma, NBER w8922",
+          "url": "https://www.nber.org/papers/w8922"
+        },
+        {
+          "label": "Idzorek sobre Black-Litterman",
+          "url": "https://people.duke.edu/~charvey/Teaching/BA453_2006/Idzorek_onBL.pdf"
+        },
+        {
+          "label": "Kirby y Ostdiek, SSRN 1530022",
+          "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1530022"
+        }
+      ],
+      "section": "Harían falta 3,000 meses de datos para que Markowitz le gane a repartir por igual"
+    },
+    {
+      "id": "risk_parity_levered",
+      "name": "Risk parity apalancado",
+      "family": "cartera",
+      "categories": [
+        "portfolio_construction",
+        "position_sizing_kelly"
+      ],
+      "claim": "Igualar contribuciones al riesgo y apalancar hasta el riesgo del mercado supera al mercado.",
+      "key_figure": "Cerca de 4% anual sobre el mercado en Estados Unidos, 1926-2010 (Asness, Frazzini y Pedersen).",
+      "critique": "Las fechas de inicio y fin alteran el resultado y \"transaction costs can reverse ranking, especially if leverage is used\".",
+      "survives": "Depende de un apalancamiento barato que un minorista no tiene.",
+      "marks": [
+        "1p"
+      ],
+      "evidence": {
+        "gross_monthly_bps": 33,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.1,
+        "requires_short": false,
+        "requires_leverage": true,
+        "microcap_dependence": "baja",
+        "oos_retention": 0.5,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 32,
+        "rationale": "Idea robusta de riesgo, resultado frágil al costo del apalancamiento."
+      },
+      "sources": [
+        {
+          "label": "Asness, Frazzini y Pedersen, FAJ 2012",
+          "url": "https://ideas.repec.org/a/taf/ufajxx/v68y2012i1p47-59.html"
+        },
+        {
+          "label": "Anderson, Bianchi y Goldberg, FAJ 2012",
+          "url": "https://ideas.repec.org/a/taf/ufajxx/v68y2012i6p75-93.html"
+        }
+      ],
+      "section": "Harían falta 3,000 meses de datos para que Markowitz le gane a repartir por igual"
+    },
+    {
+      "id": "kelly_full",
+      "name": "Apostar Kelly completo (o más)",
+      "family": "cartera",
+      "categories": [
+        "position_sizing_kelly"
+      ],
+      "claim": "f* = (μ − r)/σ² maximiza el crecimiento del capital.",
+      "key_figure": "Apostar el doble de Kelly deja el crecimiento en cero.",
+      "critique": "Solo es óptimo con utilidad logarítmica, y los cálculos son muy sensibles al error en μ: \"the size of the wagers should be reduced\".",
+      "survives": "Como cota superior teórica, no como tamaño de posición.",
+      "marks": [
+        "1p"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": null,
+        "requires_short": false,
+        "requires_leverage": true,
+        "microcap_dependence": "baja",
+        "oos_retention": null,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 15,
+        "rationale": "Un μ sobreestimado lleva directamente a sobreapostar."
+      },
+      "sources": [
+        {
+          "label": "MacLean, Thorp y Ziemba 2010",
+          "url": "https://www.stat.berkeley.edu/~aldous/157/Papers/Good_Bad_Kelly.pdf"
+        }
+      ],
+      "section": "Harían falta 3,000 meses de datos para que Markowitz le gane a repartir por igual"
+    },
+    {
+      "id": "kelly_fractional",
+      "name": "Kelly fraccionario (medio Kelly o menos)",
+      "family": "cartera",
+      "categories": [
+        "position_sizing_kelly"
+      ],
+      "claim": "Reducir la apuesta sacrifica poco crecimiento y mucho riesgo.",
+      "key_figure": "Medio Kelly conserva 75% del crecimiento y, en el ejemplo de MacLean, Thorp y Ziemba, eleva de 0.67 a 0.89 la probabilidad de duplicar el capital antes de perder la mitad.",
+      "critique": "Sigue dependiendo de estimaciones de μ y σ.",
+      "survives": "Regla razonable de tamaño cuando existe una ventaja estimada.",
+      "marks": [
+        "1p"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": null,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": null,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 55,
+        "rationale": "Compromiso sensato entre crecimiento y error de estimación."
+      },
+      "sources": [
+        {
+          "label": "MacLean, Thorp y Ziemba 2010",
+          "url": "https://www.stat.berkeley.edu/~aldous/157/Papers/Good_Bad_Kelly.pdf"
+        }
+      ],
+      "section": "Harían falta 3,000 meses de datos para que Markowitz le gane a repartir por igual"
+    },
+    {
+      "id": "all_equity_lifetime",
+      "name": "100% acciones de por vida (33% doméstica, 67% internacional)",
+      "family": "cartera",
+      "categories": [
+        "long_horizon_lifecycle"
+      ],
+      "claim": "Supera a las estrategias por edad acciones-bonos.",
+      "key_figure": "Ahorro equivalente de 16.1% contra 10%; probabilidad de agotar el dinero de 7.0% contra 19.7% del fondo de fecha objetivo [WP, ext.].",
+      "critique": "Asness: confunde \"what is the best return-for-risk portfolio\" con \"what risk we should take\". Según el propio borrador, el precio es una caída máxima de 76% en el percentil 95 durante la vida laboral [WP, ext.].",
+      "survives": "Working paper en disputa; consenso solo en diversificar entre países.",
+      "marks": [
+        "WP",
+        "ext.",
+        "1p"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.01,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": null,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 40,
+        "rationale": "Exige mantener todo en acciones a través de caídas de 50% a 75% sin vender."
+      },
+      "sources": [
+        {
+          "label": "Anarkulova et al., borrador AEA 2024 [WP]",
+          "url": "https://www.aeaweb.org/conference/2025/program/paper/EFddaa8b"
+        },
+        {
+          "label": "Asness, AQR Perspectives",
+          "url": "https://www.aqr.com/Insights/Perspectives/Why-Not-100-Equities"
+        }
+      ],
+      "section": "\"100% acciones de por vida\" es la propuesta más discutida de la década"
+    },
+    {
+      "id": "lifecycle_glidepath",
+      "name": "Reducir acciones con la edad (ciclo de vida)",
+      "family": "cartera",
+      "categories": [
+        "long_horizon_lifecycle"
+      ],
+      "claim": "El ingreso laboral funciona como un bono: la proporción óptima en acciones baja con la edad.",
+      "key_figure": "La proporción baja \"more evenly, slowly, and by less than in current lifecycle products\" (Duarte et al.).",
+      "critique": "Hay consenso en la dirección y desacuerdo en la magnitud.",
+      "survives": "Dirección respaldada por el capital humano, no por el plazo.",
+      "marks": [
+        "1p"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.01,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": null,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 60,
+        "rationale": "Consenso académico en la dirección."
+      },
+      "sources": [
+        {
+          "label": "Cocco, Gomes y Maenhout, RFS 2005",
+          "url": "https://ideas.repec.org/a/oup/rfinst/v18y2005i2p491-533.html"
+        },
+        {
+          "label": "Duarte, Fonseca, Goodman y Parker, NBER w29559",
+          "url": "https://www.nber.org/papers/w29559"
+        }
+      ],
+      "section": "\"100% acciones de por vida\" es la propuesta más discutida de la década"
+    },
+    {
+      "id": "periodic_contributions",
+      "name": "Aportar cada mes o quincena del salario",
+      "family": "cartera",
+      "categories": [
+        "long_horizon_lifecycle"
+      ],
+      "claim": "Cada aportación se invierte en cuanto existe.",
+      "key_figure": "No es una elección entre dos caminos: no hay una suma previa que trocear.",
+      "critique": "Ninguna en el informe.",
+      "survives": "Hábito consistente con la evidencia.",
+      "marks": [
+        "1p"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.0,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": null,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 80,
+        "rationale": "Invertir el dinero en cuanto existe."
+      },
+      "sources": [
+        {
+          "label": "Constantinides, JFQA 1979",
+          "url": "https://ideas.repec.org/a/cup/jfinqa/v14y1979i02p443-450_00.html"
+        }
+      ],
+      "section": "Aportar cuando hay dinero y rebalancear para controlar el riesgo"
+    },
+    {
+      "id": "dca_lump_sum",
+      "name": "Trocear (DCA) una suma que ya se tiene",
+      "family": "cartera",
+      "categories": [
+        "long_horizon_lifecycle"
+      ],
+      "claim": "Entrar poco a poco reduce el riesgo de mal momento.",
+      "key_figure": "Invertir de golpe gana cerca de dos tercios de las veces (Williams y Bacon, 1926-1991) [sec.]; DCA \"dominated by a sequential optimal investment strategy\" (Constantinides).",
+      "critique": "Cho y Kuvvet lo plantean como intercambio: 8.16% esperado con desviación de 19.19% (de golpe) contra 6.08% y 14.91% (DCA).",
+      "survives": "Reduce riesgo a cambio de menor rendimiento esperado; no es alfa.",
+      "marks": [
+        "sec.",
+        "1p"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.0,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": null,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 35,
+        "rationale": "Dominada en rendimiento esperado; aceptable solo como gestión emocional del riesgo."
+      },
+      "sources": [
+        {
+          "label": "Constantinides, JFQA 1979",
+          "url": "https://ideas.repec.org/a/cup/jfinqa/v14y1979i02p443-450_00.html"
+        },
+        {
+          "label": "Cho y Kuvvet 2015",
+          "url": "https://www.financialplanningassociation.org/article/journal/OCT15-dollar-cost-averaging-trade-between-risk-and-return"
+        },
+        {
+          "label": "Hayley 2012 (cita a Williams y Bacon) [sec.]",
+          "url": "https://www.citystgeorges.ac.uk/__data/assets/pdf_file/0008/128384/Dollar-Cost-Averaging-09052012.pdf"
+        }
+      ],
+      "section": "Aportar cuando hay dinero y rebalancear para controlar el riesgo"
+    },
+    {
+      "id": "rebalancing",
+      "name": "Rebalancear a pesos objetivo",
+      "family": "cartera",
+      "categories": [
+        "portfolio_construction",
+        "long_horizon_lifecycle"
+      ],
+      "claim": "La cartera de pesos constantes crece más: γ* = ½·(Σ w_i·σ_i² − σ_p²).",
+      "key_figure": "Fórmula de Willenbrock (FAJ 2011).",
+      "critique": "Esa ventaja \"over infinite horizons\" da una impresión inexacta en horizontes finitos.",
+      "survives": "Rebalancear es gestión de riesgo, no una fuente de alfa.",
+      "marks": [
+        "1p"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.02,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": null,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 70,
+        "rationale": "Controla el riesgo con poca rotación."
+      },
+      "sources": [
+        {
+          "label": "Willenbrock, FAJ 2011",
+          "url": "https://ideas.repec.org/a/taf/ufajxx/v67y2011i4p42-49.html"
+        },
+        {
+          "label": "Cuthbertson et al., IJFE 2016",
+          "url": "https://ideas.repec.org/a/wly/ijfiec/v21y2016i3p224-240.html"
+        }
+      ],
+      "section": "Aportar cuando hay dinero y rebalancear para controlar el riesgo"
+    },
+    {
+      "id": "frequent_trading",
+      "name": "Operar con frecuencia (minorista)",
+      "family": "comportamiento",
+      "categories": [
+        "active_funds_retail",
+        "trading_costs_turnover"
+      ],
+      "claim": "Operar activamente mejora el resultado.",
+      "key_figure": "En Taiwán, \"an annual performance penalty of 3.8 percentage points\"; las acciones más compradas cada día por usuarios de Robinhood tienen rendimientos anormales de −4.7% en los 20 días siguientes.",
+      "critique": "Operar mucho empobrece al inversionista promedio.",
+      "survives": "Nada; la evidencia es en contra.",
+      "marks": [
+        "1p"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": -32,
+        "typical_turnover_monthly": 1.0,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "media",
+        "oos_retention": null,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 5,
+        "rationale": "Penalización documentada de 3.8 puntos anuales."
+      },
+      "sources": [
+        {
+          "label": "Barber et al., RFS 2009",
+          "url": "https://ideas.repec.org/a/oup/rfinst/v22y2009i2p609-632.html"
+        },
+        {
+          "label": "Barber et al., JF 2022",
+          "url": "https://ideas.repec.org/a/bla/jfinan/v77y2022i6p3141-3190.html"
+        }
+      ],
+      "section": "Operar mucho empobrece, y la habilidad de los fondos se la quedan las gestoras"
+    },
+    {
+      "id": "retail_options",
+      "name": "Opciones semanales baratas (minorista)",
+      "family": "comportamiento",
+      "categories": [
+        "active_funds_retail",
+        "sentiment_options_short"
+      ],
+      "claim": "Las opciones baratas dan exposición apalancada a buenas ideas.",
+      "key_figure": "Diferencial bid-ask promedio de 12.6%; pérdidas de 5% a 9% alrededor de anuncios de utilidades [WP].",
+      "critique": "Los minoristas \"lose money on average\".",
+      "survives": "Nada; la evidencia es en contra.",
+      "marks": [
+        "WP",
+        "1p"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 4.0,
+        "requires_short": false,
+        "requires_leverage": true,
+        "microcap_dependence": "media",
+        "oos_retention": null,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 3,
+        "rationale": "Costos de transacción enormes y pérdidas promedio documentadas."
+      },
+      "sources": [
+        {
+          "label": "Bryzgalova, Pavlova y Sikorskaya, CEPR",
+          "url": "https://ideas.repec.org/p/cpr/ceprdp/17688.html"
+        },
+        {
+          "label": "Stanford GSB [WP]",
+          "url": "https://www.gsb.stanford.edu/faculty-research/working-papers/losing-optional-retail-option-trading-expected-announcement"
+        }
+      ],
+      "section": "Operar mucho empobrece, y la habilidad de los fondos se la quedan las gestoras"
+    },
+    {
+      "id": "active_funds",
+      "name": "Elegir fondos de gestión activa",
+      "family": "comportamiento",
+      "categories": [
+        "active_funds_retail",
+        "mexico_latam"
+      ],
+      "claim": "Un buen gestor supera al índice.",
+      "key_figure": "75% de los fondos tiene alfa cero neta; en México el índice superó a 75.56% de los fondos a un año, 77.27% a cinco y 75.61% a diez (5.16% contra 7.17% anual a diez años).",
+      "critique": "Berk y van Binsbergen: la habilidad existe (unos 3.2 millones de dólares al año) pero la capturan las gestoras vía comisiones. Las cifras de SPIVA México vienen de una sección verificada; las de Barras, Scaillet y Wermers y las de Berk y van Binsbergen, de la sección no reverificada.",
+      "survives": "El alfa neto para quien compra el fondo ronda cero.",
+      "marks": [
+        "1p"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": -17,
+        "typical_turnover_monthly": 0.05,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": null,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 18,
+        "rationale": "Tres de cada cuatro fondos quedan debajo del índice."
+      },
+      "sources": [
+        {
+          "label": "Barras, Scaillet y Wermers, JF 2010",
+          "url": "https://econpapers.repec.org/RePEc:bla:jfinan:v:65:y:2010:i:1:p:179-216"
+        },
+        {
+          "label": "Fama y French, JF 2010",
+          "url": "https://ideas.repec.org/a/bla/jfinan/v65y2010i5p1915-1947.html"
+        },
+        {
+          "label": "SPIVA Latin America YE 2025",
+          "url": "https://www.spglobal.com/spdji/en/documents/spiva/spiva-latin-america-year-end-2025.pdf"
+        },
+        {
+          "label": "Berk y van Binsbergen, JFE 2015",
+          "url": "https://ideas.repec.org/a/eee/jfinec/v118y2015i1p1-20.html"
+        }
+      ],
+      "section": "Operar mucho empobrece, y la habilidad de los fondos se la quedan las gestoras"
+    },
+    {
+      "id": "concentrated_stock_picking",
+      "name": "Cartera concentrada de pocas acciones",
+      "family": "comportamiento",
+      "categories": [
+        "active_funds_retail",
+        "portfolio_construction"
+      ],
+      "claim": "Treinta o cuarenta acciones bastan para diversificar.",
+      "key_figure": "55.2% de las acciones de Estados Unidos rinde menos que los T-bills y el 2.4% de las empresas explica toda la creación neta de riqueza (75.7 billones de dólares).",
+      "critique": "30-40 acciones acercan la volatilidad a la del mercado, pero no aseguran contener a las pocas ganadoras.",
+      "survives": "La asimetría extrema castiga la concentración.",
+      "marks": [
+        "1p"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.1,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "media",
+        "oos_retention": null,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 15,
+        "rationale": "La riqueza depende de pocas ganadoras difíciles de identificar."
+      },
+      "sources": [
+        {
+          "label": "Bessembinder et al., FAJ 2023",
+          "url": "https://ideas.repec.org/a/taf/ufajxx/v79y2023i3p33-63.html"
+        },
+        {
+          "label": "Statman, JFQA 1987",
+          "url": "https://www.cambridge.org/core/journals/journal-of-financial-and-quantitative-analysis/article/abs/how-many-stocks-make-a-diversified-portfolio/CE5CDF2C7225FC1E0EDE3E700A3C66A7"
+        }
+      ],
+      "section": "Operar mucho empobrece, y la habilidad de los fondos se la quedan las gestoras"
+    },
+    {
+      "id": "predictive_regressions",
+      "name": "Timing con regresiones predictivas (dividendo-precio, tasas, etc.)",
+      "family": "timing",
+      "categories": [
+        "market_timing_predictors"
+      ],
+      "claim": "Cocientes y tasas anticipan la prima de riesgo.",
+      "key_figure": "R² anual fuera de muestra de −2.06% (dividendo-precio), −1.78% (utilidad-precio) y −139.03% con todas las variables juntas.",
+      "critique": "Sesgo de Stambaugh, R² de largo plazo mecánico, inestabilidad; de 29 variables nuevas, más de un tercio ya no es significativo ni dentro de muestra.",
+      "survives": "R² mensual de 0 a 1% con restricciones o combinaciones.",
+      "marks": [],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.2,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": 0.1,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 15,
+        "rationale": "Los rendimientos esperados varían, pero no ha sido explotable."
+      },
+      "sources": [
+        {
+          "label": "Welch y Goyal, RFS 2008",
+          "url": "https://breesefine7110.tulane.edu/wp-content/uploads/sites/16/2015/10/Goyal-and-Welch-2008.pdf"
+        },
+        {
+          "label": "Goyal, Welch y Zafirov, RFS 2024",
+          "url": "https://academic.oup.com/rfs/article/37/11/3490/7749383"
+        },
+        {
+          "label": "Campbell y Thompson, NBER w11468",
+          "url": "https://www.nber.org/system/files/working_papers/w11468/w11468.pdf"
+        },
+        {
+          "label": "Rapach, Strauss y Zhou, RFS 2010",
+          "url": "https://ideas.repec.org/a/oup/rfinst/v23y2010i2p821-862.html"
+        }
+      ],
+      "section": "Casi ningún predictor individual vence a la media histórica fuera de muestra"
+    },
+    {
+      "id": "cape_timing",
+      "name": "Entrar o salir según el CAPE",
+      "family": "timing",
+      "categories": [
+        "market_timing_predictors"
+      ],
+      "claim": "Valuación alta anticipa rendimientos bajos a diez años.",
+      "key_figure": "R² de 40% a diez años [WP]; como regla de timing, Sharpe de 0.37 contra 0.38 de comprar y mantener (1900-2015).",
+      "critique": "Pocas décadas independientes (13 a 15); media inestable; la regla quedó subinvertida (posición media de 89% desde 1958).",
+      "survives": "Sirve para moderar expectativas, no para elegir fechas.",
+      "marks": [
+        "WP"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.05,
+        "requires_short": false,
+        "requires_leverage": true,
+        "microcap_dependence": "baja",
+        "oos_retention": null,
+        "realtime_sharpe": [
+          0.37,
+          0.38
+        ]
+      },
+      "prior": {
+        "score": 15,
+        "rationale": "Empata o pierde contra no hacer nada."
+      },
+      "sources": [
+        {
+          "label": "Asness, Ilmanen y Maloney, JIM 2017",
+          "url": "https://www.aqr.com/-/media/AQR/Documents/Insights/White-Papers/Market-Timing-Sin-a-Little.pdf"
+        },
+        {
+          "label": "Campbell y Shiller, NBER w8221",
+          "url": "https://www.nber.org/system/files/working_papers/w8221/w8221.pdf"
+        },
+        {
+          "label": "Siegel, FAJ 2016",
+          "url": "https://rpc.cfainstitute.org/research/financial-analysts-journal/2016/the-shiller-cape-ratio-a-new-look"
+        }
+      ],
+      "section": "El CAPE explica 30% a 40% de los rendimientos a diez años y casi nada como señal de entrada"
+    },
+    {
+      "id": "trend_index_ma",
+      "name": "Media móvil de 10 meses sobre el índice",
+      "family": "timing",
+      "categories": [
+        "trend_following_tsmom",
+        "technical_rules"
+      ],
+      "claim": "Salir del índice bajo su media móvil evita las grandes caídas.",
+      "key_figure": "S&P 1930-2012 con selección en tiempo real y costos de 0.50%: rendimiento medio 20% menor, desviación estándar 32% menor y Sharpe 7% mayor (p = 0.38) [WP].",
+      "critique": "El desempeño reportado suele estar muy sobrestimado por minería de datos y por ignorar fricciones.",
+      "survives": "Reduce caídas más de lo que eleva el rendimiento; menor crecimiento del capital.",
+      "marks": [
+        "WP"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.15,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": null,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 28,
+        "rationale": "Gestión de riesgo con costo en crecimiento; no es una regla ganadora."
+      },
+      "sources": [
+        {
+          "label": "Zakamulin 2013 [WP]",
+          "url": "https://foro.masdividendos.com/uploads/default/original/2X/a/a1bd5ae7e323496b5072adf8c2e126e31764e306.pdf"
+        },
+        {
+          "label": "Zakamulin, JAM 2014",
+          "url": "https://ideas.repec.org/a/pal/assmgt/v15y2014i4d10.1057_jam.2014.25.html"
+        }
+      ],
+      "section": "Tendencia y volatilidad reducen caídas más de lo que elevan el rendimiento"
+    },
+    {
+      "id": "tsmom_futures",
+      "name": "Time-series momentum en futuros diversificados",
+      "family": "timing",
+      "categories": [
+        "trend_following_tsmom"
+      ],
+      "claim": "Los últimos doce meses predicen el siguiente en muchos mercados.",
+      "key_figure": "Alfa de 1.58% mensual (t = 7.99) en 58 futuros; Sharpe neto de comisiones de 0.77 en 67 mercados desde 1880.",
+      "critique": "Poca evidencia activo por activo; t conjunto de 4.34 contra valores críticos bootstrap de 12.53 y 4.83; buena parte es escalado por volatilidad y posición neta larga.",
+      "survives": "Diversificador institucional; positivo en 8 de las 10 mayores caídas de una 60/40.",
+      "marks": [
+        "WP"
+      ],
+      "evidence": {
+        "gross_monthly_bps": 158,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.3,
+        "requires_short": true,
+        "requires_leverage": true,
+        "microcap_dependence": "baja",
+        "oos_retention": 0.42,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 38,
+        "rationale": "Historia larga y amplia, mecanismo en disputa, requiere futuros y apalancamiento."
+      },
+      "sources": [
+        {
+          "label": "Moskowitz, Ooi y Pedersen, JFE 2012",
+          "url": "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf"
+        },
+        {
+          "label": "Hurst, Ooi y Pedersen 2014",
+          "url": "https://www.trendfollowing.com/whitepaper/Century_Evidence_Trend_Following.pdf"
+        },
+        {
+          "label": "Huang, Li, Wang y Zhou, JFE 2020",
+          "url": "https://www.sciencedirect.com/science/article/abs/pii/S0304405X19301953"
+        }
+      ],
+      "section": "Tendencia y volatilidad reducen caídas más de lo que elevan el rendimiento"
+    },
+    {
+      "id": "vol_managed_market",
+      "name": "Exposición al mercado gestionada por volatilidad",
+      "family": "timing",
+      "categories": [
+        "volatility_managed"
+      ],
+      "claim": "Menos exposición cuando la volatilidad reciente es alta.",
+      "key_figure": "Alfa de 4.86% anual y Sharpe ~25% mayor (1926-2015).",
+      "critique": "En tiempo real gana a la original en 45 de 103 casos; para el mercado, Sharpe de 0.42 contra 0.46; con look-ahead corregido la caída máxima va de 68% a 93%.",
+      "survives": "Evidencia mixta para el mercado; nula tras costos en otros factores.",
+      "marks": [],
+      "evidence": {
+        "gross_monthly_bps": 40,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.3,
+        "requires_short": false,
+        "requires_leverage": true,
+        "microcap_dependence": "baja",
+        "oos_retention": null,
+        "realtime_sharpe": [
+          0.42,
+          0.46
+        ]
+      },
+      "prior": {
+        "score": 25,
+        "rationale": "La volatilidad es predecible; el beneficio en tiempo real no se confirma."
+      },
+      "sources": [
+        {
+          "label": "Moreira y Muir, NBER w22208",
+          "url": "https://www.nber.org/system/files/working_papers/w22208/w22208.pdf"
+        },
+        {
+          "label": "Cederburg et al., JFE 2020",
+          "url": "https://www.lehigh.edu/~xuy219/research/COWY.pdf"
+        },
+        {
+          "label": "Barroso y Detzel, JFE 2021",
+          "url": "https://econpapers.repec.org/article/eeejfinec/v_3a140_3ay_3a2021_3ai_3a3_3ap_3a744-767.htm"
+        }
+      ],
+      "section": "Tendencia y volatilidad reducen caídas más de lo que elevan el rendimiento"
+    },
+    {
+      "id": "yield_curve_exit",
+      "name": "Salir de acciones cuando la curva de tasas se invierte",
+      "family": "timing",
+      "categories": [
+        "regimes_business_cycle",
+        "market_timing_predictors"
+      ],
+      "claim": "La curva invertida anticipa recesiones y caídas.",
+      "key_figure": "67 de 72 estrategias redujeron el resultado frente a comprar y mantener (1975-2018) [WP].",
+      "critique": "Predecir la economía no es predecir la bolsa; un pronóstico continuo puede mejorar el R² sin que una regla de todo o nada gane.",
+      "survives": "Nada como regla de entrada y salida.",
+      "marks": [
+        "WP"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.05,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": null,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 5,
+        "rationale": "Empeoró el resultado en 67 de 72 variantes."
+      },
+      "sources": [
+        {
+          "label": "Fama y French 2019 [WP]",
+          "url": "https://www.tma-invest.com/wp-content/uploads/2019/08/inverted-yield-curves-and-expected-stock-returns-july-28-2019.pdf"
+        },
+        {
+          "label": "Estrella y Mishkin, NY Fed",
+          "url": "https://www.newyorkfed.org/medialibrary/media/research/current_issues/ci2-7.pdf"
+        }
+      ],
+      "section": "La predictibilidad se concentra en recesiones que solo se fechan después"
+    },
+    {
+      "id": "regime_switching",
+      "name": "Timing por cambio de régimen o recesión",
+      "family": "timing",
+      "categories": [
+        "regimes_business_cycle"
+      ],
+      "claim": "La predictibilidad vive en las recesiones.",
+      "key_figure": "R² ajustado dentro de muestra de 0.4% en expansión contra 17.5% en recesión (Estados Unidos; Henkel, Martin y Nardari).",
+      "critique": "El régimen no se identifica a tiempo: hay cambios perdidos y falsas alarmas; el régimen \"malo\" sigue teniendo rendimiento medio positivo (0.33% mensual).",
+      "survives": "Pronósticos que reaccionan a tiempo mejoran medidas ajustadas por riesgo, no el rendimiento.",
+      "marks": [],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.1,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": null,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 15,
+        "rationale": "Las recesiones se fechan después."
+      },
+      "sources": [
+        {
+          "label": "Ang y Timmermann",
+          "url": "https://rady.ucsd.edu/_files/faculty-research/timmermann/regime_changes_June_22.pdf"
+        },
+        {
+          "label": "Henkel, Martin y Nardari, JFE 2011",
+          "url": "https://ideas.repec.org/a/eee/jfinec/v99y2011i3p560-580.html"
+        },
+        {
+          "label": "Gómez-Cram, JF 2022",
+          "url": "https://ideas.repec.org/a/bla/jfinan/v77y2022i2p923-966.html"
+        },
+        {
+          "label": "Haase y Neuenkirch, IJF 2023",
+          "url": "https://ideas.repec.org/a/eee/intfor/v39y2023i2p587-605.html"
+        }
+      ],
+      "section": "La predictibilidad se concentra en recesiones que solo se fechan después"
+    },
+    {
+      "id": "sentiment_signals",
+      "name": "Timing con sentimiento, opciones (VRP, SVIX) o interés corto",
+      "family": "timing",
+      "categories": [
+        "sentiment_options_short"
+      ],
+      "claim": "Sentimiento, varianza implícita e interés corto anticipan el mercado.",
+      "key_figure": "Interés corto: R² anual fuera de muestra de 13.24%; sentimiento alineado: R² fuera de muestra de 1.23% mensual contra 0.15% del original [WP]; VRP: R² ajustado trimestral dentro de muestra de 15.14% en el WP de 2007 y 6.82% en la versión publicada.",
+      "critique": "Muestras cortas y descubrimientos recientes, candidatos naturales al deterioro.",
+      "survives": "Señales prometedoras sin confirmación de reglas rentables.",
+      "marks": [
+        "WP"
+      ],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.2,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": 0.45,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 20,
+        "rationale": "Evidencia reciente y frágil entre versiones."
+      },
+      "sources": [
+        {
+          "label": "Baker y Wurgler, NBER w13189",
+          "url": "https://www.nber.org/system/files/working_papers/w13189/w13189.pdf"
+        },
+        {
+          "label": "Rapach, Ringgenberg y Zhou, JFE 2016",
+          "url": "https://ideas.repec.org/a/eee/jfinec/v121y2016i1p46-65.html"
+        },
+        {
+          "label": "Martin, QJE 2017",
+          "url": "https://eprints.lse.ac.uk/67036/7/Martin_What%20is%20the%20expected%20return%20on%20the%20market_published_2017%20LSERO.pdf"
+        },
+        {
+          "label": "Huang, Jiang, Tu y Zhou [WP]",
+          "url": "https://down.aefweb.net/WorkingPapers/w676.pdf"
+        },
+        {
+          "label": "Bollerslev, Tauchen y Zhou, FEDS 2007-11",
+          "url": "https://www.federalreserve.gov/pubs/feds/2007/200711/200711pap.pdf"
+        },
+        {
+          "label": "Bollerslev, Tauchen y Zhou, RFS 2009",
+          "url": "https://public.econ.duke.edu/~boller/Published_Papers/rfs_09.pdf"
+        }
+      ],
+      "section": "Sentimiento, opciones y ventas en corto son señales con muestras cortas"
+    },
+    {
+      "id": "calendar_index",
+      "name": "Efectos de calendario del índice (día de la semana, enero, Sell in May, Halloween)",
+      "family": "calendario",
+      "categories": [
+        "calendar_effects",
+        "backtest_overfitting"
+      ],
+      "claim": "Hay días y meses mejores para estar invertido.",
+      "key_figure": "Entre casi 9,500 reglas en 100 años del Dow, ninguna es significativa con el Reality Check.",
+      "critique": "Desaparecen tras publicarse; evidencia \"highly fragile\" con datos de 1960-2023; en siete mercados latinoamericanos, Sell in May \"never offered a significantly superior investment strategy than 'buy and hold'\" (lista de países y periodo no verificados).",
+      "survives": "Nada como regla; el cambio de mes es el más persistente, con evidencia mixta.",
+      "marks": [],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.3,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": 0.1,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 5,
+        "rationale": "Data snooping de manual."
+      },
+      "sources": [
+        {
+          "label": "Sullivan, Timmermann y White, J. of Econometrics 2001",
+          "url": "https://www.sciencedirect.com/science/article/abs/pii/S030440760100077X"
+        },
+        {
+          "label": "Hansen, Lunde y Nason, Atlanta Fed 2005",
+          "url": "https://ideas.repec.org/p/fip/fedawp/2005-02.html"
+        },
+        {
+          "label": "Kim y Shamsuddin, IRFA 2023",
+          "url": "https://ideas.repec.org/a/eee/finana/v90y2023ics1057521923003575.html"
+        },
+        {
+          "label": "Universidad de São Paulo, resumen OpenAlex",
+          "url": "https://api.openalex.org/works/doi:10.1080/10978526.2021.1997334"
+        }
+      ],
+      "section": "Entre 9,500 reglas de calendario, la mejor no supera lo esperable por azar"
+    },
+    {
+      "id": "turn_of_month",
+      "name": "Cambio de mes (estar invertido de 3 días antes a 3 días después)",
+      "family": "calendario",
+      "categories": [
+        "calendar_effects"
+      ],
+      "claim": "El ciclo de pagos institucionales concentra el rendimiento en el cambio de mes.",
+      "key_figure": "Capturó todo el exceso de rendimiento con la mitad de la volatilidad; alfas de 5.6% a 6.3% anual antes de costos [WP].",
+      "critique": "Plastun y coautores lo ven desvanecerse en el Dow en los años 2000.",
+      "survives": "El efecto de calendario del índice con mejor historia causal, con evidencia mixta reciente.",
+      "marks": [
+        "WP"
+      ],
+      "evidence": {
+        "gross_monthly_bps": 50,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 1.0,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": 0.42,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 18,
+        "rationale": "Causalmente plausible pero exige entrar y salir cada mes."
+      },
+      "sources": [
+        {
+          "label": "Etula et al., RFS 2020",
+          "url": "https://research.aalto.fi/en/publications/dash-for-cash-monthly-market-impact-of-institutional-liquidity-ne"
+        },
+        {
+          "label": "Dash for Cash [WP]",
+          "url": "https://orbilu.uni.lu/bitstream/10993/21145/1/Dash4Cash.pdf"
+        }
+      ],
+      "section": "La prima del día de anuncio es real; la deriva pre-FOMC se encogió de 49 a entre 5 y 20 puntos base"
+    },
+    {
+      "id": "pre_fomc",
+      "name": "Deriva pre-FOMC y días de anuncio",
+      "family": "calendario",
+      "categories": [
+        "calendar_effects"
+      ],
+      "claim": "La prima se concentra en los días de anuncios.",
+      "key_figure": "49 pb en las 24 horas previas al FOMC (1994-2011); 0.047% en 2011-2019; unos 20 pb overnight en 2011-2023.",
+      "critique": "El ciclo de semanas pares se invirtió en 2017-2021.",
+      "survives": "Hecho de valuación, no regla mecánica.",
+      "marks": [],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.67,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": 0.1,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 10,
+        "rationale": "Se encogió tras publicarse."
+      },
+      "sources": [
+        {
+          "label": "Lucca y Moench, NY Fed SR 512",
+          "url": "https://www.newyorkfed.org/medialibrary/media/research/staff_reports/sr512.pdf"
+        },
+        {
+          "label": "Kurov, Wolfe y Gilbert, FRL 2021",
+          "url": "https://www.sciencedirect.com/science/article/pii/S1544612320315956"
+        },
+        {
+          "label": "Knox y Vissing-Jorgensen, FEDS",
+          "url": "https://www.federalreserve.gov/econres/feds/files/2026023pap.pdf"
+        }
+      ],
+      "section": "La prima del día de anuncio es real; la deriva pre-FOMC se encogió de 49 a entre 5 y 20 puntos base"
+    },
+    {
+      "id": "cross_sectional_seasonality",
+      "name": "Estacionalidad entre acciones (mismo mes calendario)",
+      "family": "calendario",
+      "categories": [
+        "calendar_effects",
+        "anomaly_zoo"
+      ],
+      "claim": "Las acciones que rindieron bien en un mes calendario repiten en ese mes.",
+      "key_figure": "115 pb mensuales (t = 7.60) con el rezago de doce meses [WP].",
+      "critique": "Obliga a rotar toda la cartera cada mes; \"seasonalities are balanced out by seasonal reversals\".",
+      "survives": "Neutro para quien compra y mantiene.",
+      "marks": [
+        "WP"
+      ],
+      "evidence": {
+        "gross_monthly_bps": 115,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 1.0,
+        "requires_short": true,
+        "requires_leverage": false,
+        "microcap_dependence": "media",
+        "oos_retention": 0.42,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 10,
+        "rationale": "Los propios autores dudan que cubra costos de ida y vuelta."
+      },
+      "sources": [
+        {
+          "label": "Heston y Sadka [WP]",
+          "url": "https://w4.stern.nyu.edu/finance/docs/pdfs/Seminars/063f-sadka.pdf"
+        },
+        {
+          "label": "Keloharju, Linnainmaa y Nyberg, JFE 2021",
+          "url": "https://research.aalto.fi/en/publications/are-return-seasonalities-due-to-risk-or-mispricing/"
+        }
+      ],
+      "section": "La estacionalidad más sólida exige rotar toda la cartera cada mes"
+    },
+    {
+      "id": "ipc_calendar",
+      "name": "Calendario del IPC (lunes, enero, primer día del mes)",
+      "family": "calendario",
+      "categories": [
+        "calendar_effects",
+        "mexico_latam"
+      ],
+      "claim": "El IPC tiene días y meses mejores.",
+      "key_figure": "Lunes +0.062% diario (2000-2018); primer día hábil del mes +0.58% y segundo +0.30% (1993-2011).",
+      "critique": "El lunes pasó de ser el peor día (1986-2001) a ser el mejor; sin costos ni pruebas múltiples; no hay efecto enero robusto; el efecto post-feriado ya no aparece.",
+      "survives": "Nada demostrado neto de costos.",
+      "marks": [],
+      "evidence": {
+        "gross_monthly_bps": null,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 2.0,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "baja",
+        "oos_retention": 0.1,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 5,
+        "rationale": "Patrones de muestra que cambian de signo."
+      },
+      "sources": [
+        {
+          "label": "Villarreal-Samaniego et al., CyA 2022",
+          "url": "https://www.scielo.org.mx/scielo.php?pid=S0186-10422022000300005&script=sci_arttext"
+        },
+        {
+          "label": "Kristjanpoller y Arenas, CyA",
+          "url": "https://www.elsevier.es/es-revista-contaduria-administracion-87-articulo-el-efecto-fin-mes-los-S0186104215721479"
+        },
+        {
+          "label": "Cabello y Ortiz, REMEF",
+          "url": "https://remef.org.mx/index.php/primera/article/view/179"
+        }
+      ],
+      "section": "Sí hay estudios arbitrados del IPC, y en ellos el lunes pasó de ser el peor día a ser el mejor"
+    },
+    {
+      "id": "mexico_factors",
+      "name": "Factores en la BMV (momentum, volatilidad idiosincrática, lotería)",
+      "family": "factores",
+      "categories": [
+        "mexico_latam",
+        "momentum",
+        "anomaly_zoo"
+      ],
+      "claim": "Algunas anomalías predicen rendimientos en México.",
+      "key_figure": "Solo 3 de 19 anomalías predicen de forma robusta; momentum por terciles de 0.85% mensual, sin costos.",
+      "critique": "Con 71 a 130 emisoras los t-stats de las primas latinoamericanas (2.07 a 2.16, Cakici, Fabozzi y Tan) no pasarían el umbral de 3; \"conventional momentum produces zero risk-adjusted returns\" en cinco países de la región.",
+      "survives": "Nada demostrado neto de costos; no hay estimaciones de costos de factores en la BMV.",
+      "marks": [],
+      "evidence": {
+        "gross_monthly_bps": 85,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 0.6,
+        "requires_short": true,
+        "requires_leverage": false,
+        "microcap_dependence": "media",
+        "oos_retention": 0.42,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 10,
+        "rationale": "Universo pequeño y poco líquido; estadísticos frágiles."
+      },
+      "sources": [
+        {
+          "label": "Diaz-Ruiz, Herrerías y Vasquez, NAJEF 2020",
+          "url": "https://ideas.repec.org/a/eee/ecofin/v53y2020ics1062940820300851.html"
+        },
+        {
+          "label": "Berggrun, Cardona y Lizarzaburu, IRFA 2020",
+          "url": "https://www.sciencedirect.com/science/article/abs/pii/S1057521920301460"
+        },
+        {
+          "label": "Berggrun et al., RIBAF 2024",
+          "url": "https://ideas.repec.org/a/eee/riibaf/v70y2024ipbs0275531924001740.html"
+        },
+        {
+          "label": "Cakici, Fabozzi y Tan 2013",
+          "url": "https://gritcap.com/enoalroa/2020/10/Cakici-Size-value-and-momentum-factors-in-emerging-market-stock-returns-2013.pdf"
+        }
+      ],
+      "section": "Con 71 a 130 emisoras, los factores mexicanos tienen estadísticos t frágiles"
+    }
+  ]
+}
