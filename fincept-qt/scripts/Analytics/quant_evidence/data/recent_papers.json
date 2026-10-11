@@ -389,6 +389,259 @@
    ],
    "reliability": "journal",
    "how_it_changes_the_evidence_es": "Matiza mexico_factors: el momentum individual que encuentran Diaz-Ruiz et al. en la BMV no se extiende al momentum de industrias en la región."
+  },
+  {
+   "id": "ziobrowski_2004",
+   "authors": "Alan J. Ziobrowski, Ping Cheng, James W. Boyd, Brigitte J. Ziobrowski",
+   "year": 2004,
+   "title": "Abnormal Returns from the Common Stock Investments of the U.S. Senate",
+   "venue": "Journal of Financial and Quantitative Analysis 39(4), 661-676",
+   "url": "https://ideas.repec.org/a/cup/jfinqa/v39y2004i04p661-676_00.html",
+   "topic": "alt_signals",
+   "finding_es": "Entre 1993 y 1998, una cartera que imita las compras de los senadores supera al mercado y una que imita sus ventas queda por debajo; la diferencia es de casi un punto porcentual al mes.",
+   "key_figure": "+85 pb mensuales (compras) y −12 pb mensuales (ventas)",
+   "key_figure_quote": "We document that a portfolio that mimics the purchases of U.S. Senators beats the market by 85 basis points per month, while a portfolio that mimics the sales of Senators lags the market by 12 basis points per month.",
+   "related_strategy_ids": [
+    "congress_copy"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Es la cifra de origen del mito de los congresistas que le ganan al mercado; es anterior a la STOCK Act y se mide desde la fecha de la operación, no desde que el público puede verla."
+  },
+  {
+   "id": "ziobrowski_2011",
+   "authors": "Alan J. Ziobrowski, James W. Boyd, Ping Cheng, Brigitte J. Ziobrowski",
+   "year": 2011,
+   "title": "Abnormal Returns From the Common Stock Investments of Members of the U.S. House of Representatives",
+   "venue": "Business and Politics 13(1)",
+   "url": "https://www.cambridge.org/core/journals/business-and-politics/article/abnormal-returns-from-the-common-stock-investments-of-members-of-the-us-house-of-representatives/BC6C6A524BBE96738BB94D37EF0FD1A5",
+   "topic": "alt_signals",
+   "finding_es": "Con los mismos métodos, más de 16,000 operaciones de unos 300 diputados (1985-2001) muestran rendimientos anormales positivos en las compras, pero bastante menores que los de los senadores.",
+   "key_figure": "+55 pb mensuales (aprox. 6% anual)",
+   "key_figure_quote": "A portfolio that mimics the purchases of House Members beats the market by 55 basis points per month (approximately 6% annually).",
+   "related_strategy_ids": [
+    "congress_copy"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Confirma el efecto en la Cámara pero más chico; sigue siendo evidencia previa a 2012 y medida desde la operación."
+  },
+  {
+   "id": "eggers_hainmueller_2013",
+   "authors": "Andrew C. Eggers, Jens Hainmueller",
+   "year": 2013,
+   "title": "Capitol Losses: The Mediocre Performance of Congressional Stock Portfolios",
+   "venue": "Journal of Politics 75(2), 535-551",
+   "url": "https://eprints.lse.ac.uk/46513",
+   "topic": "alt_signals",
+   "finding_es": "Reinterpretan los estudios de 1985-2001 y analizan 2004-2008: en ninguno de los dos periodos encuentran ventaja informativa; con las carteras completas, el congresista promedio habría ganado más en un fondo indexado.",
+   "key_figure": "El congresista promedio habría ganado más en un fondo indexado pasivo (2004-2008)",
+   "key_figure_quote": "Second, we conduct the first analysis of members’ portfolio holdings, showing that between 2004 and 2008 the average member of Congress would have earned higher returns in a passive index fund.",
+   "related_strategy_ids": [
+    "congress_copy"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Contradice directamente a Ziobrowski et al. y convierte la tesis en disputada aun antes de la STOCK Act."
+  },
+  {
+   "id": "karadas_2019",
+   "authors": "Serkan Karadas",
+   "year": 2019,
+   "title": "Trading on Private Information: Evidence from Members of Congress",
+   "venue": "The Financial Review 54(1), 85-131",
+   "url": "https://ideas.repec.org/a/bla/finrev/v54y2019i1p85-131.html",
+   "topic": "alt_signals",
+   "finding_es": "En 2004-2010 las carteras compra-menos-venta de republicanos poderosos tienen los mayores rendimientos anormales, sobre todo en los menos experimentados; esos rendimientos positivos desaparecen tras la STOCK Act de 2012.",
+   "key_figure": "Más de 35% anual con tenencia de una semana (republicanos poderosos, 2004-2010)",
+   "key_figure_quote": "I examine the stock trades of members of Congress and find that over 2004–2010 the buy‐minus‐sell portfolios of powerful Republicans have the highest abnormal returns, exceeding 35% on an annual basis under a one‐week holding period.",
+   "related_strategy_ids": [
+    "congress_copy"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "La cifra es enorme pero exige operar en largo y corto en la semana de la operación (imposible para quien espera la divulgación) y el propio autor la ve desaparecer tras 2012."
+  },
+  {
+   "id": "belmont_2022",
+   "authors": "William Belmont, Bruce Sacerdote, Ranjan Sehgal, Ian Van Hoek",
+   "year": 2022,
+   "title": "Do senators and house members beat the stock market? Evidence from the STOCK Act",
+   "venue": "Journal of Public Economics 207 (versión previa: NBER w26975, 2020, \"Relief Rally\")",
+   "url": "https://ideas.repec.org/a/eee/pubeco/v207y2022ics0047272722000044.html",
+   "topic": "alt_signals",
+   "finding_es": "Con todas las operaciones de senadores y diputados de 2012 a 2020 no hay desempeño superior, ni en agregado ni en los senadores acusados de usar información privilegiada; incluso en los percentiles 95 y 99 los resultados son consistentes con elegir al azar.",
+   "key_figure": "Compras de diputados: −26 pb a seis meses; ventas: −11 pb",
+   "key_figure_quote": "Over a six-month horizon, stocks bought by House Members underperform on average by 26 basis points, while stocks sold underperform by 11 basis points.",
+   "related_strategy_ids": [
+    "congress_copy"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Es la evidencia arbitrada más directa para el periodo que puede copiarse hoy: tras la STOCK Act copiar compras no muestra ventaja ni siquiera antes de costos."
+  },
+  {
+   "id": "wei_zhou_2025",
+   "authors": "Shang-Jin Wei, Yifan Zhou",
+   "year": 2025,
+   "title": "\"Captain Gains\" on Capitol Hill",
+   "venue": "NBER Working Paper 34524",
+   "url": "https://www.nber.org/papers/w34524",
+   "topic": "alt_signals",
+   "finding_es": "Los legisladores que llegan a puestos de liderazgo rinden igual que pares comparables antes del ascenso y mucho mejor después, por influencia política (ventas antes de acciones regulatorias, compras de empresas con más contratos de gobierno) y por acceso corporativo.",
+   "key_figure": "+47 puntos porcentuales anuales frente a pares, tras el ascenso",
+   "key_figure_quote": "Using transaction-level data on US congressional stock trades, we find that lawmakers who later ascend to leadership positions perform similarly to matched peers beforehand but outperform them by 47 percentage points annually after ascension.",
+   "related_strategy_ids": [
+    "congress_copy"
+   ],
+   "reliability": "WP",
+   "how_it_changes_the_evidence_es": "Sugiere que la información existe pero se concentra en unos 20 líderes; la ventaja es relativa a otros congresistas y no está medida desde la fecha de divulgación ni neta de costos."
+  },
+  {
+   "id": "lakonishok_lee_2001",
+   "authors": "Josef Lakonishok, Inmoo Lee",
+   "year": 2001,
+   "title": "Are Insider Trades Informative?",
+   "venue": "Review of Financial Studies 14(1), 79-111",
+   "url": "https://ideas.repec.org/a/oup/rfinst/v14y2001i1p79-111.html",
+   "topic": "alt_signals",
+   "finding_es": "Con todas las empresas de NYSE, AMEX y Nasdaq (1975-1995) el mercado apenas se mueve cuando los insiders operan o reportan; sus compras predicen rendimientos de corte transversal, sobre todo en empresas pequeñas, y sus ventas no.",
+   "key_figure": "La predictibilidad se debe a empresas pequeñas y a las compras",
+   "key_figure_quote": "The result, however, is driven by insider's ability to predict returns in smaller firms.",
+   "related_strategy_ids": [
+    "insider_purchases"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Aclara dónde vive la señal: compras y empresas pequeñas, justo donde los costos de operar son mayores."
+  },
+  {
+   "id": "jeng_metrick_zeckhauser_2003",
+   "authors": "Leslie A. Jeng, Andrew Metrick, Richard Zeckhauser",
+   "year": 2003,
+   "title": "Estimating the Returns to Insider Trading: A Performance-Evaluation Perspective",
+   "venue": "Review of Economics and Statistics 85(2), 453-471 (versión previa: NBER w6913)",
+   "url": "https://ideas.repec.org/a/tpr/restat/v85y2003i2p453-471.html",
+   "topic": "alt_signals",
+   "finding_es": "Con carteras de calendario, las compras de los insiders ganan rendimientos anormales y las ventas no. En la versión NBER, una sexta parte del rendimiento llega en los primeros cinco días y un tercio en el primer mes.",
+   "key_figure": "Más de 6% anual en compras; ventas sin rendimiento anormal significativo",
+   "key_figure_quote": "We find that insider purchases earn abnormal returns of more than 6% per year, and insider sales do not earn significant abnormal returns.",
+   "related_strategy_ids": [
+    "insider_purchases"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Mide el rendimiento del propio insider desde el día siguiente a su operación; quien copia tras la divulgación pierde la parte que llega en los primeros días."
+  },
+  {
+   "id": "cohen_malloy_pomorski_2012",
+   "authors": "Lauren Cohen, Christopher Malloy, Lukasz Pomorski",
+   "year": 2012,
+   "title": "Decoding Inside Information",
+   "venue": "Journal of Finance 67(3), 1009-1043 (versión previa: NBER w16454)",
+   "url": "https://ideas.repec.org/a/bla/jfinan/v67y2012i3p1009-1043.html",
+   "topic": "alt_signals",
+   "finding_es": "Separan las operaciones rutinarias (más de la mitad del total, sin información) de las oportunistas, que concentran todo el poder predictivo; los más informados son insiders locales no ejecutivos de empresas mal gobernadas.",
+   "key_figure": "82 pb mensuales ponderados por valor (oportunistas) contra casi cero (rutinarias)",
+   "key_figure_quote": "A portfolio strategy that focuses solely on the remaining “opportunistic” traders yields value‐weighted abnormal returns of 82 basis points per month, while abnormal returns associated with routine traders are essentially zero.",
+   "related_strategy_ids": [
+    "insider_purchases"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Da la regla práctica para filtrar la señal; también muestra que los oportunistas reciben más acciones de la SEC y operan menos tras olas de sanciones, lo que anticipa que el efecto puede menguar."
+  },
+  {
+   "id": "lin_howe_1990",
+   "authors": "Ji-Chai Lin, John S. Howe",
+   "year": 1990,
+   "title": "Insider Trading in the OTC Market",
+   "venue": "Journal of Finance 45(4), 1273-1284",
+   "url": "https://ideas.repec.org/a/bla/jfinan/v45y1990i4p1273-84.html",
+   "topic": "alt_signals",
+   "finding_es": "Los insiders de empresas OTC/NASDAQ muestran capacidad de anticipar, pero los costos de transacción, sobre todo el diferencial de compra-venta, eliminan el rendimiento anormal de operar activamente; por implicación, también el de quien los imita.",
+   "key_figure": "Los diferenciales de compra-venta eliminan el rendimiento anormal",
+   "key_figure_quote": "Although the evidence suggests timing and forecasting ability on the part of insiders, high transaction costs (especially bid-ask spreads) appear to eliminate the potential for positive abnormal returns from active trading.",
+   "related_strategy_ids": [
+    "insider_purchases"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Evidencia temprana de que en acciones pequeñas la señal no sobrevive a costos para un imitador."
+  },
+  {
+   "id": "bettis_vickrey_vickrey_1997",
+   "authors": "Carr Bettis, Don Vickrey, Donn W. Vickrey",
+   "year": 1997,
+   "title": "Mimickers of Corporate Insiders Who Make Large-Volume Trades",
+   "venue": "Financial Analysts Journal 53(5), 57-66",
+   "url": "https://ideas.repec.org/a/taf/ufajxx/v53y1997i5p57-66.html",
+   "topic": "alt_signals",
+   "finding_es": "A diferencia de estudios previos, encuentran que los externos pueden obtener rendimientos anormales significativos imitando las operaciones de gran volumen de los insiders después de que se reportan.",
+   "related_strategy_ids": [
+    "insider_purchases"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Es el principal apoyo a que copiar tras la divulgación funcione, limitado a operaciones grandes; el resumen no reporta cifras netas de costos."
+  },
+  {
+   "id": "gangopadhyay_yook_2021",
+   "authors": "Partha Gangopadhyay, Ken Yook",
+   "year": 2021,
+   "title": "Profits to opportunistic insider trading before and after the Dodd-Frank act of 2010",
+   "venue": "Journal of Financial Regulation and Compliance 30",
+   "url": "https://ideas.repec.org/a/eme/jfrcpp/jfrc-02-2021-0018.html",
+   "topic": "alt_signals",
+   "finding_es": "Con la clasificación de Cohen, Malloy y Pomorski, las compras oportunistas eran muy rentables antes de Dodd-Frank y significativamente menos después.",
+   "key_figure": "Ganancias de compras oportunistas significativamente menores tras 2010",
+   "key_figure_quote": "Profits after opportunistic purchases were significantly lower after the DFA.",
+   "related_strategy_ids": [
+    "insider_purchases"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Evidencia de deterioro posterior a 2010 del mejor filtro publicado; revista de menor perfil."
+  },
+  {
+   "id": "zhao_2026",
+   "authors": "Hangyi Zhao",
+   "year": 2026,
+   "title": "Insider Purchases Far Below the 52-Week High: Decomposing the Disclosure Reaction in Microcap Equities",
+   "venue": "arXiv 2602.06198",
+   "url": "https://arxiv.org/abs/2602.06198",
+   "topic": "alt_signals",
+   "finding_es": "En compras de insiders de empresas de 30 a 500 millones de dólares (2018-2024), la reacción al Formulario 4 es grande el primer día, sobre todo lejos del máximo de 52 semanas, pero dura dos o tres sesiones y una cartera que salta el primer día no obtiene alfa significativa.",
+   "key_figure": "Reacción de 2 a 3 sesiones; sin alfa significativa si se salta el primer día",
+   "key_figure_quote": "The reaction runs for two to three sessions; the 29-day drift is imprecise (two-way t = 1.70) and a calendar-time portfolio that skips the first day earns no significant alpha.",
+   "related_strategy_ids": [
+    "insider_purchases"
+   ],
+   "reliability": "WP",
+   "how_it_changes_the_evidence_es": "Evidencia reciente de que, tras la divulgación, casi todo el efecto se cobra de inmediato; quien llega un día tarde no captura alfa significativa. Autor único, sin arbitraje."
+  },
+  {
+   "id": "chen_parsley_yang_2015",
+   "authors": "Hui Chen, David Parsley, Ya-Wen Yang",
+   "year": 2015,
+   "title": "Corporate Lobbying and Firm Performance",
+   "venue": "Journal of Business Finance & Accounting 42(3-4), 444-481",
+   "url": "https://ideas.repec.org/a/bla/jbfnac/v42y2015i3-4p444-481.html",
+   "topic": "alt_signals",
+   "finding_es": "Con datos de la Lobbying Disclosure Act de 1995, el cabildeo se relaciona positivamente con el desempeño contable y de mercado; las carteras de empresas con mayor intensidad de cabildeo superan a sus referencias en los tres años siguientes.",
+   "key_figure": "Las carteras con mayor intensidad de cabildeo superan su referencia durante tres años",
+   "key_figure_quote": "We find that portfolios of firms with the highest lobbying intensities significantly outperform their benchmarks in the three years following portfolio formation.",
+   "related_strategy_ids": [
+    "congress_copy"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Da contexto al cabildeo como característica de la empresa; es una señal lenta de corte transversal y no prueba que copiar a políticos funcione. Publicado en JBFA, no en JFQA."
+  },
+  {
+   "id": "palkar_larson_larson_2012",
+   "authors": "Darshana D. Palkar, Stephen J. Larson, Robert B. Larson",
+   "year": 2012,
+   "title": "The valuation effects of military contract awards surrounding 11th September",
+   "venue": "Applied Financial Economics 22(2), 147-164",
+   "url": "https://ideas.repec.org/a/taf/apfiec/v22y2012i2p147-164.html",
+   "topic": "alt_signals",
+   "finding_es": "Los ganadores de contratos militares tienen rendimientos anormales positivos el día del anuncio antes y después del 11 de septiembre de 2001; a largo plazo, los contratos posteriores al 11-S parecen haber estado subfinanciados.",
+   "key_figure": "Rendimiento anormal positivo el día del anuncio del contrato",
+   "key_figure_quote": "Consistent with previous studies, we find positive abnormal returns on the announcement day for both pre and post 11 September 2001 contracts.",
+   "related_strategy_ids": [
+    "congress_copy"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "El anuncio de un contrato de gobierno mueve el precio el mismo día; para quien lo ve en una base de datos días después, el efecto ya ocurrió."
   }
  ],
  "methods": [
@@ -492,5 +745,24 @@
   "Arian, Norouzi y Seco, 'Backtest overfitting in the machine learning era' (Knowledge-Based Systems 2024): no se localizó",
   "Zuluaga-Rendón y Agudelo, 'Nonparametric identification of factors for the cross-section of Latin American stock returns' (Global Finance Journal 68, 2025): solo referencia bibliográfica, sin abstract accesible",
   "No se encontraron papers 2023-2026 específicos de México (factores o calendario) verificables; lo más cercano ya está en la base (Berggrun et al. RIBAF 2024, Villarreal-Samaniego et al. 2022)"
+ ],
+ "etfs": [
+  {
+   "symbol": "NANC",
+   "name": "Unusual Whales Subversive Democratic Trading ETF (listado en Cboe como Subversive Congressional Democrats Trading ETF)",
+   "what_it_copies": "Acciones compradas o vendidas por miembros demócratas del Congreso de EE. UU. y sus cónyuges, según las declaraciones de la STOCK Act.",
+   "inception": "2023-02-07",
+   "source_url": "https://www.cboe.com/us/equities/listings/listed_products/symbols/NANC/",
+   "short_es": "Copia a congresistas demócratas"
+  },
+  {
+   "symbol": "GOP",
+   "name": "Unusual Whales Subversive Republican Trading ETF (cambió su ticker a GOP en marzo de 2025)",
+   "what_it_copies": "Acciones compradas o vendidas por miembros republicanos del Congreso de EE. UU. y sus cónyuges, según las declaraciones de la STOCK Act.",
+   "inception": "2023-02-07",
+   "source_url": "https://www.cboe.com/us/equities/listings/listed_products/symbols/GOP/",
+   "short_es": "Copia a congresistas republicanos",
+   "former_symbol": "KRUZ"
+  }
  ]
 }

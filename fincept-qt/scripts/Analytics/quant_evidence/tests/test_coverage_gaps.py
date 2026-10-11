@@ -65,7 +65,7 @@ class TestParityAllStrategies(unittest.TestCase):
         repo = {'modules': [{'path': 'x.py', 'categories': ['momentum', 'value', 'calendar_effects']}]}
         cases = [dict(p, strategy_id=s['id']) for s in load_kb()['strategies'] for p in self.PROFILES]
         js = _node("return A[0].map(c=>E.evaluateDecision(c,kb,A[1]));", cases, repo)
-        self.assertEqual(len(js), 44 * 3)
+        self.assertEqual(len(js), len(load_kb()["strategies"]) * 3)
         for case, js_res in zip(cases, js):
             with self.subTest(case=case):
                 _close(_strip_text(evaluate_decision(case, repo_map=repo)), _strip_text(js_res))

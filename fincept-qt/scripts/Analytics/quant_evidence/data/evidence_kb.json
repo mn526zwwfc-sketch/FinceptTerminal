@@ -2162,6 +2162,137 @@
         }
       ],
       "section": "Con 71 a 130 emisoras, los factores mexicanos tienen estadísticos t frágiles"
+    },
+    {
+      "id": "congress_copy",
+      "name": "Copiar las compras de congresistas de EE. UU. tras su divulgación (STOCK Act)",
+      "family": "factores",
+      "categories": [
+        "active_funds_retail",
+        "anomaly_zoo"
+      ],
+      "claim": "Los legisladores saben antes lo que hará el gobierno; copiar sus compras gana al mercado.",
+      "key_figure": "Antes de la STOCK Act: compras de senadores +85 pb mensuales (1993-1998) y de diputados +55 pb mensuales (1985-2001), medidas desde la fecha de la operación. Después: de 2012 a 2020 las acciones compradas por diputados quedan 26 pb debajo a seis meses; los líderes partidistas superan a sus pares por 47 puntos porcentuales al año [WP].",
+      "critique": "Eggers y Hainmueller reinterpretan las cifras de Ziobrowski y no hallan ventaja informativa; de 2004 a 2008 el congresista promedio habría ganado más en un fondo indexado. Karadas ve alfas en republicanos poderosos que desaparecen tras la STOCK Act de 2012. Las cifras positivas se miden desde la fecha de la operación, no desde su divulgación, que es cuando un inversionista puede copiar. La ventaja de los líderes es relativa a otros congresistas, no un alfa probado contra el mercado. Los ETF NANC y KRUZ (hoy GOP) existen desde febrero de 2023: historial de menos de cuatro años.",
+      "survives": "Tras la STOCK Act, la evidencia arbitrada es consistente con elegir acciones al azar; no hay cifra neta de costos publicada para quien copia tras la divulgación. El evaluador usa −4 pb mensuales: los −26 pb a seis meses de Belmont et al. (2012-2020) divididos entre 6. Esa cifra es antes de costos, así que el neto real de quien copia sería menor.",
+      "marks": [
+        "WP",
+        "sec."
+      ],
+      "evidence": {
+        "gross_monthly_bps": 55,
+        "net_monthly_bps": -4,
+        "typical_turnover_monthly": 0.3,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "media",
+        "oos_retention": 0.42,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 8,
+        "rationale": "La ventaja se midió antes de 2012 y desde la fecha de la operación; tras la STOCK Act no aparece."
+      },
+      "sources": [
+        {
+          "label": "Ziobrowski et al., JFQA 2004",
+          "url": "https://ideas.repec.org/a/cup/jfinqa/v39y2004i04p661-676_00.html"
+        },
+        {
+          "label": "Ziobrowski et al., Business and Politics 2011",
+          "url": "https://www.cambridge.org/core/journals/business-and-politics/article/abnormal-returns-from-the-common-stock-investments-of-members-of-the-us-house-of-representatives/BC6C6A524BBE96738BB94D37EF0FD1A5"
+        },
+        {
+          "label": "Eggers y Hainmueller, Journal of Politics 2013",
+          "url": "https://eprints.lse.ac.uk/46513"
+        },
+        {
+          "label": "Karadas, Financial Review 2019",
+          "url": "https://ideas.repec.org/a/bla/finrev/v54y2019i1p85-131.html"
+        },
+        {
+          "label": "Belmont, Sacerdote, Sehgal y Van Hoek, JPubE 2022",
+          "url": "https://ideas.repec.org/a/eee/pubeco/v207y2022ics0047272722000044.html"
+        },
+        {
+          "label": "Wei y Zhou, NBER w34524 [WP]",
+          "url": "https://www.nber.org/papers/w34524"
+        },
+        {
+          "label": "Cboe: listado de NANC",
+          "url": "https://www.cboe.com/us/equities/listings/listed_products/symbols/NANC/"
+        },
+        {
+          "label": "Cboe: listado de GOP (antes KRUZ)",
+          "url": "https://www.cboe.com/us/equities/listings/listed_products/symbols/GOP/"
+        },
+        {
+          "label": "The Daily Upside, cambio de ticker KRUZ a GOP [sec.]",
+          "url": "https://www.thedailyupside.com/investments/etfs/new-gop-ticker-spotlights-politically-themed-etfs/"
+        }
+      ],
+      "section": "Señales alternativas"
+    },
+    {
+      "id": "insider_purchases",
+      "name": "Seguir compras \"oportunistas\" de directivos (Formulario 4 de la SEC)",
+      "family": "factores",
+      "categories": [
+        "anomaly_zoo",
+        "trading_costs_turnover"
+      ],
+      "claim": "Cuando un directivo compra acciones de su propia empresa con su dinero, sabe algo que el mercado no.",
+      "key_figure": "Compras de insiders: más de 6% anual de rendimiento anormal para el propio insider (1975-1996); compras y ventas \"oportunistas\", 82 pb mensuales ponderados por valor, contra casi cero de las rutinarias.",
+      "critique": "La predictibilidad viene de las compras (las ventas casi no informan) y se concentra en empresas pequeñas. Los rendimientos se miden desde la operación del insider, no desde la publicación del Formulario 4. En NASDAQ/OTC los diferenciales de compra-venta borran la ganancia de quien imita; tras Dodd-Frank (2010) las ganancias de las compras oportunistas bajaron significativamente. En microcaps 2018-2024 la reacción ocurre en dos o tres sesiones y una cartera que salta el primer día no logra alfa significativa [WP].",
+      "survives": "Señal real en los datos históricos, concentrada en acciones pequeñas y en los primeros días; sin cifra neta verificada para quien la sigue después de la divulgación.",
+      "marks": [
+        "WP"
+      ],
+      "evidence": {
+        "gross_monthly_bps": 50,
+        "net_monthly_bps": null,
+        "typical_turnover_monthly": 1.0,
+        "requires_short": false,
+        "requires_leverage": false,
+        "microcap_dependence": "alta",
+        "oos_retention": 0.42,
+        "realtime_sharpe": null
+      },
+      "prior": {
+        "score": 18,
+        "rationale": "La señal más documentada de las alternativas, pero se cobra en pocos días y en acciones pequeñas caras de operar."
+      },
+      "sources": [
+        {
+          "label": "Lakonishok y Lee, RFS 2001",
+          "url": "https://ideas.repec.org/a/oup/rfinst/v14y2001i1p79-111.html"
+        },
+        {
+          "label": "Jeng, Metrick y Zeckhauser, REStat 2003",
+          "url": "https://ideas.repec.org/a/tpr/restat/v85y2003i2p453-471.html"
+        },
+        {
+          "label": "Cohen, Malloy y Pomorski, JF 2012",
+          "url": "https://ideas.repec.org/a/bla/jfinan/v67y2012i3p1009-1043.html"
+        },
+        {
+          "label": "Lin y Howe, JF 1990",
+          "url": "https://ideas.repec.org/a/bla/jfinan/v45y1990i4p1273-84.html"
+        },
+        {
+          "label": "Bettis, Vickrey y Vickrey, FAJ 1997",
+          "url": "https://ideas.repec.org/a/taf/ufajxx/v53y1997i5p57-66.html"
+        },
+        {
+          "label": "Gangopadhyay y Yook, JFRC 2021",
+          "url": "https://ideas.repec.org/a/eme/jfrcpp/jfrc-02-2021-0018.html"
+        },
+        {
+          "label": "Zhao, arXiv 2602.06198 [WP]",
+          "url": "https://arxiv.org/abs/2602.06198"
+        }
+      ],
+      "section": "Señales alternativas"
     }
   ]
 }
