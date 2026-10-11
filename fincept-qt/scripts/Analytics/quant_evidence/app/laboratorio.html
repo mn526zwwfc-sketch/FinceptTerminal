@@ -18,6 +18,7 @@
   --accent-soft: #e3ecf8;
   --series-1: #2a78d6;
   --series-fill: rgba(42, 120, 214, 0.10);
+  --series-2: #eb6834;
   --neg-fill: rgba(208, 59, 59, 0.13);
   --good: #0ca30c;
   --warn: #fab219;
@@ -35,14 +36,14 @@
   :root:not([data-theme="light"]) {
     --paper: #0f151b; --sheet: #151c23; --ink: #e4eaef; --ink-2: #b2bec8; --ink-3: #8794a0;
     --rule: #2a343e; --rule-2: #212a33; --accent: #7aa5ff; --accent-ink: #0d1520; --accent-soft: #1b2a40;
-    --series-1: #3987e5; --series-fill: rgba(57, 135, 229, 0.16); --neg-fill: rgba(230, 103, 103, 0.18);
+    --series-1: #3987e5; --series-2: #d95926; --series-fill: rgba(57, 135, 229, 0.16); --neg-fill: rgba(230, 103, 103, 0.18);
     --good-ink: #5fd35f; --warn-ink: #fab219; --bad-ink: #ff8a8a; --chip: #202a33; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #0f151b; --sheet: #151c23; --ink: #e4eaef; --ink-2: #b2bec8; --ink-3: #8794a0;
   --rule: #2a343e; --rule-2: #212a33; --accent: #7aa5ff; --accent-ink: #0d1520; --accent-soft: #1b2a40;
-  --series-1: #3987e5; --series-fill: rgba(57, 135, 229, 0.16); --neg-fill: rgba(230, 103, 103, 0.18);
+  --series-1: #3987e5; --series-2: #d95926; --series-fill: rgba(57, 135, 229, 0.16); --neg-fill: rgba(230, 103, 103, 0.18);
   --good-ink: #5fd35f; --warn-ink: #fab219; --bad-ink: #ff8a8a; --chip: #202a33; color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -200,6 +201,16 @@ tr.click { cursor: pointer; } tr.click:hover td { background: var(--accent-soft)
 .method .card { padding: 16px 18px; display: grid; gap: 8px; }
 .formula { font-family: var(--font-data); font-size: 12.5px; background: var(--chip); padding: 8px 10px; border-radius: 5px; overflow-x: auto; white-space: nowrap; }
 
+/* Signals */
+.sigbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.sigbar label.f { min-width: 160px; }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; }
+@media (max-width: 560px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tile { background: var(--sheet); padding: 10px 12px; display: grid; gap: 2px; min-width: 0; }
+.tile .v { font-family: var(--font-data); font-size: 18px; font-variant-numeric: tabular-nums; }
+.tile .k { font-size: 11.5px; color: var(--ink-2); }
+.srcs { display: flex; flex-wrap: wrap; gap: 6px; }
+.legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
 .foot { margin-top: 28px; font-size: 12px; color: var(--ink-3); max-width: 90ch; }
 @media (prefers-reduced-motion: no-preference) { .fade { animation: fade .25s ease both; } @keyframes fade { from { opacity: .4; } to { opacity: 1; } } }
 </style>
@@ -219,6 +230,7 @@ tr.click { cursor: pointer; } tr.click:hover td { background: var(--accent-soft)
   <nav class="tabs" role="tablist" aria-label="Secciones">
     <button role="tab" id="tab-audit" aria-controls="v-audit" aria-selected="true">Auditoría</button>
     <button role="tab" id="tab-monitor" aria-controls="v-monitor" aria-selected="false">Monitor de factores</button>
+    <button role="tab" id="tab-signals" aria-controls="v-signals" aria-selected="false">Señales</button>
     <button role="tab" id="tab-evidence" aria-controls="v-evidence" aria-selected="false">Evidencia</button>
     <button role="tab" id="tab-method" aria-controls="v-method" aria-selected="false">Método</button>
   </nav>
@@ -375,6 +387,46 @@ tr.click { cursor: pointer; } tr.click:hover td { background: var(--accent-soft)
     </div>
   </section>
 
+  <!-- ── Señales alternativas ──────────────────────────────────────────── -->
+  <section class="view" id="v-signals" role="tabpanel" aria-labelledby="tab-signals" hidden>
+    <div style="display:grid;gap:16px">
+      <div class="card panel">
+        <div style="display:grid;gap:4px">
+          <h2>Señales alternativas</h2>
+          <p class="small muted">Qué compran y venden los congresistas de EE. UU. y los directivos de la empresa, y cuánto gasta la empresa en lobbying y recibe en contratos de gobierno. Datos de Alpha Vantage y Quiver Quant con tus conectores; se guardan 12 h en este navegador.</p>
+        </div>
+        <form class="sigbar" id="sig-form">
+          <label class="f" for="in-sig">Ticker de EE. UU.
+            <input type="text" id="in-sig" value="NVDA" autocomplete="off" spellcheck="false">
+          </label>
+          <button class="btn primary" type="submit" id="btn-sig">Consultar</button>
+          <button class="btn" type="button" id="btn-sig-refresh">Actualizar</button>
+        </form>
+        <div class="srcs" id="sig-srcs"></div>
+      </div>
+      <div class="grid2">
+        <div class="card panel">
+          <header><h2>Congreso</h2><span class="small muted" id="sig-c-note"></span></header>
+          <div id="sig-congress"><p class="small muted">Escribe un ticker y presiona Consultar.</p></div>
+        </div>
+        <div class="card panel">
+          <header><h2>Directivos de la empresa</h2><span class="small muted" id="sig-i-note"></span></header>
+          <div id="sig-insider"><p class="small muted">Formulario 4 de la SEC: compras y ventas de directores, ejecutivos y accionistas mayores.</p></div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="card panel">
+          <header><h2>Washington</h2><span class="small muted">lobbying y contratos · Quiver Quant</span></header>
+          <div id="sig-dc"><p class="small muted">Lobbying y contratos federales de la empresa.</p></div>
+        </div>
+        <div class="card panel">
+          <header><h2>Qué dice la evidencia</h2></header>
+          <div id="sig-evidence"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ── Evidencia ─────────────────────────────────────────────────────── -->
   <section class="view" id="v-evidence" role="tabpanel" aria-labelledby="tab-evidence" hidden>
     <div class="ev">
@@ -465,7 +517,7 @@ var PAPERS = /*__PAPERS__*/null;
   var FAMILY_ES = { base: 'Base', factores: 'Factores', 'machine learning': 'Machine learning', timing: 'Timing', cartera: 'Cartera', comportamiento: 'Comportamiento', calendario: 'Calendario' };
 
   // ── Tabs ─────────────────────────────────────────────────────────────
-  var TABS = ['audit', 'monitor', 'evidence', 'method'];
+  var TABS = ['audit', 'monitor', 'signals', 'evidence', 'method'];
   function showTab(name) {
     TABS.forEach(function (t) {
       $('tab-' + t).setAttribute('aria-selected', t === name ? 'true' : 'false');
@@ -473,6 +525,7 @@ var PAPERS = /*__PAPERS__*/null;
     });
     store('lab.tab', name);
     if (name === 'monitor') monitorOpen();
+    if (name === 'signals') signalsOpen();
     if (name === 'audit') redrawCharts();
   }
   TABS.forEach(function (t) { $('tab-' + t).onclick = function () { showTab(t); }; });
@@ -497,26 +550,65 @@ var PAPERS = /*__PAPERS__*/null;
     setPill('st-claude', cap.sample ? 'wait' : 'off', cap.sample ? 'Claude: listo al usarlo' : 'Claude: no disponible aquí');
     if (!cap.sample) { $('btn-memo').disabled = true; $('memo').innerHTML = '<p class="muted">El informe con Claude solo funciona dentro de claude.ai. Las cifras de la auditoría no dependen de él.</p>'; }
     if (!$('v-monitor').hidden) monitorOpen();
+    if (!$('v-signals').hidden) signalsOpen();
   });
 
-  // ── Alpha Vantage ────────────────────────────────────────────────────
+  // ── Connectors (Alpha Vantage, Quiver Quant) ───────────────────────────
+  var QV = 'Quiver Quant';
   var avQueue = Promise.resolve(), avLast = 0;
-  var AV_COPY = {
-    server_not_connected: 'Agrega el conector de Alpha Vantage en claude.ai → Ajustes → Conectores y vuelve a intentar.',
-    needs_reauth: 'Vuelve a conectar Alpha Vantage en claude.ai → Ajustes → Conectores.',
-    selection_required: 'Tienes más de un conector de Alpha Vantage: elige uno en el aviso de claude.ai.',
-    not_in_manifest: 'Esta página no tiene permiso para usar Alpha Vantage. Ábrelo en el menú Permisos del artefacto.',
-    consent_required: 'Esta página no tiene permiso para usar Alpha Vantage. Vuelve a intentar y acepta el aviso.',
-    blocked_by_policy: 'Tu organización bloquea esta herramienta de Alpha Vantage.',
-    approval_required: 'La consulta necesita tu aprobación. Vuelve a intentar y acepta el aviso.'
-  };
-  function avError(e) {
-    var code = e && e.code;
-    if (code && AV_COPY[code]) return { msg: AV_COPY[code], fatal: true };
-    if (code === 'server_unavailable') return { msg: 'Alpha Vantage no respondió. Intenta en unos minutos.', retry: true };
-    if (code === 'not_granted' || code === 'capability_disabled' || code === 'capability_removed') return { msg: 'Esta vista no puede usar conectores. Usa «Mis datos» o el ejemplo.', fatal: true };
-    if (code === 'tool_error') return { msg: 'Alpha Vantage rechazó la consulta: ' + String(e.message || '').slice(0, 160) };
-    return { msg: (e && e.message) ? String(e.message).slice(0, 200) : 'Falló la consulta a Alpha Vantage.' };
+  function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function connError(server, e) {
+    var code = e && e.code, msg = String((e && e.message) || '');
+    var copy = {
+      server_not_connected: 'Agrega el conector de ' + server + ' en claude.ai → Ajustes → Conectores y vuelve a intentar.',
+      needs_reauth: 'Vuelve a conectar ' + server + ' en claude.ai → Ajustes → Conectores.',
+      selection_required: 'Tienes más de un conector de ' + server + ': elige uno en el aviso de claude.ai.',
+      not_in_manifest: 'Esta página no tiene permiso para usar ' + server + '. Ábrelo en el menú Permisos del artefacto.',
+      consent_required: 'Esta página no tiene permiso para usar ' + server + '. Vuelve a intentar y acepta el aviso.',
+      blocked_by_policy: 'Tu organización bloquea esta herramienta de ' + server + '.',
+      approval_required: 'La consulta necesita tu aprobación. Vuelve a intentar y acepta el aviso.'
+    };
+    if (code && copy[code]) return { message: copy[code], fatal: true };
+    if (code === 'server_unavailable') return { message: server + ' no respondió. Intenta en unos minutos.', retry: true, retryAfterMs: e.retryAfterMs };
+    if (code === 'not_granted' || code === 'capability_disabled' || code === 'capability_removed') return { message: 'Esta vista no puede usar conectores.', fatal: true };
+    if (/subscription|subscribe/i.test(msg)) return { message: 'Tu cuenta de ' + server + ' no tiene una suscripción activa. Esta sección se activa sola cuando la tengas.', sub: true };
+    if (code === 'tool_error') return { message: server + ' rechazó la consulta: ' + msg.slice(0, 160) };
+    return { message: msg ? msg.slice(0, 200) : 'Falló la consulta a ' + server + '.' };
+  }
+  function noMcp() { return { message: cap.mcpChecked ? 'Esta vista no puede usar conectores. Usa «Mis datos» o el ejemplo.' : 'Todavía comprobando los conectores; intenta en unos segundos.' }; }
+  /** One Alpha Vantage call, spaced 1.2 s from the previous one (free plan: 1 per second). */
+  function avCall(tool, input) {
+    if (!cap.mcp) return Promise.reject(noMcp());
+    var run = function (retried) {
+      return delay(Math.max(0, avLast + AV_GAP - Date.now())).then(function () {
+        avLast = Date.now();
+        return cap.mcp.callTool(AV, tool, input, { cache: false });
+      }).then(function (res) {
+        setPill('st-av', 'on', 'Alpha Vantage: conectado');
+        return res;
+      }, function (e) {
+        var info = connError('Alpha Vantage', e);
+        if (info.fatal) setPill('st-av', 'off', 'Alpha Vantage: sin acceso');
+        if (info.retry && !retried) return delay((info.retryAfterMs || 1500) + Math.random() * 800).then(function () { return run(true); });
+        throw info;
+      });
+    };
+    var p = avQueue.then(function () { return run(false); }, function () { return run(false); });
+    avQueue = p.catch(function () {});
+    return p;
+  }
+  function qvCall(tool, input) {
+    if (!cap.mcp) return Promise.reject(noMcp());
+    return cap.mcp.callTool(QV, tool, input, { cache: false }).then(function (res) { return res; }, function (e) { throw connError(QV, e); });
+  }
+  /** Alpha Vantage notes (rate limit, premium, errors) arrive as normal payloads. */
+  function avNote(p) {
+    if (!p || typeof p !== 'object') return null;
+    var note = p.Information || p.Note || (p.error && (p.error.message || p.error.detail || p.error)) || (typeof p['Error Message'] === 'string' ? p['Error Message'] : null);
+    if (typeof note !== 'string') return null;
+    if (/rate limit|requests per day|spreading out|frequency/i.test(note)) return 'Llegaste al límite de consultas de Alpha Vantage (25 al día y 1 por segundo en el plan gratuito). Los datos ya guardados siguen disponibles.';
+    if (/premium/i.test(note)) return 'Ese dato es de plan premium en Alpha Vantage.';
+    return note.slice(0, 200);
   }
   function parseMonthly(sym, p) {
     if (p && typeof p === 'string') { try { p = JSON.parse(p); } catch (x) { throw { message: 'Alpha Vantage respondió en un formato inesperado para ' + sym + '.' }; } }
@@ -545,31 +637,12 @@ var PAPERS = /*__PAPERS__*/null;
   function fetchMonthly(sym, force) {
     var key = 'lab.av.' + sym, hit = store(key);
     if (!force && hit && hit.t && Date.now() - hit.t < AV_TTL && hit.data) return Promise.resolve({ data: hit.data, at: hit.t, cached: true });
-    if (!cap.mcp) return Promise.reject({ message: cap.mcpChecked ? 'Esta vista no puede usar conectores. Usa «Mis datos» o el ejemplo.' : 'Todavía comprobando el conector; intenta en unos segundos.' });
-    var run = function () {
-      var wait = Math.max(0, avLast + AV_GAP - Date.now());
-      return new Promise(function (res) { setTimeout(res, wait); }).then(function () {
-        avLast = Date.now();
-        return cap.mcp.callTool(AV, 'TIME_SERIES_MONTHLY_ADJUSTED', { symbol: sym, datatype: 'json' }, { cache: false });
-      }).then(function (res) {
-        var data = parseMonthly(sym, res ? res.payload : null);
-        var at = res && res.cache ? res.cache.storedAt : Date.now();
-        store(key, { t: at, data: data });
-        setPill('st-av', 'on', 'Alpha Vantage: conectado');
-        return { data: data, at: at, cached: false };
-      }, function (e) {
-        var info = avError(e);
-        if (info.fatal) setPill('st-av', 'off', 'Alpha Vantage: sin acceso');
-        if (info.retry && !run.retried) {
-          run.retried = true;
-          return new Promise(function (r) { setTimeout(r, (e.retryAfterMs || 1500) + Math.random() * 800); }).then(run);
-        }
-        throw { message: info.msg };
-      });
-    };
-    var p = avQueue.then(run, run);
-    avQueue = p.catch(function () {});
-    return p;
+    return avCall('TIME_SERIES_MONTHLY_ADJUSTED', { symbol: sym, datatype: 'json' }).then(function (res) {
+      var data = parseMonthly(sym, res ? res.payload : null);
+      var at = res && res.cache ? res.cache.storedAt : Date.now();
+      store(key, { t: at, data: data });
+      return { data: data, at: at, cached: false };
+    });
   }
 
   // ── Data sources ─────────────────────────────────────────────────────
@@ -1073,6 +1146,12 @@ var PAPERS = /*__PAPERS__*/null;
     { sym: 'QUAL', what: 'Calidad', sid: 'factor_fund_long_only', market: 'us' },
     { sym: 'USMV', what: 'Mínima volatilidad', sid: 'factor_fund_long_only', market: 'us' }
   ];
+  // ETFs that copy congressional trades, when the research data lists them.
+  (PAPERS && PAPERS.etfs || []).forEach(function (e) {
+    if (!/^[A-Z]{2,6}$/.test(e.symbol || '') || WATCH.some(function (w) { return w.sym === e.symbol; })) return;
+    WATCH.push({ sym: e.symbol, what: e.short_es || e.symbol, market: 'us',
+      sid: KB.strategies.some(function (s) { return s.id === 'congress_copy'; }) ? 'congress_copy' : 'factor_fund_long_only' });
+  });
   var mon = { started: false, rows: {}, busy: false };
   function monitorOpen() { if (!mon.started && cap.mcpChecked) { mon.started = true; monitorLoad(false); } else monitorRender(); }
   function monitorLoad(force) {
@@ -1190,7 +1269,7 @@ var PAPERS = /*__PAPERS__*/null;
     $('btn-use-strategy').onclick = function () { $('in-strategy').value = s.id; showTab('audit'); run(); };
   }
   var TOPIC_ES = { replication_decay: 'Replicación y decaimiento', costs: 'Costos de transacción', overfitting: 'Sobreajuste y pruebas múltiples', machine_learning: 'Machine learning',
-    llm_text: 'LLM y texto', factor_etfs: 'ETF de factores y desempeño reciente', emerging_mexico: 'Emergentes y México' };
+    llm_text: 'LLM y texto', alt_signals: 'Señales alternativas', factor_etfs: 'ETF de factores y desempeño reciente', emerging_mexico: 'Emergentes y México' };
   function papersRender() {
     var P = PAPERS && PAPERS.papers;
     if (!P || !P.length) { $('papers-wrap').hidden = true; return; }
@@ -1206,6 +1285,311 @@ var PAPERS = /*__PAPERS__*/null;
     }).join('');
   }
   $('papers-topics').onclick = function (e) { var b = e.target.closest('button'); if (!b) return; evState.topic = b.getAttribute('data-t') || null; papersRender(); };
+
+  // ── Señales alternativas ─────────────────────────────────────────────
+  var SIG_TTL = 12 * 3600e3, DAY = 864e5;
+  var sig = { sym: null, res: {}, busy: false, opened: false };
+  function isObj(x) { return x != null && typeof x === 'object' && !Array.isArray(x); }
+  /** The records array of a connector answer, whatever it is called. */
+  function recordsOf(p) {
+    if (typeof p === 'string') { try { p = JSON.parse(p); } catch (e) { return []; } }
+    if (Array.isArray(p)) return p.filter(isObj);
+    if (!isObj(p)) return [];
+    var keys = ['data', 'results', 'trades', 'records', 'items', 'rows', 'transactions', 'contracts', 'lobbying'];
+    for (var i = 0; i < keys.length; i++) if (Array.isArray(p[keys[i]])) return p[keys[i]].filter(isObj);
+    for (var k in p) if (Array.isArray(p[k]) && p[k].length && isObj(p[k][0])) return p[k].filter(isObj);
+    return [];
+  }
+  function pick(o, names) {
+    var low = {};
+    Object.keys(o).forEach(function (k) { low[k.toLowerCase().replace(/[\s_]/g, '')] = o[k]; });
+    for (var i = 0; i < names.length; i++) {
+      var v = low[names[i].toLowerCase().replace(/[\s_]/g, '')];
+      if (v != null && v !== '') return v;
+    }
+    return null;
+  }
+  function toDay(v) {
+    if (v == null) return null;
+    var s = String(v).slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return Date.parse(s + 'T00:00:00Z');
+    var t = Date.parse(String(v));
+    return isFinite(t) ? t : null;
+  }
+  function money(v) {
+    if (v == null || v === '') return null;
+    if (typeof v === 'number') return isFinite(v) ? v : null;
+    var n = parseFloat(String(v).replace(/[$,\s]/g, ''));
+    return isFinite(n) ? n : null;
+  }
+  function rangeOf(v) {
+    var m = String(v || '').replace(/[$,\s]/g, '').match(/^(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)$/);
+    return m ? [+m[1], +m[2]] : null;
+  }
+  function congressRow(r) {
+    var t = String(pick(r, ['transaction_type', 'transaction', 'type']) || '');
+    var side = /purchase|buy|^p\b/i.test(t) ? 'buy' : /sale|sell|^s\b/i.test(t) ? 'sell' : 'other';
+    var lo = money(pick(r, ['amount_min', 'min_amount'])), hi = money(pick(r, ['amount_max', 'max_amount']));
+    if (lo == null) {
+      var rg = rangeOf(pick(r, ['range', 'amount_range', 'amount']));
+      if (rg) { lo = rg[0]; hi = rg[1]; } else { lo = hi = money(pick(r, ['amount', 'value', 'trade_size_usd'])); }
+    }
+    var party = String(pick(r, ['party']) || '');
+    return { date: toDay(pick(r, ['transaction_date', 'traded', 'transactiondate', 'trade_date', 'date'])),
+      filed: toDay(pick(r, ['filed_date', 'filed', 'reportdate', 'report_date', 'disclosure_date', 'notification_date'])),
+      name: String(pick(r, ['politician_canonical', 'politician', 'representative', 'name', 'member']) || '—'),
+      party: /^d/i.test(party) ? 'D' : /^r/i.test(party) ? 'R' : party ? party.slice(0, 1).toUpperCase() : '',
+      chamber: String(pick(r, ['chamber', 'house']) || ''), side: side, lo: lo, hi: hi };
+  }
+  function insiderRow(r) {
+    var code = String(pick(r, ['transaction_code', 'transactioncode', 'acquisition_or_disposal', 'acquireddisposed', 'transaction_type', 'type']) || '').trim();
+    var price = money(pick(r, ['share_price', 'transaction_price_per_share', 'price_per_share', 'pricepershare', 'price']));
+    var shares = money(pick(r, ['shares', 'transaction_shares', 'shares_traded', 'sharestraded']));
+    var side = /^p$|purchase|buy/i.test(code) ? 'buy' : /^s$|sale|sell/i.test(code) ? 'sell' : /^a$/i.test(code) ? (price > 0 ? 'buy' : 'grant') : /^d$/i.test(code) ? 'sell' : 'other';
+    return { date: toDay(pick(r, ['transaction_date', 'transactiondate', 'date', 'file_date', 'filed'])),
+      name: String(pick(r, ['executive', 'insider_name', 'name', 'owner_name', 'reporting_owner', 'owner']) || '—'),
+      title: String(pick(r, ['executive_title', 'title', 'officer_title', 'relationship', 'position']) || ''),
+      side: side, shares: shares, price: price, value: shares != null && price != null ? Math.abs(shares * price) : money(pick(r, ['value', 'transaction_value'])) };
+  }
+  /**
+   * Cohen, Malloy & Pomorski (2012): an insider is "routine" if they traded in the
+   * same calendar month in each of the three previous years; everyone else is
+   * "opportunistic". Needs at least 4 years of this company's history.
+   */
+  function classifyInsiders(rows) {
+    var seen = {}, minY = Infinity;
+    rows.forEach(function (r) {
+      if (!r.date) return;
+      var d = new Date(r.date), y = d.getUTCFullYear(), m = d.getUTCMonth();
+      minY = Math.min(minY, y);
+      (seen[r.name] = seen[r.name] || {})[y + '-' + m] = true;
+    });
+    rows.forEach(function (r) {
+      if (!r.date) { r.kind = null; return; }
+      var d = new Date(r.date), y = d.getUTCFullYear(), m = d.getUTCMonth();
+      if (y - 3 < minY) { r.kind = null; return; }
+      var s = seen[r.name] || {};
+      r.kind = s[(y - 1) + '-' + m] && s[(y - 2) + '-' + m] && s[(y - 3) + '-' + m] ? 'routine' : 'opportunistic';
+    });
+    return isFinite(minY) ? minY : null;
+  }
+  function usd(x) {
+    if (x == null || !isFinite(x)) return '—';
+    var a = Math.abs(x);
+    return (a >= 1e9 ? fmt(x / 1e9, 1) + ' mil M' : a >= 1e6 ? fmt(x / 1e6, 1) + ' M' : a >= 1e3 ? fmt(x / 1e3, 0) + ' mil' : fmt(x, 0)) + ' US$';
+  }
+  function dstr(t) { return t ? new Date(t).toISOString().slice(0, 10) : '—'; }
+
+  // Each source: how to call it and how to read the answer into rows.
+  function since(days) { return new Date(Date.now() - days * DAY).toISOString().slice(0, 10); }
+  var SOURCES = {
+    av_congress: { label: 'Congreso · Alpha Vantage', server: 'Alpha Vantage', call: function (s) { return avCall('CONGRESS_TRADES', { symbol: s, return_full_data: true }); },
+      read: function (p) {
+        var partial = false;
+        if (isObj(p) && p.preview === true && typeof p.sample_data === 'string') { partial = true; try { p = JSON.parse(p.sample_data); } catch (e) { p = {}; } }
+        var n = avNote(p); if (n) throw { message: n };
+        return { rows: recordsOf(p).map(congressRow), partial: partial, total: isObj(p) ? p.trades_total_count : null };
+      } },
+    qv_congress: { label: 'Congreso · Quiver', server: QV, call: function (s) { return qvCall('get_congress_trades', { ticker: s, date_field: 'traded', date_from: since(4 * 365), limit: 500 }); },
+      read: function (p) { return { rows: recordsOf(p).map(congressRow) }; } },
+    av_insider: { label: 'Directivos · Alpha Vantage', server: 'Alpha Vantage', call: function (s) { return avCall('INSIDER_TRANSACTIONS', { symbol: s, return_full_data: true }); },
+      read: function (p) {
+        if (isObj(p) && p.preview === true && typeof p.sample_data === 'string') { try { p = JSON.parse(p.sample_data); } catch (e) { p = {}; } }
+        var n = avNote(p); if (n) throw { message: n };
+        return { rows: recordsOf(p).map(insiderRow) };
+      } },
+    qv_insider: { label: 'Directivos · Quiver', server: QV, call: function (s) { return qvCall('get_insider_trading', { ticker: s, date_from: since(5 * 365), limit: 500 }); },
+      read: function (p) { return { rows: recordsOf(p).map(insiderRow) }; } },
+    qv_lobby: { label: 'Lobbying · Quiver', server: QV, call: function (s) { return qvCall('get_lobbying', { ticker: s, year_from: new Date().getUTCFullYear() - 3, limit: 500 }); },
+      read: function (p) { return { rows: recordsOf(p).map(function (r) {
+        return { date: toDay(pick(r, ['date', 'filing_date', 'period'])) || (pick(r, ['year']) ? Date.UTC(+pick(r, ['year']), 6, 1) : null), year: +pick(r, ['year']) || null,
+          amount: money(pick(r, ['amount', 'income', 'expenses', 'spending'])), issue: String(pick(r, ['issue', 'issues', 'specific_issue', 'general_issue']) || '') };
+      }) }; } },
+    qv_contracts: { label: 'Contratos · Quiver', server: QV, call: function (s) { return qvCall('get_gov_contracts', { ticker: s, date_from: since(3 * 365), limit: 500 }); },
+      read: function (p) { return { rows: recordsOf(p).map(function (r) {
+        return { date: toDay(pick(r, ['action_date', 'date', 'award_date'])), amount: money(pick(r, ['total_dollars_obligated', 'amount', 'value', 'obligated'])),
+          agency: String(pick(r, ['awarding_agency_name', 'agency', 'awarding_agency', 'funding_agency']) || ''), what: String(pick(r, ['description', 'award_description', 'title']) || '') };
+      }) }; } }
+  };
+  var ORDER = ['av_congress', 'av_insider', 'qv_congress', 'qv_insider', 'qv_lobby', 'qv_contracts'];
+
+  function signalsOpen() {
+    sig.opened = true;
+    signalsEvidence();
+    if (!sig.sym && cap.mcpChecked) loadSignals(false);
+  }
+  function loadSignals(force) {
+    var s = $('in-sig').value.trim().toUpperCase();
+    if (!/^[A-Z][A-Z0-9.\-]{0,9}$/.test(s)) { $('sig-srcs').innerHTML = '<span class="err">Escribe un ticker de EE. UU., por ejemplo NVDA.</span>'; return; }
+    if (sig.busy) return;
+    sig.busy = true; sig.sym = s; sig.res = {};
+    $('btn-sig').disabled = $('btn-sig-refresh').disabled = true;
+    store('lab.sig.last', s);
+    renderSignals();
+    var avChain = Promise.resolve();
+    var jobs = ORDER.map(function (id) {
+      var src = SOURCES[id], key = 'lab.sig.' + id + '.' + s, hit = store(key);
+      var go = function () {
+        if (!force && hit && hit.t && Date.now() - hit.t < SIG_TTL && hit.v) { sig.res[id] = { ok: true, v: hit.v, at: hit.t, cached: true }; renderSignals(); return Promise.resolve(); }
+        sig.res[id] = { busy: true }; renderSignals();
+        return src.call(s).then(function (res) {
+          var v = src.read(res ? res.payload : null);
+          var at = res && res.cache ? res.cache.storedAt : Date.now();
+          sig.res[id] = { ok: true, v: v, at: at };
+          if (v.rows.length) store(key, { t: at, v: v });
+        }, function (e) {
+          sig.res[id] = { ok: false, err: (e && e.message) || 'Falló la consulta.', sub: !!(e && e.sub) };
+        }).then(renderSignals);
+      };
+      // Alpha Vantage calls go one after another; Quiver runs alongside.
+      if (src.server === 'Alpha Vantage') { avChain = avChain.then(go); return avChain; }
+      return go();
+    });
+    Promise.all(jobs).then(function () { sig.busy = false; $('btn-sig').disabled = $('btn-sig-refresh').disabled = false; renderSignals(); });
+  }
+  $('sig-form').addEventListener('submit', function (e) { e.preventDefault(); loadSignals(false); });
+  $('btn-sig-refresh').onclick = function () { loadSignals(true); };
+
+  function srcChip(id) {
+    var r = sig.res[id], label = SOURCES[id].label;
+    if (!r) return '';
+    var state = r.busy ? 'wait' : r.ok ? (r.v.rows.length ? 'on' : 'wait') : r.sub ? 'wait' : 'off';
+    var text = r.busy ? 'consultando…' : r.ok ? (r.v.rows.length ? r.v.rows.length + ' registros' + (r.cached ? ' (guardados)' : '') : 'sin registros') : r.sub ? 'requiere suscripción' : 'error';
+    return '<span class="pill" title="' + esc(r.err || '') + '"><span class="dot ' + state + '"></span>' + esc(label + ': ' + text) + '</span>';
+  }
+  /** Rows of the first source that answered with data, plus where they came from. */
+  function bestOf(ids) {
+    for (var i = 0; i < ids.length; i++) { var r = sig.res[ids[i]]; if (r && r.ok && r.v.rows.length) return { id: ids[i], rows: r.v.rows, v: r.v }; }
+    return null;
+  }
+  /** Errors per section: one line per distinct message; a missing subscription is a note, not an error. */
+  function sourceProblems(ids) {
+    var out = [], seen = {};
+    ids.forEach(function (id) {
+      var r = sig.res[id];
+      if (!r || r.ok || r.busy || seen[r.err]) return;
+      seen[r.err] = true;
+      out.push({ text: r.sub ? r.err : SOURCES[id].label + ': ' + r.err, sub: r.sub });
+    });
+    return out;
+  }
+  function monthBars(rows, months) {
+    var now = new Date(), keys = [];
+    for (var i = months - 1; i >= 0; i--) { var d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1)); keys.push(d.getUTCFullYear() + '-' + d.getUTCMonth()); }
+    var buy = {}, sell = {};
+    rows.forEach(function (r) {
+      if (!r.date) return;
+      var d = new Date(r.date), k = d.getUTCFullYear() + '-' + d.getUTCMonth();
+      if (r.side === 'buy') buy[k] = (buy[k] || 0) + 1; else if (r.side === 'sell') sell[k] = (sell[k] || 0) + 1;
+    });
+    var max = Math.max(1, Math.max.apply(null, keys.map(function (k) { return Math.max(buy[k] || 0, sell[k] || 0); })));
+    var W = 520, H = 120, mid = (H - 16) / 2, bw = W / months;
+    var mlab = function (k) { var q = k.split('-'); return new Date(Date.UTC(+q[0], +q[1], 1)).toLocaleDateString('es-MX', { month: 'short', year: 'numeric', timeZone: 'UTC' }); };
+    var bars = keys.map(function (k, i) {
+      var b = buy[k] || 0, s = sell[k] || 0, x = i * bw + 2, w = Math.max(2, bw - 4);
+      var parts = k.split('-'), lab = new Date(Date.UTC(+parts[0], +parts[1], 1)).toLocaleDateString('es-MX', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+      var hb = b / max * (mid - 6), hs = s / max * (mid - 6);
+      return (b ? '<rect x="' + x.toFixed(1) + '" y="' + (mid - 1 - hb).toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + hb.toFixed(1) + '" rx="2" fill="var(--series-1)"><title>' + esc(lab + ': ' + b + ' compra(s)') + '</title></rect>' : '') +
+        (s ? '<rect x="' + x.toFixed(1) + '" y="' + (mid + 1).toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + hs.toFixed(1) + '" rx="2" fill="var(--series-2)"><title>' + esc(lab + ': ' + s + ' venta(s)') + '</title></rect>' : '');
+    }).join('');
+    return '<div class="legend"><span><span class="sw" style="background:var(--series-1)"></span>compras</span><span><span class="sw" style="background:var(--series-2)"></span>ventas</span><span class="muted">por mes, últimos ' + months + ' meses</span></div>' +
+      '<div class="chart"><svg viewBox="0 0 ' + W + ' ' + H + '" height="' + H + '" role="img" aria-label="Compras y ventas por mes"><line class="zero" x1="0" x2="' + W + '" y1="' + mid + '" y2="' + mid + '"/>' + bars +
+      '<g class="axis"><text x="2" y="' + (H - 3) + '">' + esc(mlab(keys[0])) + '</text><text x="' + (W - 2) + '" y="' + (H - 3) + '" text-anchor="end">' + esc(mlab(keys[keys.length - 1])) + '</text></g></svg></div>';
+  }
+  function tiles(list) { return '<div class="tiles">' + list.map(function (t) { return '<div class="tile"><span class="k">' + esc(t[0]) + '</span><span class="v">' + esc(t[1]) + '</span></div>'; }).join('') + '</div>'; }
+  function median(a) { if (!a.length) return null; var s = a.slice().sort(function (x, y) { return x - y; }); return s[Math.floor(s.length / 2)]; }
+
+  function renderSignals() {
+    $('sig-srcs').innerHTML = ORDER.map(srcChip).join('');
+    if (!sig.sym) return;
+    var yearAgo = Date.now() - 365 * DAY;
+    // Congress
+    var c = bestOf(['av_congress', 'qv_congress']), box = $('sig-congress');
+    if (c) {
+      var rows = c.rows.filter(function (r) { return r.date; }).sort(function (a, b) { return b.date - a.date; });
+      var last = rows.filter(function (r) { return r.date >= yearAgo; });
+      var b = last.filter(function (r) { return r.side === 'buy'; }), s = last.filter(function (r) { return r.side === 'sell'; });
+      var mid = function (rs) { return rs.reduce(function (a, r) { return a + (r.lo != null && r.hi != null ? (r.lo + r.hi) / 2 : 0); }, 0); };
+      var lags = rows.filter(function (r) { return r.filed && r.date && r.filed >= r.date; }).slice(0, 200).map(function (r) { return (r.filed - r.date) / DAY; });
+      var people = {}; last.forEach(function (r) { people[r.name] = true; });
+      var other = c.id === 'av_congress' ? sig.res.qv_congress : sig.res.av_congress;
+      $('sig-c-note').textContent = SOURCES[c.id].label.split('· ')[1] + (c.v.partial ? ' · muestra parcial' : '');
+      box.innerHTML = tiles([['Compras, 12 meses', String(b.length)], ['Ventas, 12 meses', String(s.length)], ['Monto estimado comprado', usd(mid(b))], ['Monto estimado vendido', usd(mid(s))],
+          ['Congresistas distintos', String(Object.keys(people).length)], ['Retraso mediano de divulgación', lags.length ? fmt(median(lags), 0) + ' días' : '—']]) +
+        monthBars(rows, 24) +
+        '<p class="small muted">Los montos son rangos declarados (por ejemplo 1,001 a 15,000 US$); se suma el punto medio. El retraso es lo que tarda en hacerse pública cada operación: copiar solo es posible después.' +
+        (other && other.ok && other.v.rows.length ? ' Cotejo: la otra fuente reporta ' + other.v.rows.length + ' registros.' : '') + '</p>' +
+        '<div class="tablewrap"><table><thead><tr><th>Operó</th><th>Divulgó</th><th>Congresista</th><th></th><th>Tipo</th><th class="n">Monto (US$)</th></tr></thead><tbody>' +
+        rows.slice(0, 12).map(function (r) {
+          return '<tr><td class="num">' + dstr(r.date) + '</td><td class="num">' + dstr(r.filed) + '</td><td>' + esc(r.name) + '</td><td class="muted">' + esc(r.party) + '</td><td>' + (r.side === 'buy' ? 'Compra' : r.side === 'sell' ? 'Venta' : 'Otra') + '</td>' +
+            '<td class="n">' + (r.lo != null ? (r.lo === r.hi ? fmt(r.lo, 0) : fmt(r.lo, 0) + ' – ' + fmt(r.hi, 0)) : '—') + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    } else box.innerHTML = signalEmpty(['av_congress', 'qv_congress'], 'Ningún congresista reportó operaciones con ' + sig.sym + ' en las fuentes disponibles.');
+    // Insiders
+    var ins = bestOf(['qv_insider', 'av_insider']), ib = $('sig-insider');
+    if (ins) {
+      var ir = ins.rows.filter(function (r) { return r.date; }).sort(function (a, b) { return b.date - a.date; });
+      var firstYear = classifyInsiders(ir);
+      var il = ir.filter(function (r) { return r.date >= yearAgo; });
+      var ib2 = il.filter(function (r) { return r.side === 'buy'; }), is2 = il.filter(function (r) { return r.side === 'sell'; });
+      var opp = ib2.filter(function (r) { return r.kind === 'opportunistic'; });
+      var sumv = function (rs) { return rs.reduce(function (a, r) { return a + (r.value || 0); }, 0); };
+      var classifiable = il.some(function (r) { return r.kind; });
+      $('sig-i-note').textContent = SOURCES[ins.id].label.split('· ')[1] + (firstYear ? ' · desde ' + firstYear : '');
+      ib.innerHTML = tiles([['Compras, 12 meses', String(ib2.length)], ['Ventas, 12 meses', String(is2.length)], ['Valor comprado', usd(sumv(ib2))], ['Valor vendido', usd(sumv(is2))],
+          ['Compras oportunistas', classifiable ? String(opp.length) : 'sin historia'], ['Directivos distintos', String(Object.keys(il.reduce(function (o, r) { o[r.name] = 1; return o; }, {})).length)]]) +
+        monthBars(ir, 24) +
+        '<p class="small muted">«Oportunista» sigue a Cohen, Malloy y Pomorski (2012): no operó en el mismo mes en cada uno de los tres años anteriores. Las ventas suelen ser por liquidez o diversificación; la evidencia se concentra en las compras.' +
+        (ins.id === 'av_insider' ? ' Con Alpha Vantage, una «compra» incluye adquisiciones con precio, que pueden ser ejercicios de opciones.' : '') + '</p>' +
+        '<div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Directivo</th><th>Cargo</th><th>Tipo</th><th class="n">Acciones</th><th class="n">Valor (US$)</th><th>Patrón</th></tr></thead><tbody>' +
+        ir.slice(0, 12).map(function (r) {
+          return '<tr><td class="num">' + dstr(r.date) + '</td><td>' + esc(r.name) + '</td><td class="muted">' + esc(r.title.slice(0, 40)) + '</td><td>' + ({ buy: 'Compra', sell: 'Venta', grant: 'Asignación' }[r.side] || 'Otra') + '</td>' +
+            '<td class="n">' + fmt(r.shares, 0) + '</td><td class="n">' + fmt(r.value, 0) + '</td><td class="muted">' + (r.kind === 'routine' ? 'rutinario' : r.kind === 'opportunistic' ? 'oportunista' : '—') + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    } else ib.innerHTML = signalEmpty(['qv_insider', 'av_insider'], 'Las fuentes disponibles no tienen operaciones de directivos de ' + sig.sym + '.');
+    // Washington
+    var lob = sig.res.qv_lobby, con = sig.res.qv_contracts, dc = $('sig-dc');
+    if ((lob && lob.ok) || (con && con.ok)) {
+      var byYear = {};
+      (lob && lob.ok ? lob.v.rows : []).forEach(function (r) { var y = r.year || (r.date ? new Date(r.date).getUTCFullYear() : null); if (y && r.amount != null) byYear[y] = (byYear[y] || 0) + r.amount; });
+      var crow = con && con.ok ? con.v.rows.filter(function (r) { return r.date; }).sort(function (a, b) { return b.date - a.date; }) : [];
+      var c12 = crow.filter(function (r) { return r.date >= yearAgo; });
+      var years = Object.keys(byYear).sort().reverse().slice(0, 3);
+      dc.innerHTML = tiles(years.map(function (y) { return ['Lobbying ' + y, usd(byYear[y])]; }).concat([['Contratos, 12 meses', String(c12.length)],
+          ['Monto obligado, 12 meses', usd(c12.reduce(function (a, r) { return a + (r.amount || 0); }, 0))]])) +
+        (crow.length ? '<div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Dependencia</th><th class="n">Monto (US$)</th></tr></thead><tbody>' +
+          crow.slice(0, 8).map(function (r) { return '<tr><td class="num">' + dstr(r.date) + '</td><td>' + esc(r.agency.slice(0, 60)) + '</td><td class="n">' + fmt(r.amount, 0) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '');
+    } else dc.innerHTML = signalEmpty(['qv_lobby', 'qv_contracts'], 'Quiver no reporta lobbying ni contratos de ' + sig.sym + '.');
+  }
+  function signalEmpty(ids, emptyText) {
+    if (ids.some(function (id) { return sig.res[id] && sig.res[id].busy; })) return '<p class="small muted">Consultando…</p>';
+    var probs = sourceProblems(ids);
+    var answered = ids.some(function (id) { return sig.res[id] && sig.res[id].ok; });
+    return (answered ? '<p class="small">' + esc(emptyText) + '</p>' : '') + probs.map(function (m) { return '<p class="small ' + (m.sub ? 'muted' : 'err') + '">' + esc(m.text) + '</p>'; }).join('') +
+      (!answered && !probs.length ? '<p class="small muted">Sin datos todavía.</p>' : '');
+  }
+  function signalsEvidence() {
+    var ids = ['congress_copy', 'insider_purchases'];
+    var strs = KB.strategies.filter(function (s) { return ids.indexOf(s.id) >= 0; });
+    var papers = (PAPERS && PAPERS.papers || []).filter(function (p) { return p.topic === 'alt_signals'; });
+    var html = strs.map(function (s) {
+      return '<div style="display:grid;gap:4px;margin-bottom:12px"><div><strong>' + esc(s.name) + '</strong> <span class="num small">· evidencia ' + s.prior.score + '/100</span></div>' +
+        '<p class="small">' + esc(s.claim) + '</p><p class="small muted"><strong>Crítica:</strong> ' + esc(s.critique) + '</p><p class="small muted"><strong>Qué sobrevive:</strong> ' + esc(s.survives) + '</p>' +
+        '<p class="small">' + (s.sources || []).map(function (x) { return x.url ? '<a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.label) + '</a>' : esc(x.label); }).join(' · ') + '</p></div>';
+    }).join('');
+    if (papers.length) html += '<p class="small muted">' + papers.length + ' trabajos relacionados en Evidencia → Investigación reciente.</p>';
+    var etfs = PAPERS && PAPERS.etfs || [];
+    if (etfs.length) html += '<div class="btns"><button class="btn" type="button" id="btn-audit-congress">Auditar ' + etfs.map(function (e) { return e.symbol; }).join(' y ') + ' contra SPY</button></div>' +
+      '<p class="small muted">' + etfs.map(function (e) { return esc(e.symbol + ': ' + e.what_it_copies); }).join(' · ') + '</p>';
+    $('sig-evidence').innerHTML = html || '<p class="small muted">Sin evidencia cargada.</p>';
+    var btn = $('btn-audit-congress');
+    if (btn) btn.onclick = function () {
+      $('in-tickers').value = etfs.map(function (e) { return e.symbol; }).concat(['SPY']).join(', ');
+      if (KB.strategies.some(function (s) { return s.id === 'congress_copy'; })) $('in-strategy').value = 'congress_copy';
+      showTab('audit'); setSource('ticker'); fetchTickers();
+    };
+  }
+  (function () { var last = store('lab.sig.last'); if (typeof last === 'string' && /^[A-Z][A-Z0-9.\-]{0,9}$/.test(last)) $('in-sig').value = last; })();
 
   // ── Boot ─────────────────────────────────────────────────────────────
   var savedTick = store('lab.tickers'); if (typeof savedTick === 'string' && savedTick) $('in-tickers').value = savedTick;
