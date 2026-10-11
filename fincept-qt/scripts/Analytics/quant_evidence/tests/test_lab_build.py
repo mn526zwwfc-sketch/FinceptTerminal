@@ -49,8 +49,15 @@ class TestLabBuild(unittest.TestCase):
         data = self.scripts[2]
         kb = json.loads(re.search(r'var KB = (.*?);\nvar PAPERS', data, re.S).group(1).replace('<\\/', '</'))
         with open(build_lab.KB, encoding='utf-8') as f:
-            self.assertEqual(kb, json.load(f))
+            full = json.load(f)
+        ids = [s['id'] for s in kb['strategies']]
+        self.assertEqual(ids, [s['id'] for s in full['strategies'] if s['id'] not in build_lab.EXCLUDED_STRATEGIES])
+        self.assertEqual({k: v for k, v in kb.items() if k != 'strategies'}, {k: v for k, v in full.items() if k != 'strategies'})
         self.assertNotIn('</', data)
+
+    def test_markowitz_is_not_offered(self):
+        self.assertNotIn('markowitz_sample', self.html)
+        self.assertNotIn('Optimización de Markowitz', self.html)
 
     def test_inline_json_escapes_script_close(self):
         s = build_lab._inline_json({'x': '</script><b>', 'y': ' '})
