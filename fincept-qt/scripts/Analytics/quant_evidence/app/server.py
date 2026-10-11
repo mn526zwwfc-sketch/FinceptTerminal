@@ -57,7 +57,12 @@ MAX_OUTPUT_BYTES = 400_000
 RUN_TIMEOUT_S = 60
 TREE_SKIP = {'__pycache__', 'node_modules', 'build', '.venv', 'venv', 'dist'}
 LOCAL_HOSTS = {'localhost', '127.0.0.1', '[::1]', '::1'}
-COMMAND_RE = re.compile(r'^[a-z][a-z0-9_]{0,40}$')
+HOST_RE = re.compile(r'^(?P<name>[a-z0-9.-]+|\[[0-9a-f:]+\])(?::\d{1,5})?$')
+COMMAND_RE = re.compile(r'^[a-z][a-z0-9_]{0,40}\Z')
+# Commands that write files: refused through RUN (export_web takes an arbitrary output path).
+BLOCKED_COMMANDS = {('quant_evidence', 'export_web')}
+# Sec-Fetch-Site values a page from another site sends; same-origin and direct navigation pass.
+CROSS_SITE = {'cross-site', 'same-site'}
 
 RUNNABLE = [
     {'id': 'quant_evidence', 'label': 'quant_evidence_cli.py · paquete nuevo', 'script': 'quant_evidence_cli.py'},
@@ -131,6 +136,8 @@ def run_cli(script_id: str, command: str, params) -> dict:
         raise ValueError('Programa no permitido.')
     if not isinstance(command, str) or not COMMAND_RE.match(command):
         raise ValueError('El comando solo puede tener letras minúsculas, números y guiones bajos.')
+    if (script_id, command) in BLOCKED_COMMANDS:
+        raise ValueError('Ese comando escribe archivos y no se puede ejecutar desde la página.')
     if not isinstance(params, dict):
         raise ValueError('Los parámetros deben ser un objeto JSON.')
     script = os.path.join(ANALYTICS_DIR, spec['script'])
@@ -165,9 +172,14 @@ class StudioHandler(BaseHTTPRequestHandler):
 
     # ── helpers ────────────────────────────────────────────────────────────
     def _host_ok(self) -> bool:
-        host = (self.headers.get('Host') or '').strip().lower()
-        name = host.rsplit(':', 1)[0] if not host.startswith('[') else host.split(']')[0] + ']'
+        m = HOST_RE.match((self.headers.get('Host') or '').strip().lower())
+        if not m:
+            return False
+        name = m.group('name')
         return name in LOCAL_HOSTS or name == self.server.server_address[0]
+
+    def _cross_site(self) -> bool:
+        return (self.headers.get('Sec-Fetch-Site') or '').lower() in CROSS_SITE
 
     def _send(self, status: int, body: bytes, ctype: str):
         self.send_response(status)
@@ -190,8 +202,11 @@ class StudioHandler(BaseHTTPRequestHandler):
     def _body(self):
         if not (self.headers.get('Content-Type') or '').startswith('application/json'):
             raise PermissionError('Se requiere Content-Type: application/json.')
-        n = int(self.headers.get('Content-Length') or 0)
-        if n > MAX_BODY_BYTES:
+        try:
+            n = int(self.headers.get('Content-Length') or 0)
+        except ValueError:
+            raise ValueError('Content-Length inválido.')
+        if n < 0 or n > MAX_BODY_BYTES:
             raise ValueError('Cuerpo demasiado grande.')
         raw = self.rfile.read(n) if n else b'{}'
         data = json.loads(raw.decode('utf-8') or '{}')
@@ -206,6 +221,8 @@ class StudioHandler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         q = parse_qs(url.query)
         path = url.path
+        if path.startswith('/api/') and self._cross_site():
+            return self._err('Solicitud desde otro sitio rechazada.', HTTPStatus.FORBIDDEN)
         try:
             if path in ('/', '/index.html'):
                 return self._send(200, self.page.encode('utf-8'), 'text/html; charset=utf-8')
@@ -272,7 +289,7 @@ class StudioHandler(BaseHTTPRequestHandler):
             return self._err('Ruta desconocida.', HTTPStatus.NOT_FOUND)
         except PermissionError as e:
             return self._err(str(e), HTTPStatus.FORBIDDEN)
-        except (ValueError, TypeError, KeyError, OSError) as e:
+        except (ValueError, TypeError, KeyError, OSError, ArithmeticError) as e:
             return self._err(str(e))
 
 
