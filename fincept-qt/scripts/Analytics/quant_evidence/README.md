@@ -75,7 +75,7 @@ Output follows the convention of the other Analytics CLIs: `{"success": true, "d
 
 ## Claude Code / MCP
 
-`mcp_server.py` is a dependency-free [MCP](https://modelcontextprotocol.io) server (server name `fincept-quant`) over stdio: newline-delimited JSON-RPC 2.0, protocol `2025-06-18` (older clients get their own version echoed back when it is `2025-03-26` or `2024-11-05`). It reuses the CLI commands, so the numbers are the same as the CLI and the web pages. stdout carries protocol messages only; logs go to stderr.
+`mcp_server.py` is a dependency-free [MCP](https://modelcontextprotocol.io) server (server name `fincept-quant`) over stdio: newline-delimited JSON-RPC 2.0, protocol `2025-06-18` (clients asking for `2024-11-05` get that version echoed back; `2025-03-26` is not offered because it allows JSON-RPC batches). It reuses the CLI commands, so the numbers are the same as the CLI and the web pages. stdout carries protocol messages only; logs go to stderr.
 
 ```bash
 python3 fincept-qt/scripts/Analytics/quant_evidence/mcp_server.py

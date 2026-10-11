@@ -172,6 +172,30 @@ class TestMcpServerModule(unittest.TestCase):
         self.assertEqual(mcp_server.handle_line(b'\xff\n')['error']['code'], -32700)
         self.assertIsNone(mcp_server.handle_line('  \n'))
 
+    def test_bad_ids_and_deep_nesting_never_stop_the_server(self):
+        lines = (b'{"jsonrpc":"2.0","id":1e999,"method":"ping"}\n'
+                 b'{"jsonrpc":"2.0","id":NaN,"method":"ping"}\n'
+                 b'{"jsonrpc":"2.0","id":null,"method":"ping"}\n'
+                 b'{"jsonrpc":"2.0","id":{"x":1},"method":"ping"}\n'
+                 + b'[' * 20000 + b']' * 20000 + b'\n'
+                 b'{"jsonrpc":"2.0","id":7,"method":"ping"}\n')
+        proc = subprocess.run([sys.executable, SERVER], input=lines, capture_output=True, timeout=60)
+        self.assertEqual(proc.returncode, 0, proc.stderr.decode('utf-8', 'replace')[-500:])
+        replies = [json.loads(line) for line in proc.stdout.decode('utf-8').splitlines()]
+        self.assertEqual([r.get('error', {}).get('code') for r in replies[:4]], [-32600] * 4)
+        self.assertEqual(replies[4]['error']['code'], -32700)
+        self.assertEqual(replies[5], {'jsonrpc': '2.0', 'id': 7, 'result': {}})
+
+    def test_null_optional_arguments(self):
+        r = mcp_server.call_tool('haircut_sharpe', {'sharpe_annual': 1.2, 'years': 8, 'method': None})
+        self.assertFalse(r.get('isError'))
+        r = mcp_server.call_tool('min_backtest_length', {'n_trials': 50, 'years': None})
+        data = json.loads(r['content'][0]['text'])
+        self.assertFalse(r.get('isError'))
+        self.assertNotIn('years', data)
+        r = mcp_server.call_tool('min_backtest_length', {'n_trials': None, 'years': None})
+        self.assertTrue(r['isError'])
+
 
 if __name__ == '__main__':
     unittest.main()

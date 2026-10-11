@@ -283,7 +283,10 @@
     return !!v;
   }
   function key(v) { return typeof v === 'string' ? strip(v).toLowerCase() : ''; }
-  function show(v) { return typeof v === 'string' ? '"' + v + '"' : String(v); }
+  function show(v) {
+    if (typeof v === 'string') return '"' + v + '"';
+    return typeof v === 'number' ? String(v) : 'no numérico';
+  }
 
   function inputProblems(raw) {
     var srRaw = raw.sharpe_annual, yrRaw = raw.years;
@@ -590,6 +593,7 @@
   }
 
   return {
+    num: num,
     normCdf: normCdf, normPpf: normPpf,
     expectedMaxSharpeZ: expectedMaxSharpeZ, minBacktestLength: minBacktestLength,
     maxTrialsForLength: maxTrialsForLength, probabilisticSharpeRatio: probabilisticSharpeRatio,

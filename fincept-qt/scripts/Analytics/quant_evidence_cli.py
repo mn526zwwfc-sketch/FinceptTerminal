@@ -105,16 +105,16 @@ def cmd_deflated_sharpe(params):
 def cmd_haircut_sharpe(params):
     return stats.haircut_sharpe(_f(params, 'sharpe_annual'), _f(params, 'years'),
                                 _i(params, 'n_tests', params.get('n_trials', 1)),
-                                params.get('method', 'bonferroni'))
+                                params.get('method') or 'bonferroni')
 
 
 def cmd_min_backtest_length(params):
     target = _f(params, 'target_sharpe', 1.0)
     out = {'target_sharpe': target}
-    if 'n_trials' in params:
+    if params.get('n_trials') is not None:
         out['n_trials'] = _i(params, 'n_trials', 1)
         out['min_years'] = stats.min_backtest_length(out['n_trials'], target)
-    if 'years' in params:
+    if params.get('years') is not None:
         out['years'] = _f(params, 'years')
         out['max_trials'] = stats.max_trials_for_length(out['years'], target)
     return out

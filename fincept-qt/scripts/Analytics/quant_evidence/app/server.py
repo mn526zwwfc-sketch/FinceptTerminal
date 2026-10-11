@@ -289,7 +289,7 @@ class StudioHandler(BaseHTTPRequestHandler):
             return self._err('Ruta desconocida.', HTTPStatus.NOT_FOUND)
         except PermissionError as e:
             return self._err(str(e), HTTPStatus.FORBIDDEN)
-        except (ValueError, TypeError, KeyError, OSError, ArithmeticError) as e:
+        except (ValueError, TypeError, KeyError, OSError, ArithmeticError, RecursionError) as e:
             return self._err(str(e))
 
 

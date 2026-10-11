@@ -122,7 +122,11 @@ def _key(value) -> str:
 
 
 def _show(value) -> str:
-    return f'"{value}"' if isinstance(value, str) else str(value)
+    if isinstance(value, str):
+        return f'"{value}"'
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return str(value)
+    return 'no numérico'
 
 
 def input_problems(raw: dict) -> dict:

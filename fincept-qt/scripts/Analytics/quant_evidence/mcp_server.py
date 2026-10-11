@@ -34,7 +34,8 @@ from quant_evidence.knowledge_base import load_kb  # noqa: E402
 SERVER_NAME = 'fincept-quant'
 SERVER_VERSION = '1.0.0'
 PROTOCOL_VERSION = '2025-06-18'
-SUPPORTED_PROTOCOL_VERSIONS = ('2025-06-18', '2025-03-26', '2024-11-05')
+# 2025-03-26 is left out: it allows JSON-RPC batches, which this server does not handle.
+SUPPORTED_PROTOCOL_VERSIONS = ('2025-06-18', '2024-11-05')
 
 PARSE_ERROR, INVALID_REQUEST, METHOD_NOT_FOUND, INVALID_PARAMS, INTERNAL_ERROR = \
     -32700, -32600, -32601, -32602, -32603
@@ -236,7 +237,7 @@ def _validate(spec: dict, args: dict) -> None:
     missing = [k for k in spec['inputSchema'].get('required', []) if args.get(k) in (None, '')]
     if missing:
         raise ToolError(f"Missing required argument(s) for {spec['name']}: {', '.join(missing)}.")
-    if spec['name'] == 'min_backtest_length' and 'n_trials' not in args and 'years' not in args:
+    if spec['name'] == 'min_backtest_length' and args.get('n_trials') is None and args.get('years') is None:
         raise ToolError('min_backtest_length needs n_trials, years or both.')
 
 
@@ -298,6 +299,8 @@ def handle_message(msg) -> dict | None:
     if not is_request:
         return None  # notifications/initialized, notifications/cancelled, ...
     req_id = msg['id']
+    if isinstance(req_id, bool) or not isinstance(req_id, (str, int)):
+        return _error(None, INVALID_REQUEST, 'Invalid Request: id must be a string or an integer')
     params = msg.get('params') or {}
     if not isinstance(params, dict):
         return _error(req_id, INVALID_PARAMS, 'params must be an object')
@@ -332,7 +335,7 @@ def handle_line(line: bytes | str) -> dict | None:
         return None
     try:
         msg = json.loads(line)
-    except ValueError as e:
+    except (ValueError, RecursionError) as e:
         return _error(None, PARSE_ERROR, f'Parse error: {e}')
     return handle_message(msg)
 
@@ -342,9 +345,14 @@ def serve(stdin=None, stdout=None) -> None:
     stdin = stdin or sys.stdin.buffer
     stdout = stdout or sys.stdout.buffer
     for line in stdin:
-        reply = handle_line(line)
-        if reply is not None:
-            stdout.write(json.dumps(reply, ensure_ascii=False, allow_nan=False).encode('utf-8') + b'\n')
+        try:
+            reply = handle_line(line)
+            out = None if reply is None else json.dumps(reply, ensure_ascii=False, allow_nan=False)
+        except Exception as e:  # noqa: BLE001 - one bad line must never stop the server
+            _log(f'unhandled message: {type(e).__name__}: {e}')
+            out = json.dumps(_error(None, INTERNAL_ERROR, 'Internal error'))
+        if out is not None:
+            stdout.write(out.encode('utf-8') + b'\n')
             stdout.flush()
 
 

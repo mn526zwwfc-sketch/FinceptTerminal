@@ -112,7 +112,8 @@ var CODE = /*__CODE_INDEX__*/null;
     }).filter(function (x) { return x.sc > 0; }).sort(function (a, b) { return b.sc - a.sc || b.s.prior.score - a.s.prior.score; }).slice(0, 6);
   }
   function decisionFrom(input) {
-    var d = {}, n = function (k) { var v = Number(input[k]); return input[k] == null || input[k] === '' || !isFinite(v) ? undefined : v; };
+    // Same coercion as the engine (and agent_tools.decision_from in Python).
+    var d = {}, n = function (k) { var v = E.num(input[k], null); return v === null ? undefined : v; };
     d.strategy_id = String(input.strategy_id || '');
     if (!BY_ID[d.strategy_id]) throw new Error('strategy_id desconocido: usa buscar_estrategias para obtener un id válido.');
     ['horizon_years', 'sharpe_annual', 'years', 'n_trials', 'periods_per_year', 'skew', 'kurtosis', 'turnover_monthly', 'roundtrip_cost_bps', 'microcap_share', 'volatility_annual', 'gross_alpha_monthly_bps', 'live_months', 'kelly_multiple']
