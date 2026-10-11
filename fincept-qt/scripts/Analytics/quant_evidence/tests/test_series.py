@@ -154,7 +154,7 @@ class TestSeriesCli(unittest.TestCase):
 
     def test_audit_matches_library_and_feeds_the_evaluator(self):
         rnd = random.Random(5)
-        cols = [[rnd.gauss(0.005, 0.04) for _ in range(72)] for _ in range(3)]
+        cols = [[round(rnd.gauss(0.005, 0.04), 6) for _ in range(72)] for _ in range(3)]   # as written to the CSV
         rows = ['fecha,a,b,c'] + ['%04d-%02d-28,%s' % (2015 + t // 12, t % 12 + 1, ','.join('%.6f' % c[t] for c in cols)) for t in range(72)]
         out = self.run_cli('\n'.join(rows))
         self.assertTrue(out['success'])
