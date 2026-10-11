@@ -11,9 +11,11 @@ Usage:
     python quant_evidence_cli.py <command> [params_json]
 
 Commands:
-    list                 - List available commands
+    list                 - List available commands ("data") with a one-line help for each ("help")
     strategies           - Strategy catalog, optional {"family": ..., "category": ...}
     strategy             - One strategy with its evidence, {"id": "momentum"}
+    search               - Keyword search ranked like the chat agent, {"query": "momentum",
+                           "family", "category", "limit": 6}
     categories           - Evidence categories with strategies and repo modules
     evaluate             - Score a decision, e.g. {"strategy_id": "momentum",
                            "sharpe_annual": 1.2, "years": 8, "n_trials": 50}
@@ -25,6 +27,11 @@ Commands:
                            "gross_monthly_bps"}
     horizon_risk         - {"sigma_annual", "years", "mu_real_annual"}
     kelly                - {"mu", "r", "sigma", "gamma", "kelly_multiple"}
+    compare              - Rank all strategies for one profile, {"horizon_years": 15,
+                           "market": "global", "investor": "retail", "strategy_id", "top": 10}
+    breakeven            - Round-trip cost (bps) and monthly turnover at which the net edge
+                           of a decision vanishes, same fields as evaluate
+    repo_modules         - Repository modules and known gaps for a strategy, {"strategy_id": ...}
     cascade              - Chen-Velikov cascade and decay constants
     repo_map             - Curated map of repository modules by category
     repo_scan            - Live keyword scan of the repository tree
@@ -41,7 +48,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 if script_dir not in sys.path:
     sys.path.insert(0, script_dir)
 
-from quant_evidence import stats  # noqa: E402
+from quant_evidence import agent_tools, stats  # noqa: E402
 from quant_evidence.evaluator import _bool, evaluate_decision  # noqa: E402
 from quant_evidence.knowledge_base import (  # noqa: E402
     get_strategy, list_strategies, load_kb, load_repo_map, organize)
@@ -59,7 +66,17 @@ def _sanitize(obj):
 
 def _f(params, key, default=None):
     v = params.get(key, default)
-    return default if v is None else float(v)
+    if v is None:
+        return default
+    x = float(v)
+    if not math.isfinite(x):
+        raise ValueError(f'{key} debe ser un número finito: {v!r}')
+    return x
+
+
+def _i(params, key, default):
+    """Integer parameter; rejects NaN/inf instead of crashing or wrapping."""
+    return int(_f(params, key, default))
 
 
 def cmd_strategies(params):
@@ -69,7 +86,7 @@ def cmd_strategies(params):
 def cmd_strategy(params):
     s = get_strategy(params.get('id') or params.get('strategy_id'))
     if s is None:
-        raise ValueError(f"Estrategia desconocida: {params.get('id')!r}")
+        raise ValueError(f"Estrategia desconocida: {params.get('id') or params.get('strategy_id')!r}")
     return s
 
 
@@ -80,14 +97,14 @@ def cmd_categories(params):
 
 def cmd_deflated_sharpe(params):
     return stats.deflated_sharpe_ratio(
-        _f(params, 'sharpe_annual'), int(params.get('n_trials', 1)), _f(params, 'years'),
-        int(params.get('periods_per_year', 252)),
+        _f(params, 'sharpe_annual'), _i(params, 'n_trials', 1), _f(params, 'years'),
+        _i(params, 'periods_per_year', 252),
         _f(params, 'var_trials_sr'), _f(params, 'skew', 0.0), _f(params, 'kurtosis', 3.0))
 
 
 def cmd_haircut_sharpe(params):
     return stats.haircut_sharpe(_f(params, 'sharpe_annual'), _f(params, 'years'),
-                                int(params.get('n_tests', params.get('n_trials', 1))),
+                                _i(params, 'n_tests', params.get('n_trials', 1)),
                                 params.get('method', 'bonferroni'))
 
 
@@ -95,7 +112,7 @@ def cmd_min_backtest_length(params):
     target = _f(params, 'target_sharpe', 1.0)
     out = {'target_sharpe': target}
     if 'n_trials' in params:
-        out['n_trials'] = int(params['n_trials'])
+        out['n_trials'] = _i(params, 'n_trials', 1)
         out['min_years'] = stats.min_backtest_length(out['n_trials'], target)
     if 'years' in params:
         out['years'] = _f(params, 'years')
@@ -139,6 +156,25 @@ def cmd_kelly(params):
             'growth_rate': stats.growth_rate(x * f_star, mu, r, sigma)}
 
 
+def cmd_search(params):
+    query = next((params[k] for k in ('query', 'q', 'text') if params.get(k) is not None), None)
+    return agent_tools.search_strategies(query, params.get('family'), params.get('category'),
+                                         params.get('limit', agent_tools.SEARCH_LIMIT))
+
+
+def cmd_compare(params):
+    return agent_tools.compare_strategies(params, params.get('strategy_id'),
+                                          params.get('top', agent_tools.COMPARE_TOP))
+
+
+def cmd_breakeven(params):
+    return agent_tools.breakeven_points(params)
+
+
+def cmd_repo_modules(params):
+    return agent_tools.repo_modules(params.get('strategy_id') or params.get('id'))
+
+
 def cmd_cascade(params):
     kb = load_kb()
     return {'cascade': kb['cascade'], 'decay': kb['decay'], 'habits': kb['habits']}
@@ -163,6 +199,7 @@ def cmd_export_web(params):
 COMMANDS = {
     'strategies': cmd_strategies,
     'strategy': cmd_strategy,
+    'search': cmd_search,
     'categories': cmd_categories,
     'evaluate': evaluate_decision,
     'deflated_sharpe': cmd_deflated_sharpe,
@@ -171,14 +208,40 @@ COMMANDS = {
     'cost_drag': cmd_cost_drag,
     'horizon_risk': cmd_horizon_risk,
     'kelly': cmd_kelly,
+    'compare': cmd_compare,
+    'breakeven': cmd_breakeven,
+    'repo_modules': cmd_repo_modules,
     'cascade': cmd_cascade,
     'repo_map': cmd_repo_map,
     'repo_scan': cmd_repo_scan,
     'export_web': cmd_export_web,
 }
 
+COMMAND_HELP = {
+    'strategies': 'Strategy catalog, optional family / category filter',
+    'strategy': 'One strategy with its evidence and sources',
+    'search': 'Keyword search over the strategies, ranked like the chat agent',
+    'categories': 'Evidence categories with their strategies and repository modules',
+    'evaluate': 'Score a decision 0-100 with checks and the net-edge cascade',
+    'deflated_sharpe': 'Deflated Sharpe Ratio (Bailey and Lopez de Prado)',
+    'haircut_sharpe': 'Harvey-Liu multiple-testing haircut of a Sharpe ratio',
+    'min_backtest_length': 'Minimum backtest length, or maximum trials for a length',
+    'cost_drag': 'Monthly cost drag and break-even round-trip cost',
+    'horizon_risk': 'Bodie shortfall put cost and probability of a real loss',
+    'kelly': 'Kelly and fractional Kelly sizing',
+    'compare': 'Rank all strategies for one investor profile',
+    'breakeven': 'Round-trip cost and turnover at which a decision loses its net edge',
+    'repo_modules': 'Repository modules and known gaps for a strategy',
+    'cascade': 'Chen-Velikov cascade and decay constants',
+    'repo_map': 'Curated map of repository modules by category',
+    'repo_scan': 'Live keyword scan of the repository tree',
+    'export_web': 'Write web/decision_lab.html with the data embedded',
+}
+
 
 def main():
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
     if len(sys.argv) < 2:
         print(json.dumps({'success': False, 'error': 'No command provided',
                           'usage': 'python quant_evidence_cli.py <command> [params_json]'}))
@@ -193,11 +256,11 @@ def main():
                     params = json.load(f)
             else:
                 params = json.loads(arg)
-        except (ValueError, OSError) as e:  # JSONDecodeError and UnicodeDecodeError
+        except (ValueError, OSError, RecursionError) as e:  # JSONDecodeError, UnicodeDecodeError, deep nesting
             print(json.dumps({'success': False, 'error': f'Invalid JSON parameters: {e}'}))
             return
     if command == 'list':
-        print(json.dumps({'success': True, 'data': sorted(COMMANDS)}))
+        print(json.dumps({'success': True, 'data': sorted(COMMANDS), 'help': COMMAND_HELP}))
         return
     if command not in COMMANDS:
         print(json.dumps({'success': False, 'error': f'Unknown command: {command}',

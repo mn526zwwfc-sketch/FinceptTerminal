@@ -54,6 +54,7 @@ cd fincept-qt/scripts/Analytics
 python quant_evidence_cli.py list
 python quant_evidence_cli.py strategies '{"family": "timing"}'
 python quant_evidence_cli.py strategy '{"id": "cape_timing"}'
+python quant_evidence_cli.py search '{"query": "momentum", "limit": 3}'
 python quant_evidence_cli.py categories            # strategies + repo modules per category
 python quant_evidence_cli.py evaluate '{"strategy_id": "momentum", "sharpe_annual": 1.2, "years": 8, "n_trials": 50, "periods_per_year": 12}'
 python quant_evidence_cli.py evaluate decision.json   # JSON copied from the web page
@@ -61,11 +62,36 @@ python quant_evidence_cli.py deflated_sharpe '{"sharpe_annual": 2.5, "n_trials":
 python quant_evidence_cli.py haircut_sharpe '{"sharpe_annual": 0.75, "years": 20, "n_tests": 200}'
 python quant_evidence_cli.py min_backtest_length '{"n_trials": 45, "target_sharpe": 1}'
 python quant_evidence_cli.py cost_drag '{"turnover_monthly": 0.6, "roundtrip_cost_bps": 40, "long_short": true, "gross_monthly_bps": 50}'
+python quant_evidence_cli.py compare '{"market": "mx", "horizon_years": 15, "strategy_id": "momentum", "top": 5}'
+python quant_evidence_cli.py breakeven '{"strategy_id": "momentum", "sharpe_annual": 1.2, "years": 8, "n_trials": 50, "periods_per_year": 12}'
+python quant_evidence_cli.py repo_modules '{"strategy_id": "momentum"}'
 python quant_evidence_cli.py repo_scan
 python quant_evidence_cli.py export_web            # rebuilds web/decision_lab.html
 ```
 
-Output follows the convention of the other Analytics CLIs: `{"success": true, "data": ...}` or `{"success": false, "error": ...}`.
+Output follows the convention of the other Analytics CLIs: `{"success": true, "data": ...}` or `{"success": false, "error": ...}`. `list` also returns a one-line `help` for each command.
+
+`search`, `compare`, `breakeven` and `repo_modules` come from `agent_tools.py`, a port of the chat agent's tools in `app/agente.html` (same ranking, defaults and break-even search; a test runs the page's tools under Node and compares). `breakeven` bisects the round-trip cost (0-300 bps, 1 bp steps) and the monthly turnover (0-300%, 5-point steps) until the net edge reaches zero: `null` means the edge survives the whole range and `0` means there is no edge even without costs.
+
+## Claude Code / MCP
+
+`mcp_server.py` is a dependency-free [MCP](https://modelcontextprotocol.io) server (server name `fincept-quant`) over stdio: newline-delimited JSON-RPC 2.0, protocol `2025-06-18` (older clients get their own version echoed back when it is `2025-03-26` or `2024-11-05`). It reuses the CLI commands, so the numbers are the same as the CLI and the web pages. stdout carries protocol messages only; logs go to stderr.
+
+```bash
+python3 fincept-qt/scripts/Analytics/quant_evidence/mcp_server.py
+# or
+cd fincept-qt/scripts/Analytics && python3 -m quant_evidence.mcp_server
+```
+
+Tools: `search_strategies`, `get_strategy`, `evaluate_decision`, `compare_strategies`, `breakeven_points`, `deflated_sharpe`, `haircut_sharpe`, `min_backtest_length`, `cost_drag`, `horizon_risk`, `kelly`, `repo_modules`. Each has a JSON Schema for its arguments; results are JSON text (non-finite numbers become `null`), and a failed call (unknown strategy, missing argument) comes back as a tool result with `isError: true`.
+
+The Claude Code plugin lives in the ECC repository at `plugins/fincept-quant`. It finds this engine through the `FINCEPT_ANALYTICS_DIR` environment variable, which must point at `fincept-qt/scripts/Analytics`.
+
+To register the server directly, without the plugin:
+
+```bash
+claude mcp add fincept-quant -- python3 /path/to/FinceptTerminal/fincept-qt/scripts/Analytics/quant_evidence/mcp_server.py
+```
 
 From Python:
 
