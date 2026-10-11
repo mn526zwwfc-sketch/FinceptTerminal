@@ -14,11 +14,15 @@ import os
 import random
 import shutil
 import subprocess
+import sys
 import unittest
 from statistics import NormalDist
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SERIES_JS = os.path.join(os.path.dirname(HERE), 'web', 'series.js')
+ANALYTICS = os.path.dirname(os.path.dirname(HERE))
+if ANALYTICS not in sys.path:
+    sys.path.insert(0, ANALYTICS)
 
 
 def _node(script, *args):
@@ -138,6 +142,39 @@ class TestSeries(unittest.TestCase):
             _node('return S.parseTable("texto sin numeros");')
         with self.assertRaises(subprocess.CalledProcessError):
             _node('return S.pbo([[0.1, 0.2, 0.3]]);')
+
+
+@unittest.skipUnless(shutil.which('node'), 'Node.js not installed')
+class TestSeriesCli(unittest.TestCase):
+    CLI = os.path.join(os.path.dirname(HERE), 'web', 'series_cli.js')
+
+    def run_cli(self, text, *args):
+        proc = subprocess.run(['node', self.CLI, '-', *args], input=text, capture_output=True, text=True, check=True)
+        return json.loads(proc.stdout)
+
+    def test_audit_matches_library_and_feeds_the_evaluator(self):
+        rnd = random.Random(5)
+        cols = [[rnd.gauss(0.005, 0.04) for _ in range(72)] for _ in range(3)]
+        rows = ['fecha,a,b,c'] + ['%04d-%02d-28,%s' % (2015 + t // 12, t % 12 + 1, ','.join('%.6f' % c[t] for c in cols)) for t in range(72)]
+        out = self.run_cli('\n'.join(rows))
+        self.assertTrue(out['success'])
+        d = out['data']
+        self.assertEqual((d['periods_per_year'], d['variants'], d['kind']), (12, 3, 'returns'))
+        best = max(range(3), key=lambda k: _sharpe(cols[k]))
+        self.assertEqual(d['series_index'], best)
+        ref = _pbo_reference(cols, d['pbo']['blocks'])
+        self.assertAlmostEqual(d['pbo']['pbo'], ref, places=12)
+        from quant_evidence import evaluate_decision
+        r = evaluate_decision(dict(d['evaluate_inputs'], strategy_id='momentum'))
+        self.assertAlmostEqual(r['inputs']['sharpe_annual'], _sharpe(cols[best]) * math.sqrt(12), places=6)
+        self.assertEqual(r['inputs']['n_trials'], 3)
+
+    def test_errors_use_the_envelope(self):
+        proc = subprocess.run(['node', self.CLI, '-'], input='1;2\n', capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 0)
+        self.assertFalse(json.loads(proc.stdout)['success'])
+        out = self.run_cli('\n'.join('%f' % (0.01 * ((i % 5) - 2)) for i in range(30)), '--series', '3')
+        self.assertFalse(out['success'])
 
 
 if __name__ == '__main__':
