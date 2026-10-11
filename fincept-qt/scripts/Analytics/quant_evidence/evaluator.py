@@ -15,7 +15,9 @@ same function; tests/test_quant_evidence.py checks that both agree.
 
 from __future__ import annotations
 
+import copy
 import math
+import re
 
 from . import stats
 from .knowledge_base import load_kb, load_repo_map, get_strategy
@@ -71,12 +73,32 @@ def _clamp(x: float, lo: float = 0.0, hi: float = 1.0) -> float:
     return max(lo, min(hi, x))
 
 
+# Plain decimal numbers only: sign, ASCII digits, one '.' or ',' decimal
+# separator, exponent, surrounding spaces. engine.js uses the same pattern, so
+# hex, binary, '1_000', 'inf' or non-ASCII digits are rejected by both engines.
+_SPACES = ' \t\n\r'
+_NUM_RE = re.compile(r'[ \t\n\r]*([+-]?(?:[0-9]+(?:[.,][0-9]*)?|[.,][0-9]+)(?:[eE][+-]?[0-9]+)?)[ \t\n\r]*')
+TRUE_WORDS = ('1', 'true', 'si', 'sí', 'yes', 'y', 'verdadero', 'on', 't', 's')
+FALSE_WORDS = ('0', 'false', 'no', 'n', 'falso', 'off', 'f')
+DEFAULT_VOLATILITY = 0.15
+
+
+def _blank(value) -> bool:
+    """True when an input was not given (None or an empty / blank string)."""
+    return value is None or (isinstance(value, str) and not value.strip(_SPACES))
+
+
 def _num(value, default=None):
-    if value is None or value == '':
+    if value is None:
         return default
+    if isinstance(value, str):
+        m = _NUM_RE.fullmatch(value)
+        if not m:
+            return default
+        value = m.group(1).replace(',', '.')
     try:
         v = float(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return default
     return v if math.isfinite(v) else default
 
@@ -85,17 +107,60 @@ def _bool(value, default: bool) -> bool:
     if value is None or value == '':
         return default
     if isinstance(value, str):
-        return value.strip().lower() in ('1', 'true', 'si', 'sí', 'yes', 'y')
+        word = value.strip(_SPACES).lower()
+        if word in TRUE_WORDS:
+            return True
+        if word in FALSE_WORDS:
+            return False
+        return default
     return bool(value)
+
+
+def _key(value) -> str:
+    """Lower-cased choice; a non-string (list, dict, number) counts as missing."""
+    return value.strip(_SPACES).lower() if isinstance(value, str) else ''
+
+
+def _show(value) -> str:
+    return f'"{value}"' if isinstance(value, str) else str(value)
+
+
+def input_problems(raw: dict) -> dict:
+    """Inputs that were given but ignored, as Spanish sentences.
+
+    'backtest': the Sharpe / years pair could not be used, so the statistical
+    block was skipped. 'inputs': other values replaced by their default.
+    """
+    sr_raw, yr_raw = raw.get('sharpe_annual'), raw.get('years')
+    sharpe, years = _num(sr_raw), _num(yr_raw)
+    backtest = []
+    if not _blank(sr_raw) and sharpe is None:
+        backtest.append(f'el Sharpe anual {_show(sr_raw)} no es un número válido')
+    if not _blank(yr_raw):
+        if years is None:
+            backtest.append(f'los años de datos {_show(yr_raw)} no son un número válido')
+        elif years <= 0:
+            backtest.append(f'los años de datos ({_show(yr_raw)}) deben ser mayores que 0')
+    if not backtest:
+        if sharpe is not None and _blank(yr_raw):
+            backtest.append(f'se dio el Sharpe anual ({_show(sr_raw)}) pero faltan los años de datos')
+        elif years is not None and _blank(sr_raw):
+            backtest.append(f'se dieron los años de datos ({_show(yr_raw)}) pero falta el Sharpe anual')
+    other = []
+    vol = _num(raw.get('volatility_annual'))
+    if vol is not None and vol < 0:
+        other.append(f'la volatilidad anual ({_show(raw.get("volatility_annual"))}) no puede ser negativa; '
+                     f'se usó {DEFAULT_VOLATILITY * 100:.0f}%')
+    return {'backtest': backtest, 'inputs': other}
 
 
 def resolve_inputs(raw: dict, strategy: dict) -> dict:
     """Fill missing inputs from the strategy's evidence profile."""
     ev = strategy['evidence']
-    investor = raw.get('investor') or 'retail'
+    investor = _key(raw.get('investor')) or 'retail'
     if investor not in DEFAULT_ROUNDTRIP_BPS:
         investor = 'retail'
-    market = raw.get('market') or 'global'
+    market = _key(raw.get('market')) or 'global'
     if market not in MARKET_SCORE:
         market = 'other'
     default_cost = DEFAULT_ROUNDTRIP_BPS[investor] * (MX_COST_MULTIPLIER if market == 'mx' else 1.0)
@@ -103,6 +168,9 @@ def resolve_inputs(raw: dict, strategy: dict) -> dict:
     years = _num(raw.get('years'))
     has_backtest = sharpe is not None and years is not None and years > 0
     live_months = _num(raw.get('live_months'), 0.0)
+    volatility = _num(raw.get('volatility_annual'), DEFAULT_VOLATILITY)
+    if volatility < 0:
+        volatility = DEFAULT_VOLATILITY
     return {
         'strategy_id': strategy['id'],
         'has_backtest': has_backtest,
@@ -114,7 +182,7 @@ def resolve_inputs(raw: dict, strategy: dict) -> dict:
         'kurtosis': _num(raw.get('kurtosis'), 3.0),
         'var_trials_sr': _num(raw.get('var_trials_sr')),
         'gross_alpha_monthly_bps': _num(raw.get('gross_alpha_monthly_bps')),
-        'volatility_annual': _num(raw.get('volatility_annual'), 0.15),
+        'volatility_annual': volatility,
         'turnover_monthly': _num(raw.get('turnover_monthly'), ev.get('typical_turnover_monthly') or 0.0),
         'roundtrip_cost_bps': _num(raw.get('roundtrip_cost_bps'), default_cost),
         'long_short': _bool(raw.get('long_short'), bool(ev.get('requires_short'))),
@@ -132,7 +200,9 @@ def resolve_inputs(raw: dict, strategy: dict) -> dict:
 
 
 def _check(cid, label, status, detail, source=None):
-    return {'id': cid, 'label': label, 'status': status, 'detail': detail, 'source': source}
+    # Copy the source so a caller editing the result cannot alter the catalog or the constants.
+    return {'id': cid, 'label': label, 'status': status, 'detail': detail,
+            'source': dict(source) if source else None}
 
 
 def _fmt(x, nd=2):
@@ -158,6 +228,20 @@ def evaluate_decision(raw: dict, kb: dict | None = None, repo_map: dict | None =
         'pass' if prior >= 60 else 'warn' if prior >= 30 else 'fail',
         f"{strategy['survives']} (valoración sintética: {int(prior)}/100)",
         strategy['sources'][0] if strategy['sources'] else None))
+
+    problems = input_problems(raw)
+    if problems['backtest']:
+        checks.append(_check(
+            'backtest_inputs', 'Datos del backtest',
+            'fail',
+            'Se ignoró el backtest: ' + '; '.join(problems['backtest']) + '. Sin un Sharpe anual y unos '
+            'años de datos válidos no se calculan el DSR, el recorte por pruebas múltiples ni la MinBTL.',
+            None))
+    if problems['inputs']:
+        checks.append(_check(
+            'inputs', 'Datos ignorados',
+            'warn',
+            'Se reemplazaron valores no válidos: ' + '; '.join(problems['inputs']) + '.', None))
 
     # 2. Statistical credibility ----------------------------------------------
     stat_block = None
@@ -337,7 +421,13 @@ def evaluate_decision(raw: dict, kb: dict | None = None, repo_map: dict | None =
             f"{inp['live_months']:.0f} meses operando en vivo. El único out-of-sample verdadero es operar en vivo.",
             LIVE_SOURCE))
     k = inp['kelly_multiple']
-    if k is not None:
+    if k is not None and k < 0:
+        ctx.append(0.0)
+        checks.append(_check(
+            'kelly', 'Tamaño de la apuesta', 'fail',
+            f"Un múltiplo de Kelly negativo ({_fmt(k)}×) significa apostar en contra de la propia señal; "
+            "revisa el dato. Medio Kelly conserva 75% del crecimiento máximo.", KELLY_SOURCE))
+    elif k is not None:
         ctx.append(1.0 if k <= 0.5 else 0.6 if k <= 1.0 else 0.0)
         checks.append(_check(
             'kelly', 'Tamaño de la apuesta',
@@ -373,9 +463,11 @@ def evaluate_decision(raw: dict, kb: dict | None = None, repo_map: dict | None =
                                 'categories': [c for c in m.get('categories', []) if c in cats]})
         modules.sort(key=lambda m: (-len(m['categories']), m['path']))
 
+    # Deep copies: the catalog is cached (knowledge_base._cache), so returning its
+    # objects would let a caller that edits the result corrupt later evaluations.
     return {
-        'strategy': {k3: strategy[k3] for k3 in ('id', 'name', 'family', 'categories', 'claim',
-                                                  'key_figure', 'critique', 'survives', 'marks')},
+        'strategy': copy.deepcopy({k3: strategy[k3] for k3 in ('id', 'name', 'family', 'categories', 'claim',
+                                                                'key_figure', 'critique', 'survives', 'marks')}),
         'inputs': inp,
         'stats': stat_block,
         'cascade': cascade,
@@ -383,12 +475,12 @@ def evaluate_decision(raw: dict, kb: dict | None = None, repo_map: dict | None =
         'net_sharpe_estimate': (net_monthly * 12 / 1e4 / inp['volatility_annual'])
         if net_monthly is not None and inp['volatility_annual'] > 0 else None,
         'scores': scores,
-        'weights': weights,
+        'weights': dict(weights),
         'caps': caps,
         'verdict': {'code': code, 'label': label, 'summary': summary},
         'checks': checks,
-        'sources': strategy['sources'],
+        'sources': copy.deepcopy(strategy['sources']),
         'related_modules': modules[:12],
-        'habits': kb.get('habits', []),
+        'habits': copy.deepcopy(kb.get('habits', [])),
         'disclaimer': kb['meta']['disclaimer'],
     }

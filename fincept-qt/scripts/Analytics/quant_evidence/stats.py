@@ -39,12 +39,15 @@ def expected_max_sharpe_z(n_trials: int) -> float:
     """E[max_N] of N iid standard normals, in standard deviations.
 
     E[max_N] ~ (1 - g) * Z^-1[1 - 1/N] + g * Z^-1[1 - 1/(N e)]
+
+    Evaluated through the lower tail, Z^-1[1 - q] = -Z^-1[q], because 1 - 1/N
+    rounds to exactly 1.0 (and Z^-1 to infinity) once N exceeds ~1e16.
     """
     n = int(n_trials)
     if n <= 1:
         return 0.0
-    return ((1.0 - EULER_GAMMA) * norm_ppf(1.0 - 1.0 / n)
-            + EULER_GAMMA * norm_ppf(1.0 - 1.0 / (n * math.e)))
+    return (-(1.0 - EULER_GAMMA) * norm_ppf(1.0 / n)
+            - EULER_GAMMA * norm_ppf(1.0 / (n * math.e)))
 
 
 def min_backtest_length(n_trials: int, target_sharpe: float) -> float:
@@ -106,6 +109,8 @@ def deflated_sharpe_ratio(sr_annual: float, n_trials: int, years: float,
     n_obs = int(math.floor(years * periods_per_year + 0.5))  # round half up, as JS Math.round
     if var_trials_sr_annual is None:
         var_trials_sr_annual = 1.0 / years if years > 0 else 1.0
+    elif var_trials_sr_annual < 0:
+        raise ValueError('var_trials_sr_annual debe ser >= 0 (es una varianza)')
     sr0_annual = math.sqrt(max(var_trials_sr_annual, 0.0)) * expected_max_sharpe_z(n_trials)
     scale = math.sqrt(periods_per_year)
     dsr = probabilistic_sharpe_ratio(sr_annual / scale, sr0_annual / scale,
@@ -127,9 +132,17 @@ def sharpe_to_t(sr_annual: float, years: float) -> float:
     return sr_annual * math.sqrt(max(years, 0.0))
 
 
+# Beyond this |t| the two-sided p-value is < 1e-299 and is reported as 0, the
+# same cut-off as the normal CDF in web/engine.js (which returns 0 past 37), so
+# both engines agree; haircut_sharpe then keeps |t| (negligible haircut).
+P_UNDERFLOW_T = 37.0
+
+
 def t_to_pvalue(t: float) -> float:
     """Two-sided p-value of a t statistic (normal approximation).
     Computed from the lower tail so it does not cancel to 0 for large |t|."""
+    if abs(t) > P_UNDERFLOW_T:
+        return 0.0
     return math.erfc(abs(t) / math.sqrt(2.0))
 
 
@@ -137,12 +150,19 @@ def pvalue_to_t(p: float) -> float:
     return -norm_ppf(min(max(p, 0.0), 1.0) / 2.0)
 
 
+ADJUST_METHODS = ('bonferroni', 'holm', 'sidak')
+
+
 def adjust_pvalue(p: float, n_tests: int, method: str = 'bonferroni') -> float:
     """Adjust the p-value of the BEST of `n_tests` strategies.
 
     bonferroni: min(M p, 1). For the top-ranked test Holm equals Bonferroni.
     sidak:      1 - (1 - p)^M.
+    Any other method raises ValueError.
     """
+    if method not in ADJUST_METHODS:
+        raise ValueError(f'Método de ajuste desconocido: {method!r}. '
+                         f'Métodos admitidos: {", ".join(ADJUST_METHODS)}.')
     m = max(int(n_tests), 1)
     p = min(max(p, 0.0), 1.0)
     if method == 'sidak':
@@ -212,6 +232,8 @@ def bodie_shortfall_put_cost(sigma_annual: float, years: float) -> float:
     """Cost, as a fraction of the investment, of insuring that stocks earn at
     least the risk-free rate over `years`:  P/S = 2 N(sigma sqrt(T) / 2) - 1.
     """
+    if sigma_annual < 0:
+        raise ValueError('sigma debe ser >= 0')
     return 2.0 * norm_cdf(sigma_annual * math.sqrt(max(years, 0.0)) / 2.0) - 1.0
 
 
@@ -233,7 +255,9 @@ def prob_real_loss_lognormal(mu_real_annual: float, sigma_annual: float,
 
 def kelly_fraction(mu: float, r: float, sigma: float, gamma: float = 1.0) -> float:
     """Merton fraction (mu - r) / (gamma sigma^2); Kelly is gamma = 1."""
-    if sigma <= 0:
+    if sigma < 0:
+        raise ValueError('sigma debe ser >= 0')
+    if sigma == 0:
         return math.copysign(math.inf, mu - r) if mu != r else 0.0
     return (mu - r) / (gamma * sigma * sigma)
 

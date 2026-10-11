@@ -97,7 +97,8 @@
   function expectedMaxSharpeZ(n) {
     n = Math.floor(n);
     if (n <= 1) return 0;
-    return (1 - EULER_GAMMA) * normPpf(1 - 1 / n) + EULER_GAMMA * normPpf(1 - 1 / (n * Math.E));
+    // Lower tail: Z^-1[1 - q] = -Z^-1[q], since 1 - 1/N rounds to 1 for N > ~1e16.
+    return -(1 - EULER_GAMMA) * normPpf(1 / n) - EULER_GAMMA * normPpf(1 / (n * Math.E));
   }
 
   function minBacktestLength(n, target) {
@@ -130,6 +131,7 @@
     kurt = kurt == null ? 3 : kurt;
     var nObs = Math.floor(years * ppy + 0.5);
     if (varTrials == null) varTrials = years > 0 ? 1 / years : 1;
+    else if (varTrials < 0) throw new Error('var_trials_sr_annual debe ser >= 0 (es una varianza)');
     var em = expectedMaxSharpeZ(nTrials);
     var sr0 = Math.sqrt(Math.max(varTrials, 0)) * em;
     var scale = Math.sqrt(ppy);
@@ -141,10 +143,18 @@
   }
 
   function sharpeToT(sr, years) { return sr * Math.sqrt(Math.max(years, 0)); }
-  function tToPvalue(t) { return 2 * normCdf(-Math.abs(t)); }
+  // Same cut-off as stats.P_UNDERFLOW_T: past |t| = 37 the p-value is reported as 0 (normCdf returns 0 there).
+  var P_UNDERFLOW_T = 37;
+  function tToPvalue(t) { return Math.abs(t) > P_UNDERFLOW_T ? 0 : 2 * normCdf(-Math.abs(t)); }
   function pvalueToT(p) { return -normPpf(Math.min(Math.max(p, 0), 1) / 2); }
 
+  var ADJUST_METHODS = ['bonferroni', 'holm', 'sidak'];
   function adjustPvalue(p, m, method) {
+    if (method === undefined) method = 'bonferroni';
+    if (ADJUST_METHODS.indexOf(method) < 0) {
+      throw new Error('Método de ajuste desconocido: ' + JSON.stringify(method) +
+        '. Métodos admitidos: ' + ADJUST_METHODS.join(', ') + '.');
+    }
     m = Math.max(Math.floor(m), 1);
     p = Math.min(Math.max(p, 0), 1);
     if (method === 'sidak') return p < 1 ? -Math.expm1(m * Math.log1p(-p)) : 1;
@@ -152,7 +162,7 @@
   }
 
   function haircutSharpe(sr, years, nTests, method) {
-    method = method || 'bonferroni';
+    if (method === undefined) method = 'bonferroni';
     var t = sharpeToT(sr, years), p = tToPvalue(t), pa = adjustPvalue(p, nTests, method);
     var ta = pa < 1 ? pvalueToT(pa) : 0;
     if (!isFinite(ta)) ta = Math.abs(t);  // p underflowed: the haircut is negligible
@@ -178,6 +188,7 @@
   }
 
   function bodieShortfallPutCost(sigma, years) {
+    if (sigma < 0) throw new Error('sigma debe ser >= 0');
     return 2 * normCdf(sigma * Math.sqrt(Math.max(years, 0)) / 2) - 1;
   }
 
@@ -189,7 +200,8 @@
   }
 
   function kellyFraction(mu, r, sigma, gamma) {
-    if (sigma <= 0) return mu === r ? 0 : (mu > r ? Infinity : -Infinity);
+    if (sigma < 0) throw new Error('sigma debe ser >= 0');
+    if (sigma === 0) return mu === r ? 0 : (mu > r ? Infinity : -Infinity);
     return (mu - r) / ((gamma == null ? 1 : gamma) * sigma * sigma);
   }
   function growthRate(f, mu, r, sigma) { return r + f * (mu - r) - 0.5 * f * f * sigma * sigma; }
@@ -236,20 +248,61 @@
     return Math.max(lo, Math.min(hi, x));
   }
   function own(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
-  // Same coercion rules as evaluator._num / _bool.
+  // Same coercion rules as evaluator._num / _bool / _key / _blank (same regex and word lists).
+  var NUM_RE = /^[ \t\n\r]*([+-]?(?:[0-9]+(?:[.,][0-9]*)?|[.,][0-9]+)(?:[eE][+-]?[0-9]+)?)[ \t\n\r]*$/;
+  var TRUE_WORDS = ['1', 'true', 'si', 'sí', 'yes', 'y', 'verdadero', 'on', 't', 's'];
+  var FALSE_WORDS = ['0', 'false', 'no', 'n', 'falso', 'off', 'f'];
+  var DEFAULT_VOLATILITY = 0.15;
+  function strip(v) { return v.replace(/^[ \t\n\r]+|[ \t\n\r]+$/g, ''); }
+  function blank(v) { return v === null || v === undefined || (typeof v === 'string' && strip(v) === ''); }
   function num(v, d) {
     var dflt = d === undefined ? null : d;
     if (v === null || v === undefined || typeof v === 'object') return dflt;
-    if (typeof v === 'string' && v.trim() === '') return dflt;
-    var x = Number(v);
+    var x;
+    if (typeof v === 'string') {
+      var m = NUM_RE.exec(v);
+      if (!m) return dflt;
+      x = Number(m[1].replace(',', '.'));
+    } else if (typeof v === 'number' || typeof v === 'boolean') {
+      x = Number(v);
+    } else {
+      return dflt;
+    }
     return isFinite(x) ? x : dflt;
   }
   function bool(v, d) {
     if (v === null || v === undefined || v === '') return d;
-    if (typeof v === 'string') return ['1', 'true', 'si', 'sí', 'yes', 'y'].indexOf(v.trim().toLowerCase()) >= 0;
+    if (typeof v === 'string') {
+      var w = strip(v).toLowerCase();
+      if (TRUE_WORDS.indexOf(w) >= 0) return true;
+      if (FALSE_WORDS.indexOf(w) >= 0) return false;
+      return d;
+    }
     if (Array.isArray(v)) return v.length > 0;
     if (typeof v === 'object') return Object.keys(v).length > 0;
     return !!v;
+  }
+  function key(v) { return typeof v === 'string' ? strip(v).toLowerCase() : ''; }
+  function show(v) { return typeof v === 'string' ? '"' + v + '"' : String(v); }
+
+  function inputProblems(raw) {
+    var srRaw = raw.sharpe_annual, yrRaw = raw.years;
+    var sharpe = num(srRaw), years = num(yrRaw), backtest = [], other = [];
+    if (!blank(srRaw) && sharpe === null) backtest.push('el Sharpe anual ' + show(srRaw) + ' no es un número válido');
+    if (!blank(yrRaw)) {
+      if (years === null) backtest.push('los años de datos ' + show(yrRaw) + ' no son un número válido');
+      else if (years <= 0) backtest.push('los años de datos (' + show(yrRaw) + ') deben ser mayores que 0');
+    }
+    if (!backtest.length) {
+      if (sharpe !== null && blank(yrRaw)) backtest.push('se dio el Sharpe anual (' + show(srRaw) + ') pero faltan los años de datos');
+      else if (years !== null && blank(srRaw)) backtest.push('se dieron los años de datos (' + show(yrRaw) + ') pero falta el Sharpe anual');
+    }
+    var vol = num(raw.volatility_annual);
+    if (vol !== null && vol < 0) {
+      other.push('la volatilidad anual (' + show(raw.volatility_annual) + ') no puede ser negativa; se usó ' +
+        pct0(DEFAULT_VOLATILITY) + '%');
+    }
+    return { backtest: backtest, inputs: other };
   }
   function fmt(x, nd) { return Number(x).toFixed(nd == null ? 2 : nd); }
   function pct0(x) { return (x * 100).toFixed(0); }
@@ -263,14 +316,16 @@
 
   function resolveInputs(raw, s) {
     var ev = s.evidence;
-    var investor = raw.investor || 'retail';
+    var investor = key(raw.investor) || 'retail';
     if (!own(DEFAULT_ROUNDTRIP_BPS, investor)) investor = 'retail';
-    var market = raw.market || 'global';
+    var market = key(raw.market) || 'global';
     if (!own(MARKET_SCORE, market)) market = 'other';
     var defCost = DEFAULT_ROUNDTRIP_BPS[investor] * (market === 'mx' ? MX_COST_MULTIPLIER : 1);
     var sharpe = num(raw.sharpe_annual), years = num(raw.years);
     var hasBt = sharpe !== null && years !== null && years > 0;
     var live = num(raw.live_months, 0);
+    var vol = num(raw.volatility_annual, DEFAULT_VOLATILITY);
+    if (vol < 0) vol = DEFAULT_VOLATILITY;
     var mshare = MICROCAP_ALPHA_SHARE[ev.microcap_dependence];
     return {
       strategy_id: s.id,
@@ -283,7 +338,7 @@
       kurtosis: num(raw.kurtosis, 3),
       var_trials_sr: num(raw.var_trials_sr),
       gross_alpha_monthly_bps: num(raw.gross_alpha_monthly_bps),
-      volatility_annual: num(raw.volatility_annual, 0.15),
+      volatility_annual: vol,
       turnover_monthly: num(raw.turnover_monthly, ev.typical_turnover_monthly || 0),
       roundtrip_cost_bps: num(raw.roundtrip_cost_bps, defCost),
       long_short: bool(raw.long_short, !!ev.requires_short),
@@ -310,6 +365,17 @@
       prior >= 60 ? 'pass' : prior >= 30 ? 'warn' : 'fail',
       s.survives + ' (valoración sintética: ' + Math.trunc(prior) + '/100)',
       s.sources.length ? s.sources[0] : null));
+
+    var problems = inputProblems(raw);
+    if (problems.backtest.length) {
+      checks.push(check('backtest_inputs', 'Datos del backtest', 'fail',
+        'Se ignoró el backtest: ' + problems.backtest.join('; ') + '. Sin un Sharpe anual y unos años de datos ' +
+        'válidos no se calculan el DSR, el recorte por pruebas múltiples ni la MinBTL.', null));
+    }
+    if (problems.inputs.length) {
+      checks.push(check('inputs', 'Datos ignorados', 'warn',
+        'Se reemplazaron valores no válidos: ' + problems.inputs.join('; ') + '.', null));
+    }
 
     var st = null;
     if (inp.has_backtest) {
@@ -461,7 +527,12 @@
         inp.live_months.toFixed(0) + ' meses operando en vivo. El único out-of-sample verdadero es operar en vivo.', SRC.live));
     }
     var k = inp.kelly_multiple;
-    if (k !== null) {
+    if (k !== null && k < 0) {
+      ctx.push(0);
+      checks.push(check('kelly', 'Tamaño de la apuesta', 'fail',
+        'Un múltiplo de Kelly negativo (' + fmt(k) + '×) significa apostar en contra de la propia señal; ' +
+        'revisa el dato. Medio Kelly conserva 75% del crecimiento máximo.', SRC.kelly));
+    } else if (k !== null) {
       ctx.push(k <= 0.5 ? 1 : k <= 1 ? 0.6 : 0);
       checks.push(check('kelly', 'Tamaño de la apuesta', k <= 0.5 ? 'pass' : k <= 1 ? 'warn' : 'fail',
         fmt(k) + '× Kelly conserva ' + (kellyGrowthShare(k) * 100).toFixed(0) + '% del crecimiento máximo; ' +
