@@ -222,7 +222,6 @@ tr.click { cursor: pointer; } tr.click:hover td { background: var(--accent-soft)
       <span class="tag">Auditoría automática de estrategias contra la evidencia académica</span>
     </div>
     <div class="status" aria-live="polite">
-      <span class="pill" id="st-av"><span class="dot"></span><span>Alpha Vantage: comprobando</span></span>
       <span class="pill" id="st-yahoo"><span class="dot"></span><span>Yahoo: comprobando</span></span>
       <span class="pill" id="st-claude"><span class="dot"></span><span>Claude: comprobando</span></span>
     </div>
@@ -253,7 +252,7 @@ tr.click { cursor: pointer; } tr.click:hover td { background: var(--accent-soft)
               <input type="text" id="in-tickers" value="SPY, MTUM, QUAL, USMV" autocomplete="off" spellcheck="false">
             </label>
             <div class="btns" style="margin-top:8px"><button class="btn primary" type="button" id="btn-fetch">Traer y auditar</button></div>
-            <p class="note" style="margin-top:6px">Precios mensuales ajustados de Yahoo Finance, que una tarea programada actualiza cada día hábil, sin gastar cuota. Acepta acciones de EE. UU. y de la BMV (WALMEX.MX), índices (^MXX, ^GSPC) y divisas (USDMXN=X). Si un ticker aún no está, lo pide para la siguiente actualización y mientras tanto usa tu conector de Alpha Vantage. Varios tickers cuentan como variantes comparadas.</p>
+            <p class="note" style="margin-top:6px">Precios mensuales ajustados de Yahoo Finance, guardados en la base de esta página. La actualización automática está en pausa: la fecha de los precios aparece arriba, en «Yahoo». Acepta acciones de EE. UU. y de la BMV (WALMEX.MX), índices (^MXX, ^GSPC) y divisas (USDMXN=X). Si un ticker aún no está en la base, la página lo anota para la siguiente actualización. Varios tickers cuentan como variantes comparadas.</p>
           </div>
           <div id="pane-paste" hidden>
             <label class="f" for="in-data">Pega una tabla: fecha y una columna por variante
@@ -394,7 +393,7 @@ tr.click { cursor: pointer; } tr.click:hover td { background: var(--accent-soft)
       <div class="card panel">
         <div style="display:grid;gap:4px">
           <h2>Señales alternativas</h2>
-          <p class="small muted">Qué compran y venden los congresistas de EE. UU. y los directivos de la empresa, y cuánto gasta la empresa en lobbying y recibe en contratos de gobierno. Datos de Alpha Vantage y Quiver Quant con tus conectores; se guardan 12 h en este navegador.</p>
+          <p class="small muted">Qué compran y venden los congresistas de EE. UU. y los directivos de la empresa, y cuánto gasta la empresa en lobbying y recibe en contratos de gobierno. Datos de Quiver Quant con tu conector (requiere su plan Hobbyist o superior); se guardan 12 h en este navegador.</p>
         </div>
         <form class="sigbar" id="sig-form">
           <label class="f" for="in-sig">Ticker de EE. UU.
@@ -477,7 +476,7 @@ tr.click { cursor: pointer; } tr.click:hover td { background: var(--accent-soft)
         <p>El Sharpe se pasa a estadístico t, se ajusta el valor p por el número de pruebas (Bonferroni, Harvey, Liu y Zhu 2016) y se vuelve a Sharpe. La cascada aplica después el decaimiento tras publicación (−58%, McLean y Pontiff 2016) o fuera de muestra (−26%), la parte del alfa en microcaps y el costo de la rotación. Con resultados en vivo no se aplica el decaimiento por publicación: ya está en los datos.</p>
       </div>
       <div class="card"><h3>Qué no hace</h3>
-        <p>No predice precios ni recomienda comprar valores concretos. Los precios vienen de Yahoo Finance, que una tarea programada guarda en la base de esta página cada día hábil, y de Alpha Vantage con tu conector cuando un ticker aún no está en esa base. Las señales del Congreso, los directivos, el lobbying y los contratos vienen de Alpha Vantage y Quiver Quant. Sin esas fuentes, el laboratorio no muestra cifras de mercado. Yahoo no tiene API oficial: su acceso público no tiene garantía de servicio y sus condiciones lo limitan al uso personal. Es material educativo, no asesoría financiera personalizada.</p>
+        <p>No predice precios ni recomienda comprar valores concretos. Los precios vienen de Yahoo Finance, guardados en la base de esta página por una tarea programada que se puede pausar. Las señales del Congreso, los directivos, el lobbying y los contratos vienen de Quiver Quant. Sin esas fuentes, el laboratorio no muestra cifras de mercado. Yahoo no tiene API oficial: su acceso público no tiene garantía de servicio y sus condiciones lo limitan al uso personal. Es material educativo, no asesoría financiera personalizada.</p>
       </div>
     </div>
   </section>
@@ -500,8 +499,6 @@ var PAPERS = /*__PAPERS__*/null;
   'use strict';
   var E = window.QuantEvidence, S = window.QuantSeries;
   var $ = function (id) { return document.getElementById(id); };
-  var AV = 'Alpha Vantage MCP Server';
-  var AV_TTL = 12 * 3600e3, AV_GAP = 1200;
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function fmt(x, d) { if (x != null && isFinite(x) && Math.abs(x) < 0.5 * Math.pow(10, -(d == null ? 2 : d))) x = 0; return x == null || !isFinite(x) ? '—' : Number(x).toLocaleString('es-MX', { minimumFractionDigits: d == null ? 2 : d, maximumFractionDigits: d == null ? 2 : d }); }
@@ -548,7 +545,6 @@ var PAPERS = /*__PAPERS__*/null;
     : Promise.resolve();
   capsReady.then(function () {
     cap.mcpChecked = true;
-    setPill('st-av', cap.mcp ? 'wait' : 'off', cap.mcp ? 'Alpha Vantage: listo al usarlo' : 'Alpha Vantage: no disponible aquí');
     yahooStatus();
     setPill('st-claude', cap.sample ? 'wait' : 'off', cap.sample ? 'Claude: listo al usarlo' : 'Claude: no disponible aquí');
     if (!cap.sample) { $('btn-memo').disabled = true; $('memo').innerHTML = '<p class="muted">El informe con Claude solo funciona dentro de claude.ai. Las cifras de la auditoría no dependen de él.</p>'; }
@@ -556,9 +552,8 @@ var PAPERS = /*__PAPERS__*/null;
     if (!$('v-signals').hidden) signalsOpen();
   });
 
-  // ── Connectors (Alpha Vantage, Quiver Quant) ───────────────────────────
+  // ── Connector (Quiver Quant) ───────────────────────────────────────────
   var QV = 'Quiver Quant';
-  var avQueue = Promise.resolve(), avLast = 0;
   function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   function connError(server, e) {
     var code = e && e.code, msg = String((e && e.message) || '');
@@ -579,69 +574,14 @@ var PAPERS = /*__PAPERS__*/null;
     return { message: msg ? msg.slice(0, 200) : 'Falló la consulta a ' + server + '.' };
   }
   function noMcp() { return { message: cap.mcpChecked ? 'Esta vista no puede usar conectores. Usa «Mis datos» o el ejemplo.' : 'Todavía comprobando los conectores; intenta en unos segundos.' }; }
-  /** One Alpha Vantage call, spaced 1.2 s from the previous one (free plan: 1 per second). */
-  function avCall(tool, input) {
-    if (!cap.mcp) return Promise.reject(noMcp());
-    var run = function (retried) {
-      return delay(Math.max(0, avLast + AV_GAP - Date.now())).then(function () {
-        avLast = Date.now();
-        return cap.mcp.callTool(AV, tool, input, { cache: false });
-      }).then(function (res) {
-        setPill('st-av', 'on', 'Alpha Vantage: conectado');
-        return res;
-      }, function (e) {
-        var info = connError('Alpha Vantage', e);
-        if (info.fatal) setPill('st-av', 'off', 'Alpha Vantage: sin acceso');
-        if (info.retry && !retried) return delay((info.retryAfterMs || 1500) + Math.random() * 800).then(function () { return run(true); });
-        throw info;
-      });
-    };
-    var p = avQueue.then(function () { return run(false); }, function () { return run(false); });
-    avQueue = p.catch(function () {});
-    return p;
-  }
   function qvCall(tool, input) {
     if (!cap.mcp) return Promise.reject(noMcp());
     return cap.mcp.callTool(QV, tool, input, { cache: false }).then(function (res) { return res; }, function (e) { throw connError(QV, e); });
-  }
-  /** Alpha Vantage notes (rate limit, premium, errors) arrive as normal payloads. */
-  function avNote(p) {
-    if (!p || typeof p !== 'object') return null;
-    var note = p.Information || p.Note || (p.error && (p.error.message || p.error.detail || p.error)) || (typeof p['Error Message'] === 'string' ? p['Error Message'] : null);
-    if (typeof note !== 'string') return null;
-    if (/rate limit|requests per day|spreading out|frequency/i.test(note)) return 'Llegaste al límite de consultas de Alpha Vantage (25 al día y 1 por segundo en el plan gratuito). Los datos ya guardados siguen disponibles.';
-    if (/premium/i.test(note)) return 'Ese dato es de plan premium en Alpha Vantage.';
-    return note.slice(0, 200);
-  }
-  function parseMonthly(sym, p) {
-    if (p && typeof p === 'string') { try { p = JSON.parse(p); } catch (x) { throw { message: 'Alpha Vantage respondió en un formato inesperado para ' + sym + '.' }; } }
-    if (!p || typeof p !== 'object') throw { message: 'Respuesta vacía de Alpha Vantage para ' + sym + '.' };
-    var note = p.Information || p.Note || (p.error && (p.error.message || p.error)) || p.message;
-    if (typeof note === 'string' && !p['Monthly Adjusted Time Series']) {
-      if (/rate limit|requests per day|spreading out|frequency/i.test(note)) throw { message: 'Llegaste al límite de consultas de Alpha Vantage (25 al día en el plan gratuito). Los datos ya guardados siguen disponibles.', quota: true };
-      if (/premium/i.test(note)) throw { message: 'Ese dato es de plan premium en Alpha Vantage.' };
-      throw { message: note.slice(0, 200) };
-    }
-    if (typeof p['Error Message'] === 'string') throw { message: 'Alpha Vantage no reconoce el ticker ' + sym + '.' };
-    var ts = p['Monthly Adjusted Time Series'];
-    if (!ts || typeof ts !== 'object') throw { message: 'Alpha Vantage no devolvió precios mensuales para ' + sym + '.' };
-    var keys = Object.keys(ts).filter(function (k) { return /^\d{4}-\d{2}-\d{2}$/.test(k); }).sort();
-    var now = new Date(), ym = now.getUTCFullYear() + '-' + String(now.getUTCMonth() + 1).padStart(2, '0');
-    if (keys.length && keys[keys.length - 1].slice(0, 7) === ym) keys.pop();        // the current month is not complete
-    var dates = [], closes = [];
-    keys.forEach(function (k) {
-      var v = parseFloat(ts[k]['5. adjusted close']);
-      if (isFinite(v) && v > 0) { dates.push(k); closes.push(v); }
-    });
-    if (closes.length < 13) throw { message: sym + ' tiene muy poca historia mensual (' + closes.length + ' meses).' };
-    var meta = p['Meta Data'] || {};
-    return { sym: sym, dates: dates, closes: closes, refreshed: meta['3. Last Refreshed'] || null };
   }
   // ── Yahoo Finance (through this page's database) ────────────────────
   // A scheduled task downloads monthly adjusted prices from Yahoo on weekdays and
   // writes prices/<id>; the page reads them here and leaves requests/<id> for
   // symbols it does not have yet.
-  var YAHOO_SCHEDULE = 'cada día hábil a las 18:13 h (Ciudad de México)';
   function yahooId(sym) { return String(sym).replace(/\^/g, '~').replace(/=/g, ':'); }
   function yahooStatus() {
     if (!cap.db) { setPill('st-yahoo', 'off', 'Yahoo: no disponible aquí'); return; }
@@ -669,26 +609,13 @@ var PAPERS = /*__PAPERS__*/null;
       return cap.db.doc('requests/' + yahooId(sym)).set({ symbol: sym, requested_at: new Date().toISOString() }).then(function () { return true; }, function () { return false; });
     } catch (e) { return Promise.resolve(false); }
   }
-  /** Monthly adjusted prices: Yahoo first (no quota), then Alpha Vantage. */
-  function fetchMonthly(sym, force) {
+  /** Monthly adjusted prices from the page's Yahoo database; a missing symbol is requested for the next update. */
+  function fetchMonthly(sym) {
+    if (!cap.db) return Promise.reject({ message: cap.mcpChecked ? 'Esta vista no puede leer la base de precios. Abre la página en claude.ai.' : 'Todavía comprobando la base de precios; intenta en unos segundos.' });
     return fetchYahoo(sym).then(function (y) {
       if (y) return y;
-      var asked = requestYahoo(sym);
-      var key = 'lab.av.' + sym, hit = store(key);
-      if (!force && hit && hit.t && Date.now() - hit.t < AV_TTL && hit.data) return { data: Object.assign({ source: 'Alpha Vantage' }, hit.data), at: hit.t, cached: true };
-      if (!cap.mcp) return asked.then(function (ok) {
-        throw { message: ok ? sym + ' todavía no está en la base de Yahoo; lo pedí y llegará ' + YAHOO_SCHEDULE + '.' : noMcp().message };
-      });
-      return avCall('TIME_SERIES_MONTHLY_ADJUSTED', { symbol: sym, datatype: 'json' }).then(function (res) {
-        var data = parseMonthly(sym, res ? res.payload : null);
-        data.source = 'Alpha Vantage';
-        var at = res && res.cache ? res.cache.storedAt : Date.now();
-        store(key, { t: at, data: data });
-        return { data: data, at: at, cached: false };
-      }, function (e) {
-        return asked.then(function (ok) {
-          throw { message: e.message + (ok ? ' Lo pedí a Yahoo: llegará ' + YAHOO_SCHEDULE + '.' : '') };
-        });
+      return requestYahoo(sym).then(function (ok) {
+        throw { message: sym + ' no está en la base de precios de Yahoo.' + (ok ? ' Quedó anotado para cuando se actualice la base (la actualización automática está en pausa).' : '') };
       });
     });
   }
@@ -722,7 +649,7 @@ var PAPERS = /*__PAPERS__*/null;
     $('in-live').checked = false;
     afterLoad();
   }
-  /** Aligns monthly series on their common months ('YYYY-MM'); Yahoo and Alpha Vantage mix freely. */
+  /** Aligns monthly series on their common months ('YYYY-MM'). */
   function alignTickers(list) {
     var common = null;
     var months = list.map(function (d) {
@@ -757,7 +684,7 @@ var PAPERS = /*__PAPERS__*/null;
       var al = alignTickers(got);
       if (al.dates.length < 12) { showDataError('Los tickers comparten menos de 12 meses de historia.'); return; }
       var bySrc = {};
-      got.forEach(function (d) { (bySrc[d.source || 'Alpha Vantage'] = bySrc[d.source || 'Alpha Vantage'] || []).push(d.sym); });
+      got.forEach(function (d) { (bySrc[d.source || 'Yahoo Finance'] = bySrc[d.source || 'Yahoo Finance'] || []).push(d.sym); });
       data = { label: 'Precios mensuales ajustados · ' + Object.keys(bySrc).map(function (k) { return k + ': ' + bySrc[k].join(', '); }).join(' · '), kind: 'ticker', ppy: 12,
         dates: al.dates, names: got.map(function (d) { return d.sym; }), cols: al.cols, live: true };
       store('lab.tickers', $('in-tickers').value);
@@ -1208,10 +1135,7 @@ var PAPERS = /*__PAPERS__*/null;
   function monitorOpen() { if (!mon.started && cap.mcpChecked) { mon.started = true; monitorLoad(false); } else monitorRender(); }
   function monitorLoad(force) {
     if (mon.busy) return;
-    if (!cap.mcp && !cap.db) {
-      var anyCached = WATCH.some(function (w) { var h = store('lab.av.' + w.sym); return h && h.data; });
-      if (!anyCached) { $('mon-status').innerHTML = '<span class="err">' + esc('Esta vista no puede leer la base de Yahoo ni usar conectores, así que no hay cifras de mercado. Abre la página en claude.ai.') + '</span>'; monitorRender(); return; }
-    }
+    if (!cap.db) { $('mon-status').innerHTML = '<span class="err">' + esc('Esta vista no puede leer la base de precios de Yahoo, así que no hay cifras de mercado. Abre la página en claude.ai.') + '</span>'; monitorRender(); return; }
     mon.busy = true; $('btn-mon-refresh').disabled = true;
     var done = 0, chain = Promise.resolve();
     $('mon-status').textContent = 'Cargando 0 de ' + WATCH.length + '…';
@@ -1227,7 +1151,7 @@ var PAPERS = /*__PAPERS__*/null;
       var ats = WATCH.map(function (w) { return mon.rows[w.sym] && mon.rows[w.sym].at; }).filter(Boolean);
       var errs = WATCH.filter(function (w) { return mon.rows[w.sym] && mon.rows[w.sym].err; });
       var srcs = {};
-      WATCH.forEach(function (w) { var r = mon.rows[w.sym]; if (r && r.data) srcs[r.data.source || 'Alpha Vantage'] = (srcs[r.data.source || 'Alpha Vantage'] || 0) + 1; });
+      WATCH.forEach(function (w) { var r = mon.rows[w.sym]; if (r && r.data) srcs[r.data.source || 'Yahoo Finance'] = (srcs[r.data.source || 'Yahoo Finance'] || 0) + 1; });
       $('mon-status').innerHTML = (ats.length ? esc('Precios al ' + new Date(Math.min.apply(null, ats)).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) +
         ' · ' + Object.keys(srcs).map(function (k) { return k + ': ' + srcs[k]; }).join(' · ') + '. ') : '') +
         (errs.length ? '<span class="err">' + esc(errs[0].err) + '</span>' : '');
@@ -1438,21 +1362,8 @@ var PAPERS = /*__PAPERS__*/null;
   // Each source: how to call it and how to read the answer into rows.
   function since(days) { return new Date(Date.now() - days * DAY).toISOString().slice(0, 10); }
   var SOURCES = {
-    av_congress: { label: 'Congreso · Alpha Vantage', server: 'Alpha Vantage', call: function (s) { return avCall('CONGRESS_TRADES', { symbol: s, return_full_data: true }); },
-      read: function (p) {
-        var partial = false;
-        if (isObj(p) && p.preview === true && typeof p.sample_data === 'string') { partial = true; try { p = JSON.parse(p.sample_data); } catch (e) { p = {}; } }
-        var n = avNote(p); if (n) throw { message: n };
-        return { rows: recordsOf(p).map(congressRow), partial: partial, total: isObj(p) ? p.trades_total_count : null };
-      } },
     qv_congress: { label: 'Congreso · Quiver', server: QV, call: function (s) { return qvCall('get_congress_trades', { ticker: s, date_field: 'traded', date_from: since(4 * 365), limit: 500 }); },
       read: function (p) { return { rows: recordsOf(p).map(congressRow) }; } },
-    av_insider: { label: 'Directivos · Alpha Vantage', server: 'Alpha Vantage', call: function (s) { return avCall('INSIDER_TRANSACTIONS', { symbol: s, return_full_data: true }); },
-      read: function (p) {
-        if (isObj(p) && p.preview === true && typeof p.sample_data === 'string') { try { p = JSON.parse(p.sample_data); } catch (e) { p = {}; } }
-        var n = avNote(p); if (n) throw { message: n };
-        return { rows: recordsOf(p).map(insiderRow) };
-      } },
     qv_insider: { label: 'Directivos · Quiver', server: QV, call: function (s) { return qvCall('get_insider_trading', { ticker: s, date_from: since(5 * 365), limit: 500 }); },
       read: function (p) { return { rows: recordsOf(p).map(insiderRow) }; } },
     qv_lobby: { label: 'Lobbying · Quiver', server: QV, call: function (s) { return qvCall('get_lobbying', { ticker: s, year_from: new Date().getUTCFullYear() - 3, limit: 500 }); },
@@ -1466,7 +1377,7 @@ var PAPERS = /*__PAPERS__*/null;
           agency: String(pick(r, ['awarding_agency_name', 'agency', 'awarding_agency', 'funding_agency']) || ''), what: String(pick(r, ['description', 'award_description', 'title']) || '') };
       }) }; } }
   };
-  var ORDER = ['av_congress', 'av_insider', 'qv_congress', 'qv_insider', 'qv_lobby', 'qv_contracts'];
+  var ORDER = ['qv_congress', 'qv_insider', 'qv_lobby', 'qv_contracts'];
 
   function signalsOpen() {
     sig.opened = true;
@@ -1481,7 +1392,6 @@ var PAPERS = /*__PAPERS__*/null;
     $('btn-sig').disabled = $('btn-sig-refresh').disabled = true;
     store('lab.sig.last', s);
     renderSignals();
-    var avChain = Promise.resolve();
     var jobs = ORDER.map(function (id) {
       var src = SOURCES[id], key = 'lab.sig.' + id + '.' + s, hit = store(key);
       var go = function () {
@@ -1496,8 +1406,6 @@ var PAPERS = /*__PAPERS__*/null;
           sig.res[id] = { ok: false, err: (e && e.message) || 'Falló la consulta.', sub: !!(e && e.sub) };
         }).then(renderSignals);
       };
-      // Alpha Vantage calls go one after another; Quiver runs alongside.
-      if (src.server === 'Alpha Vantage') { avChain = avChain.then(go); return avChain; }
       return go();
     });
     Promise.all(jobs).then(function () { sig.busy = false; $('btn-sig').disabled = $('btn-sig-refresh').disabled = false; renderSignals(); });
@@ -1559,7 +1467,7 @@ var PAPERS = /*__PAPERS__*/null;
     if (!sig.sym) return;
     var yearAgo = Date.now() - 365 * DAY;
     // Congress
-    var c = bestOf(['av_congress', 'qv_congress']), box = $('sig-congress');
+    var c = bestOf(['qv_congress']), box = $('sig-congress');
     if (c) {
       var rows = c.rows.filter(function (r) { return r.date; }).sort(function (a, b) { return b.date - a.date; });
       var last = rows.filter(function (r) { return r.date >= yearAgo; });
@@ -1567,21 +1475,19 @@ var PAPERS = /*__PAPERS__*/null;
       var mid = function (rs) { return rs.reduce(function (a, r) { return a + (r.lo != null && r.hi != null ? (r.lo + r.hi) / 2 : 0); }, 0); };
       var lags = rows.filter(function (r) { return r.filed && r.date && r.filed >= r.date; }).slice(0, 200).map(function (r) { return (r.filed - r.date) / DAY; });
       var people = {}; last.forEach(function (r) { people[r.name] = true; });
-      var other = c.id === 'av_congress' ? sig.res.qv_congress : sig.res.av_congress;
       $('sig-c-note').textContent = SOURCES[c.id].label.split('· ')[1] + (c.v.partial ? ' · muestra parcial' : '');
       box.innerHTML = tiles([['Compras, 12 meses', String(b.length)], ['Ventas, 12 meses', String(s.length)], ['Monto estimado comprado', usd(mid(b))], ['Monto estimado vendido', usd(mid(s))],
           ['Congresistas distintos', String(Object.keys(people).length)], ['Retraso mediano de divulgación', lags.length ? fmt(median(lags), 0) + ' días' : '—']]) +
         monthBars(rows, 24) +
-        '<p class="small muted">Los montos son rangos declarados (por ejemplo 1,001 a 15,000 US$); se suma el punto medio. El retraso es lo que tarda en hacerse pública cada operación: copiar solo es posible después.' +
-        (other && other.ok && other.v.rows.length ? ' Cotejo: la otra fuente reporta ' + other.v.rows.length + ' registros.' : '') + '</p>' +
+        '<p class="small muted">Los montos son rangos declarados (por ejemplo 1,001 a 15,000 US$); se suma el punto medio. El retraso es lo que tarda en hacerse pública cada operación: copiar solo es posible después.</p>' +
         '<div class="tablewrap"><table><thead><tr><th>Operó</th><th>Divulgó</th><th>Congresista</th><th></th><th>Tipo</th><th class="n">Monto (US$)</th></tr></thead><tbody>' +
         rows.slice(0, 12).map(function (r) {
           return '<tr><td class="num">' + dstr(r.date) + '</td><td class="num">' + dstr(r.filed) + '</td><td>' + esc(r.name) + '</td><td class="muted">' + esc(r.party) + '</td><td>' + (r.side === 'buy' ? 'Compra' : r.side === 'sell' ? 'Venta' : 'Otra') + '</td>' +
             '<td class="n">' + (r.lo != null ? (r.lo === r.hi ? fmt(r.lo, 0) : fmt(r.lo, 0) + ' – ' + fmt(r.hi, 0)) : '—') + '</td></tr>';
         }).join('') + '</tbody></table></div>';
-    } else box.innerHTML = signalEmpty(['av_congress', 'qv_congress'], 'Ningún congresista reportó operaciones con ' + sig.sym + ' en las fuentes disponibles.');
+    } else box.innerHTML = signalEmpty(['qv_congress'], 'Ningún congresista reportó operaciones con ' + sig.sym + ' en las fuentes disponibles.');
     // Insiders
-    var ins = bestOf(['qv_insider', 'av_insider']), ib = $('sig-insider');
+    var ins = bestOf(['qv_insider']), ib = $('sig-insider');
     if (ins) {
       var ir = ins.rows.filter(function (r) { return r.date; }).sort(function (a, b) { return b.date - a.date; });
       var firstYear = classifyInsiders(ir);
@@ -1595,13 +1501,13 @@ var PAPERS = /*__PAPERS__*/null;
           ['Compras oportunistas', classifiable ? String(opp.length) : 'sin historia'], ['Directivos distintos', String(Object.keys(il.reduce(function (o, r) { o[r.name] = 1; return o; }, {})).length)]]) +
         monthBars(ir, 24) +
         '<p class="small muted">«Oportunista» sigue a Cohen, Malloy y Pomorski (2012): no operó en el mismo mes en cada uno de los tres años anteriores. Las ventas suelen ser por liquidez o diversificación; la evidencia se concentra en las compras.' +
-        (ins.id === 'av_insider' ? ' Con Alpha Vantage, una «compra» incluye adquisiciones con precio, que pueden ser ejercicios de opciones.' : '') + '</p>' +
+        '</p>' +
         '<div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Directivo</th><th>Cargo</th><th>Tipo</th><th class="n">Acciones</th><th class="n">Valor (US$)</th><th>Patrón</th></tr></thead><tbody>' +
         ir.slice(0, 12).map(function (r) {
           return '<tr><td class="num">' + dstr(r.date) + '</td><td>' + esc(r.name) + '</td><td class="muted">' + esc(r.title.slice(0, 40)) + '</td><td>' + ({ buy: 'Compra', sell: 'Venta', grant: 'Asignación' }[r.side] || 'Otra') + '</td>' +
             '<td class="n">' + fmt(r.shares, 0) + '</td><td class="n">' + fmt(r.value, 0) + '</td><td class="muted">' + (r.kind === 'routine' ? 'rutinario' : r.kind === 'opportunistic' ? 'oportunista' : '—') + '</td></tr>';
         }).join('') + '</tbody></table></div>';
-    } else ib.innerHTML = signalEmpty(['qv_insider', 'av_insider'], 'Las fuentes disponibles no tienen operaciones de directivos de ' + sig.sym + '.');
+    } else ib.innerHTML = signalEmpty(['qv_insider'], 'Las fuentes disponibles no tienen operaciones de directivos de ' + sig.sym + '.');
     // Washington
     var lob = sig.res.qv_lobby, con = sig.res.qv_contracts, dc = $('sig-dc');
     if ((lob && lob.ok) || (con && con.ok)) {

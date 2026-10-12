@@ -7,9 +7,10 @@ with the JavaScript engine (web/engine.js), the series analytics
     python -m quant_evidence.app.build_lab [output.html]
 
 The page is meant to be published as a claude.ai artifact: there it reads
-market data through the viewer's Alpha Vantage connector and drafts reports
-with the viewer's Claude account. Opened anywhere else it still runs the
-audit on the simulated example or on pasted data.
+prices from its Yahoo database, signals through the viewer's Quiver Quant
+connector, and drafts reports with the viewer's Claude account. Opened
+anywhere else it still runs the audit on the simulated example or on pasted
+data.
 """
 
 import json
