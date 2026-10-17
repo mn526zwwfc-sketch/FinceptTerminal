@@ -27,7 +27,12 @@ import urllib.parse
 import urllib.request
 
 CHART_URL = ('https://query1.finance.yahoo.com/v8/finance/chart/{sym}'
-             '?range=max&interval=1mo&events=div%2Csplit&includeAdjustedClose=true')
+             '?range={range}&interval={interval}&events=div%2Csplit&includeAdjustedClose=true')
+# range=max can come back quarterly for long histories (AAPL, MSFT, ^GSPC, ^N225, ^NDX
+# as of 2026-10) and monthly bars for futures (=F) skip about one month in seven.
+# When the first answer has gaps, try these in order and keep the one with fewest gaps;
+# daily bars reduce to month-end closes because the parser keeps the last point of a month.
+RETRIES = (('25y', '1mo'), ('25y', '1d'))
 SYMBOL_RE = re.compile(r'^\^?[A-Z0-9][A-Z0-9.\-]{0,14}(=X|=F)?$')
 MIN_MONTHS = 13
 # Database ids allow letters, digits and _ - . ~ : @ + only.
@@ -48,9 +53,9 @@ def symbol_from_id(doc: str) -> str:
     return ''.join(_SYM_MAP.get(c, c) for c in doc)
 
 
-def fetch_chart(symbol: str, timeout: float = 25.0) -> dict:
+def fetch_chart(symbol: str, timeout: float = 25.0, range_: str = 'max', interval: str = '1mo') -> dict:
     """Raw chart JSON for one symbol. Replaced in tests."""
-    url = CHART_URL.format(sym=urllib.parse.quote(symbol, safe=''))
+    url = CHART_URL.format(sym=urllib.parse.quote(symbol, safe=''), range=range_, interval=interval)
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (FinceptLab)', 'Accept': 'application/json'})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return json.loads(resp.read().decode('utf-8'))
@@ -85,6 +90,7 @@ def parse_monthly(symbol: str, payload: dict, today: dt.date | None = None) -> d
             continue
         months[(d.year, d.month)] = float(v)          # one point per month; a later row wins
     keys = sorted(months)
+    gaps = sum((b[0] * 12 + b[1]) - (a[0] * 12 + a[1]) - 1 for a, b in zip(keys, keys[1:]))
     if len(keys) < MIN_MONTHS:
         raise ValueError(f'Muy poca historia mensual ({len(keys)} meses).')
     return {
@@ -96,8 +102,28 @@ def parse_monthly(symbol: str, payload: dict, today: dt.date | None = None) -> d
         'adjusted': bool(adj and any(v is not None for v in adj)),
         'dates': [f'{y:04d}-{m:02d}' for y, m in keys],
         'closes': [round(months[k], 6) for k in keys],
+        'gaps': gaps,
         'updated_at': dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
     }
+
+
+def _fill_gaps(sym: str, doc: dict, fetch, pause: float) -> dict:
+    """Refetch a gapped series with the RETRIES settings; keep the version with fewest gaps."""
+    best = dict(doc, fetch='max/1mo')
+    for range_, interval in RETRIES:
+        if best['gaps'] == 0:
+            break
+        if pause:
+            time.sleep(pause)
+        try:
+            cand = parse_monthly(sym, fetch(sym, range_=range_, interval=interval))
+        except TypeError:
+            break                                   # a fetch function without range/interval support
+        except Exception:  # noqa: BLE001 - keep the series we already have
+            continue
+        if cand['gaps'] < best['gaps']:
+            best = dict(cand, fetch=f'{range_}/{interval}')
+    return best
 
 
 def sync(symbols, out_dir: str, fetch=fetch_chart, pause: float = 0.6) -> dict:
@@ -116,10 +142,12 @@ def sync(symbols, out_dir: str, fetch=fetch_chart, pause: float = 0.6) -> dict:
         except Exception as e:  # noqa: BLE001 - reported per symbol, the rest continue
             failed.append({'symbol': sym, 'error': str(e)[:200]})
             continue
+        doc = _fill_gaps(sym, doc, fetch, pause)
         path = os.path.join(out_dir, 'prices', doc_id(sym) + '.json')
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(doc, f, ensure_ascii=False, separators=(',', ':'))
-        ok.append({'symbol': sym, 'id': doc_id(sym), 'file': path, 'months': len(doc['dates']), 'last': doc['dates'][-1]})
+        ok.append({'symbol': sym, 'id': doc_id(sym), 'file': path, 'months': len(doc['dates']), 'last': doc['dates'][-1],
+                   'gaps': doc['gaps'], 'fetch': doc['fetch']})
         if pause:
             time.sleep(pause)
     summary = {'ok': ok, 'failed': failed, 'ran_at': dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()}

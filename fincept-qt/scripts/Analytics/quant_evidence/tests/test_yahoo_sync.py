@@ -106,6 +106,26 @@ class TestSync(unittest.TestCase):
         with open(os.path.join(self.tmp, 'summary.json'), encoding='utf-8') as f:
             self.assertEqual(len(json.load(f)['ok']), 2)
 
+    def test_refetches_gapped_series(self):
+        gapped = _payload(30)
+        r = gapped['chart']['result'][0]
+        del r['timestamp'][5], r['indicators']['adjclose'][0]['adjclose'][5], r['indicators']['quote'][0]['close'][5]
+        calls = []
+
+        def fake(sym, range_='max', interval='1mo'):
+            calls.append((range_, interval))
+            return gapped if range_ == 'max' else _payload(30)
+        s = ys.sync(['SPY'], self.tmp, fetch=fake, pause=0)
+        self.assertEqual(calls, [('max', '1mo'), ('25y', '1mo')])
+        self.assertEqual((s['ok'][0]['gaps'], s['ok'][0]['fetch']), (0, '25y/1mo'))
+        self.assertEqual(ys.parse_monthly('SPY', gapped, today=dt.date(2030, 1, 1))['gaps'], 1)
+
+    def test_single_argument_fetch_keeps_first_answer(self):
+        gapped = _payload(30)
+        gapped['chart']['result'][0]['indicators']['adjclose'][0]['adjclose'][5] = None
+        s = ys.sync(['SPY'], self.tmp, fetch=lambda sym: gapped, pause=0)
+        self.assertEqual((s['ok'][0]['gaps'], s['ok'][0]['fetch']), (1, 'max/1mo'))
+
     def test_main_accepts_doc_ids(self):
         ys_fetch = ys.fetch_chart
         ys.fetch_chart = lambda sym: _payload(24)
