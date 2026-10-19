@@ -1,0 +1,1192 @@
+<title>Fincept Quant Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: an Apple-style product page. Translucent global nav + sticky local nav, alternating white / gray bands,
+   a buy-flow configurator with a sticky preview of activity rings, bento result tiles, a docs-style code explorer. */
+:root {
+  --bg: #ffffff;
+  --band: #f5f5f7;
+  --tile: #f5f5f7;
+  --tile-on-band: #ffffff;
+  --ink: #1d1d1f;
+  --ink-2: #6e6e73;
+  --ink-3: #86868b;
+  --line: #d2d2d7;
+  --hair: rgba(0, 0, 0, 0.08);
+  --blue: #0071e3;
+  --blue-ink: #ffffff;
+  --link: #0066cc;
+  --nav: rgba(250, 250, 252, 0.78);
+  --nav-ink: #1d1d1f;
+  --stage: #000000;
+  --stage-ink: #f5f5f7;
+  --stage-ink-2: #a1a1a6;
+  --stage-tile: #1d1d1f;
+  --good: #248a3d;
+  --good-bg: #e8f5ea;
+  --warn: #b25000;
+  --warn-bg: #fdf1e3;
+  --bad: #d70015;
+  --bad-bg: #fde8ea;
+  --ring-1: #e8124f;   /* Evidencia */
+  --ring-2: #4cb21e;   /* Estadística */
+  --ring-3: #0a9fc4;   /* Implementación */
+  --ring-4: #e08600;   /* Contexto */
+  --code-bg: #fbfbfd;
+  --code-ink: #1d1d1f;
+  --tok-key: #ad3da4;
+  --tok-str: #c41a16;
+  --tok-num: #1c00cf;
+  --tok-com: #707f8c;
+  --tok-fn: #326d74;
+  --tok-type: #703daa;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+  --r-tile: 28px;
+  --r-card: 18px;
+  --r-ctrl: 12px;
+  --navh: 44px;
+  --localh: 52px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --band: #0b0b0c; --tile: #1d1d1f; --tile-on-band: #1d1d1f; --ink: #f5f5f7; --ink-2: #a1a1a6;
+    --ink-3: #86868b; --line: #424245; --hair: rgba(255, 255, 255, 0.1); --blue: #0071e3; --blue-ink: #ffffff;
+    --link: #2997ff; --nav: rgba(22, 22, 23, 0.8); --nav-ink: #f5f5f7; --stage: #161617; --stage-ink: #f5f5f7;
+    --stage-ink-2: #a1a1a6; --stage-tile: #000000; --good: #30d158; --good-bg: #0f2e18; --warn: #ff9f0a;
+    --warn-bg: #3a2405; --bad: #ff453a; --bad-bg: #3d1210; --ring-1: #fa114f; --ring-2: #92e82a; --ring-3: #1eeaef;
+    --ring-4: #ffb340; --code-bg: #111113; --code-ink: #e8e8ed; --tok-key: #ff7ab2; --tok-str: #ff8170;
+    --tok-num: #d9c97c; --tok-com: #7f8c98; --tok-fn: #67b7a4; --tok-type: #dabaff; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --band: #0b0b0c; --tile: #1d1d1f; --tile-on-band: #1d1d1f; --ink: #f5f5f7; --ink-2: #a1a1a6;
+  --ink-3: #86868b; --line: #424245; --hair: rgba(255, 255, 255, 0.1); --blue: #0071e3; --blue-ink: #ffffff;
+  --link: #2997ff; --nav: rgba(22, 22, 23, 0.8); --nav-ink: #f5f5f7; --stage: #161617; --stage-ink: #f5f5f7;
+  --stage-ink-2: #a1a1a6; --stage-tile: #000000; --good: #30d158; --good-bg: #0f2e18; --warn: #ff9f0a;
+  --warn-bg: #3a2405; --bad: #ff453a; --bad-bg: #3d1210; --ring-1: #fa114f; --ring-2: #92e82a; --ring-3: #1eeaef;
+  --ring-4: #ffb340; --code-bg: #111113; --code-ink: #e8e8ed; --tok-key: #ff7ab2; --tok-str: #ff8170;
+  --tok-num: #d9c97c; --tok-com: #7f8c98; --tok-fn: #67b7a4; --tok-type: #dabaff; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; animation: none !important; } }
+body { background: var(--bg); color: var(--ink); font: 17px/1.47 var(--font); letter-spacing: -0.022em; -webkit-font-smoothing: antialiased; }
+h1, h2, h3, h4, p { margin: 0; }
+h1, h2, h3 { text-wrap: balance; font-weight: 600; }
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+:focus-visible { outline: 3px solid color-mix(in srgb, var(--blue) 60%, transparent); outline-offset: 2px; border-radius: 6px; }
+.num { font-variant-numeric: tabular-nums; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.wrap { max-width: 1024px; margin: 0 auto; padding-inline: 22px; }
+.wrap.wide { max-width: 1260px; }
+@media (max-width: 734px) { .wrap { padding-inline: 16px; } }
+section.band { padding-block: 96px; scroll-margin-top: calc(var(--navh) + var(--localh)); }
+section.band.alt { background: var(--band); }
+@media (max-width: 734px) { section.band { padding-block: 64px; } }
+
+/* ── Global + local nav ─────────────────────────────────────────────────── */
+.gnav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 50; height: var(--navh); background: var(--nav);
+  backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); }
+.gnav .wrap { height: 100%; display: flex; align-items: center; gap: 28px; }
+.gnav .mark { display: flex; align-items: center; gap: 8px; color: var(--nav-ink); font-weight: 600; font-size: 14px; letter-spacing: -0.01em; white-space: nowrap; }
+.gnav .mark svg { width: 18px; height: 18px; }
+.gnav nav { display: flex; gap: 26px; overflow-x: auto; scrollbar-width: none; flex: 1; min-width: 0; }
+.gnav nav::-webkit-scrollbar { display: none; }
+@media (max-width: 734px) { .gnav nav { -webkit-mask-image: linear-gradient(90deg, #000 80%, transparent); mask-image: linear-gradient(90deg, #000 80%, transparent); } }
+.gnav nav a { color: var(--nav-ink); opacity: 0.8; font-size: 12px; letter-spacing: -0.01em; white-space: nowrap; }
+.gnav nav a:hover { opacity: 1; text-decoration: none; }
+.gnav .mode { font-size: 12px; color: var(--ink-2); white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+.gnav .mode i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); display: inline-block; }
+.gnav .mode.live i { background: var(--good); }
+@media (max-width: 734px) { .gnav .mode span { display: none; } .gnav .wrap { gap: 16px; } }
+.lnav { position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--navh)); z-index: 49; height: var(--localh);
+  background: var(--nav); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--hair); }
+.lnav .wrap { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.lnav h2 { font-size: 21px; letter-spacing: 0.011em; white-space: nowrap; }
+.lnav .right { display: flex; align-items: center; gap: 20px; }
+.lnav .right a.plain { font-size: 12px; color: var(--ink); opacity: 0.85; white-space: nowrap; }
+@media (max-width: 734px) { .lnav .right a.plain { display: none; } .lnav h2 { font-size: 19px; } }
+
+/* ── Buttons, links, chips ──────────────────────────────────────────────── */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 0; cursor: pointer; font: 400 17px/1 var(--font);
+  letter-spacing: -0.022em; border-radius: 980px; padding: 12px 22px; background: var(--blue); color: var(--blue-ink); text-decoration: none; }
+.btn:hover { text-decoration: none; filter: brightness(1.08); }
+.btn.small { font-size: 12px; padding: 6px 12px; }
+.btn.ghost { background: transparent; color: var(--link); box-shadow: inset 0 0 0 1px var(--link); }
+.btn.quiet { background: var(--tile); color: var(--ink); }
+.more { color: var(--link); font-size: 17px; white-space: nowrap; background: none; border: 0; padding: 0; cursor: pointer; font-family: inherit; letter-spacing: inherit; }
+.more::after { content: " ›"; }
+.more:hover { text-decoration: underline; }
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; letter-spacing: 0; border-radius: 980px; padding: 3px 10px; white-space: nowrap; }
+.chip.pass, .chip.respaldada, .chip.baja { background: var(--good-bg); color: var(--good); }
+.chip.warn, .chip.debil, .chip.media { background: var(--warn-bg); color: var(--warn); }
+.chip.fail, .chip.no_respaldada, .chip.alta { background: var(--bad-bg); color: var(--bad); }
+.chip.info, .chip.condicionada { background: color-mix(in srgb, var(--blue) 12%, transparent); color: var(--link); }
+.chip.baja { background: var(--tile); color: var(--ink-2); }
+.mk { font-size: 11px; font-weight: 600; color: var(--warn); border: 1px solid currentColor; border-radius: 6px; padding: 0 5px; margin-left: 5px; white-space: nowrap; letter-spacing: 0; }
+
+/* ── Hero ───────────────────────────────────────────────────────────────── */
+.hero { text-align: center; padding-block: 72px 0; background: var(--bg); }
+.hero .eyebrow { font-size: 21px; font-weight: 600; color: var(--ink-2); letter-spacing: 0.01em; }
+.hero h1 { font-size: clamp(48px, 8vw, 96px); line-height: 1.04; letter-spacing: -0.035em; margin-top: 8px; font-weight: 700; }
+.hero h1 .g { background: linear-gradient(90deg, var(--ring-3), var(--ring-2) 55%, var(--ring-4)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero .sub { font-size: clamp(19px, 2.2vw, 24px); line-height: 1.33; color: var(--ink-2); max-width: 760px; margin: 18px auto 0; letter-spacing: 0.009em; }
+.hero .ctas { display: flex; gap: 24px; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 28px; }
+.stage { margin: 56px auto 0; max-width: 1180px; background: var(--stage); border-radius: var(--r-tile); color: var(--stage-ink); padding: 40px; display: grid; gap: 28px; }
+@media (max-width: 734px) { .stage { padding: 24px 18px; border-radius: 22px; } }
+.stage .lead { font-size: 21px; color: var(--stage-ink-2); text-align: left; max-width: 640px; }
+.stage .lead b { color: var(--stage-ink); font-weight: 600; }
+.duel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 734px) { .duel { grid-template-columns: minmax(0, 1fr); } }
+.duel .side { background: var(--stage-tile); border-radius: 22px; padding: 28px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 22px; align-items: center; text-align: left; }
+.duel .side .name { font-size: 15px; color: var(--stage-ink-2); }
+.duel .side .big { font-size: 64px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; }
+.duel .side .big small { font-size: 21px; font-weight: 600; color: var(--stage-ink-2); letter-spacing: -0.01em; margin-left: 4px; }
+.duel .side .why { font-size: 14px; color: var(--stage-ink-2); margin-top: 8px; }
+.duel .side .ringbox { width: 120px; }
+@media (max-width: 420px) { .duel .side { grid-template-columns: minmax(0, 1fr); } }
+.highlights { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin-top: 64px; padding-bottom: 72px; }
+.highlights div { padding-inline: 12px; border-left: 1px solid var(--hair); }
+.highlights div:first-child { border-left: 0; }
+.highlights b { display: block; font-size: clamp(36px, 5vw, 56px); font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; }
+.highlights span { display: block; font-size: 14px; color: var(--ink-2); margin-top: 6px; letter-spacing: -0.01em; }
+@media (max-width: 734px) { .highlights { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 28px; } .highlights div:nth-child(3) { border-left: 0; } }
+
+/* ── Section headings ───────────────────────────────────────────────────── */
+.sh { display: grid; gap: 14px; margin-bottom: 48px; }
+.sh .eyebrow { font-size: 17px; font-weight: 600; color: var(--ink-2); }
+.sh h2 { font-size: clamp(36px, 5.2vw, 56px); line-height: 1.07; letter-spacing: -0.028em; }
+.sh p { font-size: 21px; line-height: 1.38; color: var(--ink-2); max-width: 720px; letter-spacing: 0.011em; }
+.sh p b { color: var(--ink); font-weight: 600; }
+
+/* ── Configurator ───────────────────────────────────────────────────────── */
+.config { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 56px; align-items: start; }
+@media (max-width: 1000px) { .config { grid-template-columns: minmax(0, 1fr); gap: 32px; } }
+.preview { position: sticky; top: calc(var(--navh) + var(--localh) + 24px); display: grid; gap: 18px; background: var(--tile); border-radius: var(--r-tile); padding: 32px; }
+@media (max-width: 1000px) { .preview { position: static; } }
+.preview .top { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: center; }
+@media (max-width: 480px) { .preview .top { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; } }
+.preview .ringbox { width: 200px; }
+.preview .score { font-size: 72px; font-weight: 700; letter-spacing: -0.045em; line-height: 1; }
+.preview .score small { font-size: 21px; color: var(--ink-2); font-weight: 600; letter-spacing: -0.01em; margin-left: 4px; }
+.preview .sname { font-size: 15px; color: var(--ink-2); }
+.preview .summary { font-size: 15px; color: var(--ink-2); line-height: 1.45; }
+.preview .caps { font-size: 13px; color: var(--bad); }
+.legend { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 480px) { .legend { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.legend div { display: grid; gap: 2px; }
+.legend span { font-size: 12px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+.legend span i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.legend b { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+.legend b small { font-size: 12px; color: var(--ink-3); font-weight: 500; margin-left: 3px; }
+.engine-note { font-size: 12px; color: var(--ink-3); }
+
+.steps { display: grid; grid-template-columns: minmax(0, 1fr); gap: 44px; min-width: 0; }
+.step { min-width: 0; }
+.step h3 { font-size: 24px; line-height: 1.17; letter-spacing: 0.009em; margin-bottom: 18px; }
+.step h3 span { color: var(--ink-2); font-weight: 600; }
+.seg { display: flex; gap: 2px; padding: 3px; background: var(--tile); border-radius: 980px; overflow-x: auto; scrollbar-width: none; margin-bottom: 14px; }
+.seg::-webkit-scrollbar { display: none; }
+.seg button { border: 0; background: transparent; color: var(--ink); font: 400 14px var(--font); letter-spacing: -0.01em; padding: 7px 14px; border-radius: 980px; cursor: pointer; white-space: nowrap; }
+.seg button[aria-pressed="true"] { background: var(--bg); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12); font-weight: 600; }
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.opts.one { grid-template-columns: minmax(0, 1fr); }
+.opts.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 560px) { .opts, .opts.four { grid-template-columns: minmax(0, 1fr); } }
+.opt { text-align: left; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: var(--r-ctrl); padding: 16px; cursor: pointer;
+  font: inherit; letter-spacing: inherit; display: grid; gap: 4px; min-width: 0; transition: border-color 0.15s; }
+.opt:hover { border-color: var(--ink-3); }
+.opt[aria-pressed="true"] { border-color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }
+.opt b { font-size: 15px; font-weight: 600; line-height: 1.3; }
+.opt span { font-size: 12px; color: var(--ink-2); }
+.opt .row { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.opt .row em { font-style: normal; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+.claim { font-size: 14px; color: var(--ink-2); margin-top: 12px; line-height: 1.5; }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 560px) { .fields { grid-template-columns: minmax(0, 1fr); } }
+.field { display: grid; gap: 6px; min-width: 0; }
+.field label { font-size: 12px; color: var(--ink-2); letter-spacing: -0.01em; }
+.field input, .field select, .search {
+  font: 400 17px var(--font); letter-spacing: -0.022em; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+  border-radius: var(--r-ctrl); padding: 13px 14px; width: 100%; min-width: 0; }
+.field input:focus, .field select:focus, .search:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 25%, transparent); }
+.field .h { font-size: 12px; color: var(--ink-3); }
+.toggles { display: grid; gap: 0; border: 1px solid var(--line); border-radius: var(--r-ctrl); overflow: hidden; margin-top: 12px; }
+.tg { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 13px 16px; border-top: 1px solid var(--line); background: var(--bg); }
+.tg:first-child { border-top: 0; }
+.tg span { font-size: 15px; }
+.tg span small { display: block; font-size: 12px; color: var(--ink-3); }
+.switch { appearance: none; -webkit-appearance: none; width: 51px; height: 31px; border-radius: 31px; background: var(--line); position: relative; cursor: pointer; transition: background 0.2s; margin: 0; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #ffffff; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25); transition: transform 0.2s; }
+.switch:checked { background: var(--good); }
+.switch:checked::after { transform: translateX(20px); }
+.actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.toast { font-size: 14px; color: var(--good); min-height: 1.4em; }
+textarea.json { width: 100%; min-height: 140px; font: 12px var(--mono); background: var(--code-bg); color: var(--code-ink); border: 1px solid var(--line); border-radius: var(--r-ctrl); padding: 12px; }
+
+/* ── Bento results ──────────────────────────────────────────────────────── */
+.bento { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 20px; margin-top: 56px; }
+.tile { background: var(--tile); border-radius: var(--r-tile); padding: 32px; display: grid; gap: 16px; align-content: start; min-width: 0; }
+section.alt .tile, section.alt .preview, section.alt .explorer { background: var(--tile-on-band); }
+section.alt .vhead { background: var(--tile-on-band); }
+.tile.s6 { grid-column: span 6; } .tile.s4 { grid-column: span 4; } .tile.s3 { grid-column: span 3; } .tile.s2 { grid-column: span 2; }
+@media (max-width: 1000px) { .tile.s4, .tile.s3, .tile.s2 { grid-column: span 6; } }
+@media (max-width: 734px) { .tile { padding: 24px 20px; border-radius: 22px; } .bento { gap: 14px; } }
+.tile h3 { font-size: 24px; line-height: 1.17; letter-spacing: 0.009em; }
+.tile h3 span { color: var(--ink-2); }
+.tile .note { font-size: 14px; color: var(--ink-2); }
+.kv { display: grid; gap: 0; }
+.kv div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid var(--hair); font-size: 15px; }
+.kv div:first-child { border-top: 0; }
+.kv div b { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kv div span { color: var(--ink-2); min-width: 0; }
+.statbig { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.statbig div b { display: block; font-size: 40px; font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.statbig div span { font-size: 13px; color: var(--ink-2); }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
+.checks li { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 14px; padding: 14px 0; border-top: 1px solid var(--hair); }
+.checks li:first-child { border-top: 0; }
+.checks .t { font-weight: 600; font-size: 15px; }
+.checks .d { font-size: 14px; color: var(--ink-2); overflow-wrap: anywhere; }
+.checks .s { font-size: 12px; }
+.facts { display: grid; gap: 12px; font-size: 15px; }
+.facts div span { display: block; font-size: 12px; color: var(--ink-3); font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; margin-bottom: 2px; }
+.srcs { margin: 0; padding-left: 18px; font-size: 14px; display: grid; gap: 4px; }
+.mods { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.mods li { display: grid; gap: 3px; min-width: 0; }
+.mods code { font: 12px var(--mono); color: var(--ink); overflow-wrap: anywhere; }
+.mods span { font-size: 13px; color: var(--ink-2); }
+.chart { overflow-x: auto; }
+.chart svg { display: block; width: 100%; min-width: 520px; height: auto; }
+.chart text { font-family: var(--font); fill: var(--ink-2); font-size: 12px; letter-spacing: -0.01em; }
+.chart text.v { fill: var(--ink); font-weight: 600; }
+.chart .grid { stroke: var(--hair); }
+.chart .zero { stroke: var(--ink-3); }
+.chart rect.b { fill: var(--blue); }
+.chart rect.b.neg { fill: var(--bad); }
+.chart g.step:hover rect.b { opacity: 0.82; }
+.chart rect.hit { fill: transparent; }
+table.hist { width: 100%; border-collapse: collapse; font-size: 14px; }
+table.hist th { text-align: left; font-size: 12px; color: var(--ink-3); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--hair); }
+table.hist td { padding: 8px; border-bottom: 1px solid var(--hair); }
+table.hist td.n { text-align: right; font-variant-numeric: tabular-nums; }
+.tablewrap { overflow-x: auto; }
+
+/* ── Strategies grid + sheet ────────────────────────────────────────────── */
+.bar { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-bottom: 28px; }
+.bar .seg { margin-bottom: 0; flex: 1 1 auto; min-width: 0; }
+.search { max-width: 320px; padding: 10px 16px; border-radius: 980px; font-size: 15px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 20px; }
+.card { background: var(--tile-on-band); border-radius: var(--r-card); padding: 26px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.card .fam { font-size: 12px; font-weight: 600; color: var(--ink-3); letter-spacing: 0.02em; text-transform: uppercase; }
+.card h3 { font-size: 21px; line-height: 1.19; letter-spacing: 0.011em; }
+.card .pr { display: flex; align-items: baseline; gap: 6px; }
+.card .pr b { font-size: 44px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.card .pr span { font-size: 12px; color: var(--ink-3); }
+.card .meter { height: 4px; border-radius: 4px; background: var(--hair); overflow: hidden; }
+.card .meter i { display: block; height: 100%; background: var(--blue); border-radius: 4px; }
+.card p { font-size: 14px; color: var(--ink-2); }
+.card .links { display: flex; gap: 18px; flex-wrap: wrap; }
+.card .links .more { font-size: 14px; }
+dialog.sheet { border: 0; border-radius: var(--r-tile); padding: 0; max-width: min(720px, calc(100vw - 32px)); width: 100%; background: var(--bg); color: var(--ink); box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35); }
+dialog.sheet::backdrop { background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+dialog.sheet .in { padding: 36px; display: grid; gap: 18px; max-height: 82vh; overflow-y: auto; }
+@media (max-width: 734px) { dialog.sheet .in { padding: 24px 20px; } }
+dialog.sheet .x { position: sticky; top: 0; justify-self: end; width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--tile); color: var(--ink); font-size: 18px; cursor: pointer; }
+dialog.sheet .dlg-fam { font-size: 12px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.02em; }
+dialog.sheet h3 { font-size: 32px; line-height: 1.12; letter-spacing: -0.01em; }
+
+/* ── Code explorer ──────────────────────────────────────────────────────── */
+.explorer { display: grid; grid-template-columns: 300px minmax(0, 1fr); background: var(--tile); border-radius: var(--r-tile); overflow: hidden; height: min(78vh, 780px); }
+@media (max-width: 900px) { .explorer { grid-template-columns: minmax(0, 1fr); height: auto; } }
+.xside { display: grid; grid-template-rows: auto auto minmax(0, 1fr); border-right: 1px solid var(--hair); min-height: 0; }
+@media (max-width: 900px) { .xside { border-right: 0; border-bottom: 1px solid var(--hair); max-height: 46vh; } }
+.xside .top { padding: 16px 16px 8px; display: grid; gap: 10px; }
+.xside .top .search { max-width: none; background: var(--bg); }
+.xside .seg { margin: 0 16px 8px; background: var(--bg); }
+.xside .seg button[aria-pressed="true"] { background: var(--tile); }
+.tree { overflow-y: auto; padding: 4px 8px 16px; min-height: 0; }
+.tree details { margin: 2px 0; }
+.tree summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--ink); padding: 6px 8px; border-radius: 8px; list-style: none; display: flex; justify-content: space-between; gap: 8px; }
+.tree summary::-webkit-details-marker { display: none; }
+.tree summary::before { content: "›"; display: inline-block; width: 12px; color: var(--ink-3); transition: transform 0.15s; }
+.tree details[open] > summary::before { transform: rotate(90deg); }
+.tree summary span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree summary em { font-style: normal; font-weight: 500; color: var(--ink-3); font-size: 12px; }
+.tree button.f { display: block; width: 100%; text-align: left; border: 0; background: transparent; color: var(--ink-2); font: 12.5px var(--font); letter-spacing: -0.01em; padding: 5px 8px 5px 28px; border-radius: 8px; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree button.f:hover { background: var(--hair); color: var(--ink); }
+.tree button.f[aria-current="true"] { background: var(--blue); color: var(--blue-ink); }
+.viewer { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; min-width: 0; background: var(--code-bg); }
+@media (max-width: 900px) { .viewer { height: 70vh; } }
+.vhead { padding: 16px 20px; border-bottom: 1px solid var(--hair); display: grid; gap: 6px; background: var(--tile); }
+.vhead .path { font: 13px var(--mono); color: var(--ink); overflow-wrap: anywhere; }
+.vhead .meta { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; font-size: 12px; color: var(--ink-3); }
+.vhead .sum { font-size: 14px; color: var(--ink-2); }
+.code { overflow: auto; min-height: 0; display: flex; font: 12.5px/1.6 var(--mono); color: var(--code-ink); }
+.code pre { margin: 0; padding: 16px 0; }
+.code .gut { text-align: right; color: var(--ink-3); padding-inline: 16px 12px; user-select: none; border-right: 1px solid var(--hair); position: sticky; left: 0; background: var(--code-bg); }
+.code .src { padding-inline: 16px 24px; white-space: pre; tab-size: 4; }
+.code .empty { padding: 32px; color: var(--ink-2); font: 15px var(--font); white-space: normal; }
+.hljs-keyword, .hljs-built_in, .hljs-literal, .hljs-meta .hljs-keyword { color: var(--tok-key); font-weight: 600; }
+.hljs-string, .hljs-regexp, .hljs-meta .hljs-string { color: var(--tok-str); }
+.hljs-number { color: var(--tok-num); }
+.hljs-comment, .hljs-quote, .hljs-doctag { color: var(--tok-com); font-style: italic; }
+.hljs-title, .hljs-title.function_, .hljs-function .hljs-title { color: var(--tok-fn); }
+.hljs-type, .hljs-class .hljs-title, .hljs-title.class_, .hljs-attr, .hljs-meta, .hljs-params { color: var(--tok-type); }
+.runbox { display: grid; gap: 12px; margin-top: 28px; }
+.runbox .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+@media (max-width: 734px) { .runbox .row { grid-template-columns: minmax(0, 1fr); } }
+.runbox pre { margin: 0; background: var(--code-bg); border-radius: var(--r-ctrl); padding: 16px; font: 12px/1.55 var(--mono); max-height: 360px; overflow: auto; color: var(--code-ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ── Repo + method ──────────────────────────────────────────────────────── */
+.cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 20px; }
+.cat { background: var(--tile); border-radius: var(--r-card); padding: 24px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.cat .fam { font-size: 12px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.02em; }
+.cat h3 { font-size: 19px; line-height: 1.21; }
+.cat .nums { display: flex; gap: 18px; flex-wrap: wrap; }
+.cat .nums div b { display: block; font-size: 28px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.cat .nums div span { font-size: 12px; color: var(--ink-3); }
+.cat p { font-size: 13px; color: var(--ink-2); }
+.gaps { list-style: none; margin: 56px 0 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+.gaps li { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 20px; padding: 22px 0; border-top: 1px solid var(--hair); }
+@media (max-width: 560px) { .gaps li { grid-template-columns: minmax(0, 1fr); gap: 8px; } }
+.gaps .gc { font-size: 12px; color: var(--ink-3); font-weight: 600; }
+.gaps .gt { font-size: 17px; margin-top: 2px; overflow-wrap: anywhere; }
+.gaps .gf { font: 12px var(--mono); color: var(--ink-3); margin-top: 6px; overflow-wrap: anywhere; }
+.gaps .gv { font-size: 14px; color: var(--good); margin-top: 6px; overflow-wrap: anywhere; }
+.method { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+@media (max-width: 860px) { .method { grid-template-columns: minmax(0, 1fr); } }
+.method pre { margin: 0; background: var(--code-bg); border-radius: var(--r-ctrl); padding: 16px; font: 12.5px/1.6 var(--mono); overflow-x: auto; color: var(--code-ink); }
+.method ul, .method ol { margin: 0; padding-left: 20px; display: grid; gap: 8px; font-size: 15px; color: var(--ink-2); }
+.method p { font-size: 15px; color: var(--ink-2); }
+footer.fine { background: var(--band); padding-block: 28px 40px; font-size: 12px; color: var(--ink-2); line-height: 1.5; letter-spacing: -0.01em; }
+footer.fine .wrap { display: grid; gap: 10px; }
+footer.fine hr { border: 0; border-top: 1px solid var(--line); margin: 6px 0; }
+.ringbox svg { display: block; width: 100%; height: auto; }
+.ringbox circle.arc { transition: stroke-dasharray 0.6s cubic-bezier(.2, .7, .2, 1); }
+</style>
+
+<header class="gnav" aria-label="Navegación principal">
+  <div class="wrap wide">
+    <a class="mark" href="#resumen" aria-label="Fincept Quant Studio, inicio">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="var(--ring-1)" stroke-width="3"/><circle cx="12" cy="12" r="5" fill="none" stroke="var(--ring-3)" stroke-width="3"/></svg>
+      Fincept
+    </a>
+    <nav aria-label="Secciones">
+      <a href="#resumen">Resumen</a>
+      <a href="#evaluar">Evaluar</a>
+      <a href="#estrategias">Estrategias</a>
+      <a href="#codigo">Código</a>
+      <a href="#repositorio">Repositorio</a>
+      <a href="#metodo">Método</a>
+    </nav>
+    <div class="mode" id="mode"><i></i><span id="mode-label">Motor en el navegador</span></div>
+  </div>
+</header>
+<div class="lnav">
+  <div class="wrap wide">
+    <h2>Quant Studio</h2>
+    <div class="right">
+      <a class="plain" href="#estrategias">Estrategias</a>
+      <a class="plain" href="#codigo">Código</a>
+      <a class="btn small" href="#evaluar">Evaluar</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <section class="hero" id="resumen" aria-labelledby="hero-h">
+    <div class="wrap wide">
+      <p class="eyebrow">Fincept Quant Studio</p>
+      <h1 id="hero-h">Decide con <span class="g">evidencia.</span></h1>
+      <p class="sub">La literatura quant universitaria y el código de FinceptTerminal en una sola app. Describe una estrategia y descubre cuánto queda después de pruebas múltiples, decaimiento, microcaps y costos.</p>
+      <div class="ctas">
+        <a class="btn" href="#evaluar">Evaluar una decisión</a>
+        <a class="more" href="#codigo">Explorar el código</a>
+      </div>
+      <div class="stage" aria-label="Comparación en vivo">
+        <p class="lead"><b>La misma pregunta, dos respuestas.</b> El motor evalúa en vivo dos decisiones de ejemplo con los mismos supuestos de costos y horizonte.</p>
+        <div class="duel" id="duel"></div>
+      </div>
+      <div class="highlights" id="highlights"></div>
+    </div>
+  </section>
+
+  <section class="band alt" id="evaluar" aria-labelledby="ev-h">
+    <div class="wrap wide">
+      <div class="sh">
+        <p class="eyebrow">Evaluar</p>
+        <h2 id="ev-h">Configura tu decisión.<br>El dictamen se arma al instante.</h2>
+        <p>Elige una estrategia, agrega tu backtest si lo tienes y ajusta cómo la llevarías a la práctica. <b>Cada cambio recalcula el puntaje.</b></p>
+      </div>
+      <div class="config">
+        <aside class="preview" aria-label="Vista previa del dictamen">
+          <div class="top">
+            <div class="ringbox" id="rings"></div>
+            <div style="display:grid;gap:8px;min-width:0">
+              <span id="v-chip"></span>
+              <div class="score num" id="v-score"></div>
+              <p class="sname" id="v-name"></p>
+            </div>
+          </div>
+          <div class="legend" id="legend"></div>
+          <p class="summary" id="v-summary"></p>
+          <div id="v-caps"></div>
+          <p class="engine-note" id="engine-note"></p>
+          <p id="verdict-live" class="sr-only" role="status" aria-live="polite"></p>
+        </aside>
+
+        <form class="steps" id="sheet" autocomplete="off">
+          <div class="step">
+            <h3>Estrategia. <span>¿Qué decisión quieres evaluar?</span></h3>
+            <div class="seg" id="famseg" role="group" aria-label="Familia"></div>
+            <div class="opts" id="stratopts" role="group" aria-label="Estrategias"></div>
+            <p class="claim" id="claim"></p>
+          </div>
+
+          <div class="step">
+            <h3>Tu backtest. <span>Opcional, pero cambia todo.</span></h3>
+            <div class="fields">
+              <div class="field"><label for="sharpe_annual">Sharpe anual</label><input type="number" id="sharpe_annual" step="0.01" inputmode="decimal"></div>
+              <div class="field"><label for="years">Años de datos</label><input type="number" id="years" step="0.5" min="0" inputmode="decimal"></div>
+              <div class="field"><label for="n_trials">Variantes probadas</label><input type="number" id="n_trials" step="1" min="1" value="1" inputmode="numeric"><span class="h">Parámetros, reglas o modelos comparados antes de elegir.</span></div>
+              <div class="field"><label for="periods_per_year">Frecuencia de los datos</label>
+                <select id="periods_per_year"><option value="252">Diaria</option><option value="52">Semanal</option><option value="12">Mensual</option></select></div>
+              <div class="field"><label for="skew">Asimetría</label><input type="number" id="skew" step="0.1" value="0" inputmode="decimal"></div>
+              <div class="field"><label for="kurtosis">Curtosis</label><input type="number" id="kurtosis" step="0.1" value="3" inputmode="decimal"><span class="h">3 equivale a una normal.</span></div>
+            </div>
+          </div>
+
+          <div class="step">
+            <h3>Implementación. <span>Lo que cuesta llevarla a la práctica.</span></h3>
+            <div class="fields">
+              <div class="field"><label for="turnover_monthly">Rotación mensual (%)</label><input type="number" id="turnover_monthly" step="5" min="0" inputmode="decimal"></div>
+              <div class="field"><label for="roundtrip_cost_bps">Costo ida y vuelta (pb)</label><input type="number" id="roundtrip_cost_bps" step="1" min="0" inputmode="decimal"></div>
+              <div class="field"><label for="microcap_share">Alfa en microcaps (%)</label><input type="number" id="microcap_share" step="5" min="0" max="100" inputmode="decimal"></div>
+              <div class="field"><label for="volatility_annual">Volatilidad anual (%)</label><input type="number" id="volatility_annual" step="1" min="0" value="15" inputmode="decimal"></div>
+              <div class="field"><label for="gross_alpha_monthly_bps">Alfa bruta mensual (pb)</label><input type="number" id="gross_alpha_monthly_bps" step="1" placeholder="Automática" inputmode="decimal"></div>
+              <div class="field"><label for="live_months">Meses operando en vivo</label><input type="number" id="live_months" step="1" min="0" value="0" inputmode="numeric"></div>
+            </div>
+            <div class="toggles">
+              <label class="tg"><span>Vende en corto<small>Cartera largo-corto</small></span><input class="switch" type="checkbox" id="long_short"></label>
+              <label class="tg"><span>Usa apalancamiento</span><input class="switch" type="checkbox" id="uses_leverage"></label>
+              <label class="tg"><span>La idea viene de un paper, libro o internet<small>Aplica el decaimiento de −58% tras publicarse</small></span><input class="switch" type="checkbox" id="published" checked></label>
+              <label class="tg"><span>Se validó con datos nuevos<small>Cuenta solo si la idea no está publicada</small></span><input class="switch" type="checkbox" id="out_of_sample"></label>
+            </div>
+          </div>
+
+          <div class="step">
+            <h3>Contexto. <span>Quién invierte, dónde y por cuánto tiempo.</span></h3>
+            <div class="opts" id="investor-opts" role="group" aria-label="Inversionista"></div>
+            <div class="opts four" id="market-opts" role="group" aria-label="Mercado" style="margin-top:12px"></div>
+            <div class="fields" style="margin-top:12px">
+              <div class="field"><label for="horizon_years">Horizonte (años)</label><input type="number" id="horizon_years" step="1" min="0" value="10" inputmode="decimal"></div>
+              <div class="field"><label for="kelly_multiple">Múltiplo de Kelly</label><input type="number" id="kelly_multiple" step="0.05" min="0" placeholder="Opcional" inputmode="decimal"></div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="button" class="btn" id="save">Guardar en el historial</button>
+            <button type="button" class="btn ghost" id="copyjson">Copiar JSON para el CLI</button>
+            <button type="button" class="more" id="reset">Volver al ejemplo</button>
+          </div>
+          <p class="toast" id="toast" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+
+      <div class="bento" id="results"></div>
+    </div>
+  </section>
+
+  <section class="band" id="estrategias" aria-labelledby="st-h">
+    <div class="wrap wide">
+      <div class="sh">
+        <p class="eyebrow">Estrategias</p>
+        <h2 id="st-h">Cuarenta y cuatro ideas.<br>Ordenadas por lo que sobrevive.</h2>
+        <p>Cada tarjeta resume lo que afirma la literatura, su cifra clave y lo que queda en la práctica. La valoración es una síntesis del informe, <b>no una cifra publicada.</b></p>
+      </div>
+      <div class="bar">
+        <div class="seg" id="libseg" role="group" aria-label="Filtrar por familia"></div>
+        <input type="search" class="search" id="libq" placeholder="Buscar estrategia, autor o cifra" aria-label="Buscar estrategias">
+      </div>
+      <div class="cards" id="cards"></div>
+    </div>
+  </section>
+
+  <section class="band alt" id="codigo" aria-labelledby="co-h">
+    <div class="wrap wide">
+      <div class="sh">
+        <p class="eyebrow">Código</p>
+        <h2 id="co-h">El código, a un clic de la evidencia.</h2>
+        <p id="code-lede">El paquete nuevo y los módulos de FinceptTerminal que implementan cada categoría, con su resumen y el código fuente completo.</p>
+      </div>
+      <div class="explorer">
+        <div class="xside">
+          <div class="top"><input type="search" class="search" id="codeq" placeholder="Filtrar archivos" aria-label="Filtrar archivos"></div>
+          <div class="seg" id="codeseg" role="group" aria-label="Vista del explorador"></div>
+          <div class="tree" id="tree"></div>
+        </div>
+        <div class="viewer">
+          <div class="vhead" id="vhead"></div>
+          <div class="code" id="code" tabindex="0" aria-label="Código fuente"></div>
+        </div>
+      </div>
+      <div class="runbox" id="runbox" hidden>
+        <h3 style="font-size:24px">Ejecutar. <span style="color:var(--ink-2)">Los CLIs del repositorio desde esta app.</span></h3>
+        <div class="row">
+          <div class="field"><label for="run-script">Programa</label><select id="run-script"></select></div>
+          <div class="field"><label for="run-cmd">Comando</label><input id="run-cmd" value="list"></div>
+          <button type="button" class="btn" id="run-go">Ejecutar</button>
+        </div>
+        <div class="field"><label for="run-params">Parámetros JSON</label><input id="run-params" value="{}"></div>
+        <pre id="run-out">La salida aparecerá aquí.</pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="repositorio" aria-labelledby="re-h">
+    <div class="wrap wide">
+      <div class="sh">
+        <p class="eyebrow">Repositorio</p>
+        <h2 id="re-h">FinceptTerminal, ordenado por la evidencia.</h2>
+        <p id="repo-lede"></p>
+      </div>
+      <div class="cats" id="cats"></div>
+      <div class="sh" style="margin:96px 0 0">
+        <h2 style="font-size:clamp(32px,4.4vw,48px)">Lo que le falta.</h2>
+        <p>Carencias verificadas leyendo el código, ordenadas por severidad. En verde, lo que este paquete ya cubre.</p>
+      </div>
+      <ul class="gaps" id="gaps"></ul>
+    </div>
+  </section>
+
+  <section class="band alt" id="metodo" aria-labelledby="me-h">
+    <div class="wrap wide">
+      <div class="sh">
+        <p class="eyebrow">Método</p>
+        <h2 id="me-h">Transparente de principio a fin.</h2>
+        <p>Las fórmulas vienen de los papers del informe y las pruebas reproducen sus ejemplos. Los pesos del puntaje son una heurística explícita.</p>
+      </div>
+      <div class="method">
+        <div class="tile"><h3>Cómo se arma el puntaje.</h3>
+          <ul>
+            <li><b>Evidencia</b> (35%, o 50% sin backtest): valoración sintética de cada familia según lo que sobrevive.</li>
+            <li><b>Estadística</b> (25%): 40% Deflated Sharpe Ratio, 30% Sharpe con recorte por pruebas múltiples, 30% años frente a la longitud mínima.</li>
+            <li><b>Implementación</b> (25%, o 30%): ventaja neta tras la cascada, rotación frente a la frontera de 50% y acceso a cortos y apalancamiento.</li>
+            <li><b>Contexto</b> (15%, o 20%): mercado, horizonte, meses en vivo y tamaño de la apuesta.</li>
+            <li>Ventaja neta nula o negativa: máximo 29. DSR menor que 0.5 o incalculable: máximo 40.</li>
+          </ul>
+        </div>
+        <div class="tile"><h3>Fórmulas.</h3>
+<pre>E[max_N] ≈ (1 − γ)·Z⁻¹[1 − 1/N] + γ·Z⁻¹[1 − 1/(N·e)]
+MinBTL   ≈ (E[max_N] / SR)²                      años
+SR0      = √V[SR_n] · E[max_N]
+DSR      = Z[(SR − SR0)·√(T − 1) /
+             √(1 − γ3·SR + (γ4 − 1)/4·SR²)]
+t        = SR·√años     p_aj = min(M·p, 1)
+costo    = rotación × ida y vuelta × patas    pb/mes
+P/S      = 2·N(σ·√T / 2) − 1                  Bodie
+g(x·f*)  = (2x − x²)·g(f*)                    Kelly</pre>
+        </div>
+        <div class="tile"><h3>Úsala en tu equipo.</h3>
+          <p>La app completa vive en el repositorio. Con Python 3.11 y sin dependencias extra:</p>
+<pre>cd fincept-qt/scripts/Analytics
+python quant_studio.py            # abre http://127.0.0.1:8765
+python quant_studio.py --port 9000 --no-browser</pre>
+          <p>En modo local el dictamen lo calcula el motor de Python, el explorador abre cualquier archivo del repositorio y puedes ejecutar sus CLIs.</p>
+        </div>
+        <div class="tile"><h3>Marcas de fiabilidad.</h3><div class="facts" id="marks"></div></div>
+        <div class="tile" style="grid-column:1/-1"><h3>Cuatro hábitos que sí se transfieren.</h3><ol id="habits"></ol></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="fine">
+  <div class="wrap wide">
+    <p id="disclaimer"></p>
+    <p>Las cifras de distintos papers corresponden a periodos, frecuencias y universos diferentes y no son estrictamente comparables. Las marcadas como working paper pueden diferir de la versión publicada.</p>
+    <hr>
+    <p>Fincept Quant Studio · motor compartido con <code>quant_evidence</code> en FinceptTerminal (AGPL-3.0).</p>
+  </div>
+</footer>
+
+<dialog class="sheet" id="sheet-dlg" aria-labelledby="dlg-h"><div class="in" id="dlg-in"></div></dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+/*__ENGINE__*/
+</script>
+<script>
+var KB = /*__KB__*/null;
+var REPO = /*__REPO__*/null;
+var CODE = /*__CODE_INDEX__*/null;
+</script>
+<script>
+(function () {
+  'use strict';
+  document.documentElement.lang = 'es';
+  var E = window.QuantEvidence;
+  var $ = function (id) { return document.getElementById(id); };
+  var FAMILIES = ['base', 'cartera', 'factores', 'machine learning', 'timing', 'calendario', 'comportamiento'];
+  var FAM_LABEL = { base: 'Referencia', cartera: 'Cartera', factores: 'Factores', 'machine learning': 'Machine learning',
+    timing: 'Timing', calendario: 'Calendario', comportamiento: 'Comportamiento' };
+  var STATUS = { pass: 'Pasa', warn: 'Ojo', fail: 'Falla', info: 'Nota' };
+  var VERDICT_CODES = /^(respaldada|condicionada|debil|no_respaldada)$/;
+  var MARK_LABEL = { '1p': 'sin reverificar' };
+  var CAT = {};
+  KB.categories.forEach(function (c) { CAT[c.key] = c; });
+  var state = { live: false, fam: 'factores', libFam: 'todas', last: null, codeView: 'evidencia', codeSel: null, codeCache: {} };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function f2(x, n) { return x == null || !isFinite(x) ? '—' : Number(x).toFixed(n == null ? 2 : n); }
+  function marks(arr) {
+    return (arr || []).map(function (m) {
+      return '<span class="mk" title="' + esc(KB.meta.marks[m] || '') + '">' + esc(MARK_LABEL[m] || m) + '</span>';
+    }).join('');
+  }
+  function srcLink(s) { return s ? '<a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.label) + '</a>' : ''; }
+  function store(k, v) {
+    try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); return true; }
+    catch (e) { return v === undefined ? null : false; }
+  }
+  var toastTimer = null;
+  function toast(msg) {
+    clearTimeout(toastTimer); $('toast').textContent = msg;
+    toastTimer = setTimeout(function () { $('toast').textContent = ''; }, 4000);
+  }
+  function strat(id) { return E.getStrategy(KB, id); }
+
+  // ── Activity rings ──────────────────────────────────────────────────────
+  var RINGS = [
+    { key: 'prior', label: 'Evidencia', color: 'var(--ring-1)' },
+    { key: 'statistical', label: 'Estadística', color: 'var(--ring-2)' },
+    { key: 'implementability', label: 'Implementación', color: 'var(--ring-3)' },
+    { key: 'context', label: 'Contexto', color: 'var(--ring-4)' }
+  ];
+  function rings(scores, label) {
+    var cx = 100, w = 16, gap = 3, out = '<svg viewBox="0 0 200 200" role="img" aria-label="' + esc(label) + '">';
+    RINGS.forEach(function (r, i) {
+      var rad = 92 - w / 2 - i * (w + gap), c = 2 * Math.PI * rad, v = scores[r.key];
+      var frac = v == null ? 0 : Math.max(0, Math.min(1, v / 100));
+      out += '<circle cx="' + cx + '" cy="' + cx + '" r="' + rad + '" fill="none" stroke="' + r.color + '" stroke-opacity="0.18" stroke-width="' + w + '"/>';
+      if (frac > 0) out += '<circle class="arc" cx="' + cx + '" cy="' + cx + '" r="' + rad + '" fill="none" stroke="' + r.color + '" stroke-width="' + w +
+        '" stroke-linecap="round" stroke-dasharray="' + (c * frac).toFixed(2) + ' ' + c.toFixed(2) + '" transform="rotate(-90 100 100)"/>';
+    });
+    return out + '</svg>';
+  }
+
+  // ── Engine (browser or local Python) ────────────────────────────────────
+  function evalLocal(d) { return E.evaluateDecision(d, KB, REPO); }
+  function evaluate(d) {
+    if (!state.live) return Promise.resolve(evalLocal(d));
+    return fetch('/api/evaluate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { if (!j.success) throw new Error(j.error || 'Error del servidor'); return j.data; })
+      .catch(function () { return evalLocal(d); });
+  }
+
+  // ── Hero ────────────────────────────────────────────────────────────────
+  function renderHero() {
+    var pairs = [
+      { d: { strategy_id: 'buy_hold_global', horizon_years: 25 }, why: 'Barato, diversificado entre países y sin rotación.' },
+      { d: { strategy_id: 'momentum', sharpe_annual: 1.2, years: 8, n_trials: 50, periods_per_year: 12, market: 'us' }, why: 'Sharpe 1.2 en el backtest. Neto de todo: negativo.' }
+    ];
+    $('duel').innerHTML = pairs.map(function (p) {
+      var r = evalLocal(p.d), fin = Math.floor(r.scores.final);
+      return '<div class="side"><div class="ringbox">' + rings(r.scores, 'Anillos de ' + r.strategy.name) + '</div>' +
+        '<div style="min-width:0"><p class="name">' + esc(r.strategy.name) + '</p><p class="big num">' + fin + '<small>/100</small></p>' +
+        '<span class="chip ' + r.verdict.code + '">' + esc(r.verdict.label) + '</span><p class="why">' + esc(p.why) + '</p></div></div>';
+    }).join('');
+    var files = (REPO && REPO.auto_index) ? REPO.auto_index.files_scanned : null;
+    var hl = [
+      [KB.strategies.length, 'estrategias de la literatura'],
+      [KB.categories.length, 'categorías de evidencia'],
+      [(REPO.modules || []).length, 'módulos del repositorio mapeados'],
+      [files ? files.toLocaleString('es-MX') : (CODE ? CODE.length : 0), files ? 'archivos escaneados' : 'archivos de código']
+    ];
+    $('highlights').innerHTML = hl.map(function (h) { return '<div><b class="num">' + h[0] + '</b><span>' + esc(h[1]) + '</span></div>'; }).join('');
+  }
+
+  // ── Configurator ────────────────────────────────────────────────────────
+  var NUM_FIELDS = ['sharpe_annual', 'years', 'n_trials', 'skew', 'kurtosis', 'gross_alpha_monthly_bps', 'volatility_annual',
+    'turnover_monthly', 'roundtrip_cost_bps', 'microcap_share', 'live_months', 'horizon_years', 'kelly_multiple'];
+  var PCT = { volatility_annual: 1, turnover_monthly: 1, microcap_share: 1 };
+  var BOOLS = ['long_short', 'uses_leverage', 'published', 'out_of_sample'];
+  var DEFAULTS = { n_trials: 1, skew: 0, kurtosis: 3, volatility_annual: 15, live_months: 0, horizon_years: 10 };
+  var form = { strategy_id: 'momentum', investor: 'retail', market: 'us' };
+  var EXAMPLE = { strategy_id: 'momentum', sharpe_annual: 1.2, years: 8, n_trials: 50, periods_per_year: 12, skew: -1.5, kurtosis: 8,
+    investor: 'retail', market: 'us', horizon_years: 10, published: true };
+
+  function renderFamSeg() {
+    $('famseg').innerHTML = FAMILIES.map(function (f) {
+      return '<button type="button" data-fam="' + esc(f) + '" aria-pressed="' + (f === state.fam) + '">' + esc(FAM_LABEL[f]) + '</button>';
+    }).join('');
+  }
+  function renderStratOpts() {
+    var list = KB.strategies.filter(function (s) { return s.family === state.fam; });
+    $('stratopts').className = 'opts' + (list.length <= 2 ? ' one' : '');
+    $('stratopts').innerHTML = list.map(function (s) {
+      return '<button type="button" class="opt" data-sid="' + esc(s.id) + '" aria-pressed="' + (s.id === form.strategy_id) + '">' +
+        '<span class="row"><b>' + esc(s.name) + '</b><em class="num">' + s.prior.score + '</em></span>' +
+        '<span>' + esc(s.survives) + '</span></button>';
+    }).join('');
+  }
+  function renderChoice(id, key, options) {
+    $(id).innerHTML = options.map(function (o) {
+      return '<button type="button" class="opt" data-k="' + key + '" data-v="' + o[0] + '" aria-pressed="' + (form[key] === o[0]) + '">' +
+        '<b>' + esc(o[1]) + '</b><span>' + esc(o[2]) + '</span></button>';
+    }).join('');
+  }
+  function renderChoices() {
+    renderChoice('investor-opts', 'investor', [['retail', 'Minorista', 'Costo por defecto de 40 pb ida y vuelta.'], ['institutional', 'Institucional', 'Costo por defecto de 15 pb; cortos accesibles.']]);
+    renderChoice('market-opts', 'market', [['global', 'Global', 'Diversificado'], ['us', 'EE. UU.', 'Un país grande'], ['mx', 'México', 'BMV, costo × 1.5'], ['other', 'Otro', 'Un país']]);
+    var base = form.investor === 'institutional' ? 15 : 40;
+    $('roundtrip_cost_bps').placeholder = 'Por defecto ' + (form.market === 'mx' ? base * 1.5 : base);
+  }
+  function strategyDefaults(s) {
+    var ev = s.evidence, share = { alta: 0.6, media: 0.3, baja: 0.05 }[ev.microcap_dependence];
+    $('turnover_monthly').value = Math.round((ev.typical_turnover_monthly || 0) * 100);
+    $('microcap_share').value = Math.round((share == null ? 0.05 : share) * 100);
+    $('long_short').checked = !!ev.requires_short;
+    $('uses_leverage').checked = !!ev.requires_leverage;
+  }
+  function updateClaim() {
+    var s = strat(form.strategy_id);
+    $('claim').innerHTML = esc(s.claim) + ' <b>' + esc(s.key_figure) + '</b>' + marks(s.marks);
+  }
+  function readForm() {
+    var d = { strategy_id: form.strategy_id, investor: form.investor, market: form.market };
+    NUM_FIELDS.forEach(function (k) {
+      var v = $(k).value;
+      if (v === '' || v == null) return;
+      var x = Number(v);
+      if (isFinite(x)) d[k] = PCT[k] ? x / 100 : x;
+    });
+    BOOLS.forEach(function (k) { d[k] = $(k).checked; });
+    d.periods_per_year = Number($('periods_per_year').value);
+    return d;
+  }
+  function writeForm(d) {
+    if (d.strategy_id && strat(d.strategy_id)) form.strategy_id = d.strategy_id;
+    var s = strat(form.strategy_id);
+    state.fam = s.family;
+    form.investor = d.investor === 'institutional' ? 'institutional' : 'retail';
+    form.market = ['global', 'us', 'mx', 'other'].indexOf(d.market) >= 0 ? d.market : 'global';
+    strategyDefaults(s);
+    NUM_FIELDS.forEach(function (k) {
+      var v = d[k];
+      if (v == null) {
+        if (k === 'turnover_monthly' || k === 'microcap_share') return;
+        $(k).value = k in DEFAULTS ? DEFAULTS[k] : '';
+        return;
+      }
+      $(k).value = PCT[k] ? Math.round(v * 10000) / 100 : v;
+    });
+    BOOLS.forEach(function (k) {
+      if (d[k] != null) $(k).checked = !!d[k];
+      else if (k === 'published') $(k).checked = true;
+      else if (k === 'out_of_sample') $(k).checked = false;
+    });
+    $('periods_per_year').value = String(d.periods_per_year || 252);
+    renderFamSeg(); renderStratOpts(); renderChoices(); updateClaim(); render();
+  }
+
+  $('famseg').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-fam]'); if (!b) return;
+    state.fam = b.getAttribute('data-fam'); renderFamSeg(); renderStratOpts();
+  });
+  $('stratopts').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-sid]'); if (!b) return;
+    form.strategy_id = b.getAttribute('data-sid');
+    strategyDefaults(strat(form.strategy_id)); renderStratOpts(); updateClaim(); render();
+  });
+  ['investor-opts', 'market-opts'].forEach(function (id) {
+    $(id).addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-k]'); if (!b) return;
+      form[b.getAttribute('data-k')] = b.getAttribute('data-v'); renderChoices(); render();
+    });
+  });
+  $('sheet').addEventListener('input', function () { render(); });
+  $('sheet').addEventListener('submit', function (ev) { ev.preventDefault(); });
+  $('reset').addEventListener('click', function () { writeForm(EXAMPLE); });
+
+  // ── Results ─────────────────────────────────────────────────────────────
+  function niceStep(raw) { var p = Math.pow(10, Math.floor(Math.log10(raw || 1))), n = raw / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p; }
+  function levelChart(steps) {
+    var maxLen = Math.max.apply(null, steps.map(function (s) { return String(s.label).length; }));
+    var W = 640, labW = Math.min(300, Math.max(150, Math.round(maxLen * 6.6) + 16)), valW = 64, rowH = 38, pad = 24, H = steps.length * rowH + pad + 8;
+    var vals = steps.map(function (s) { return s.v; });
+    var lo = Math.min(0, Math.min.apply(null, vals)), hi = Math.max(0, Math.max.apply(null, vals));
+    if (hi === lo) hi = lo + 1;
+    var X = function (v) { return labW + (v - lo) / (hi - lo) * (W - valW - labW); };
+    var st = niceStep((hi - lo) / 4), out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Cascada de la ventaja en pb al mes">';
+    for (var t = Math.ceil(lo / st) * st; t <= hi + 1e-9; t += st) {
+      var tt = Math.round(t * 1000) / 1000;
+      out += '<line class="' + (tt === 0 ? 'zero' : 'grid') + '" x1="' + X(tt).toFixed(1) + '" x2="' + X(tt).toFixed(1) + '" y1="4" y2="' + (H - pad + 2) + '"/>' +
+        '<text x="' + X(tt).toFixed(1) + '" y="' + (H - 5) + '" text-anchor="middle">' + tt + '</text>';
+    }
+    steps.forEach(function (s, i) {
+      var y = 8 + i * rowH, bh = 18, xa = X(Math.min(0, s.v)), xb = X(Math.max(0, s.v));
+      out += '<g class="step"><title>' + esc(s.label + ': ' + f2(s.v, 1) + ' pb. ' + (s.note || '')) + '</title>' +
+        '<rect class="hit" x="0" y="' + (y - 6) + '" width="' + W + '" height="' + rowH + '"/>' +
+        '<text x="0" y="' + (y + 13) + '">' + esc(s.label) + '</text>' +
+        '<rect class="b' + (s.v <= 0 ? ' neg' : '') + '" x="' + xa.toFixed(1) + '" y="' + y + '" width="' + Math.max(1.5, xb - xa).toFixed(1) + '" height="' + bh + '" rx="5"/>' +
+        '<text class="v" x="' + (s.v >= 0 ? xb + 8 : xa - 8).toFixed(1) + '" y="' + (y + 13) + '" text-anchor="' + (s.v >= 0 ? 'start' : 'end') + '">' + f2(s.v, 1) + '</text></g>';
+    });
+    return out + '</svg>';
+  }
+
+  var liveTimer = null, renderSeq = 0;
+  function render() {
+    var d = readForm(), seq = ++renderSeq;
+    evaluate(d).then(function (r) { if (seq === renderSeq) paint(d, r); }, function (e) {
+      $('v-summary').textContent = 'No se pudo evaluar: ' + e.message;
+    });
+  }
+  function paint(d, r) {
+    state.last = { input: d, result: r };
+    var sc = r.scores, s = r.strategy, fin = Math.floor(sc.final);
+    $('rings').innerHTML = rings(sc, 'Puntaje ' + fin + ' de 100');
+    $('v-chip').innerHTML = '<span class="chip ' + r.verdict.code + '">' + esc(r.verdict.label) + '</span>';
+    $('v-score').innerHTML = fin + '<small>/100</small>';
+    $('v-name').textContent = s.name;
+    $('legend').innerHTML = RINGS.map(function (rg) {
+      var v = sc[rg.key], w = r.weights[rg.key];
+      return '<div><span><i style="background:' + rg.color + '"></i>' + rg.label + '</span><b class="num">' + (v == null ? '—' : Math.floor(v)) +
+        '<small>' + (w ? Math.round(w * 100) + '%' : 'sin datos') + '</small></b></div>';
+    }).join('');
+    $('v-summary').textContent = r.verdict.summary;
+    $('v-caps').innerHTML = (r.caps || []).map(function (c) { return '<p class="caps">' + esc(c) + '</p>'; }).join('');
+    $('engine-note').textContent = state.live ? 'Calculado por el motor de Python en tu equipo.' : 'Calculado en tu navegador con el mismo motor que el CLI de Python.';
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(function () { $('verdict-live').textContent = r.verdict.label + ': ' + fin + ' de 100'; }, 600);
+
+    var h = '';
+    if (r.cascade && r.cascade.length) {
+      h += '<div class="tile s4"><h3>De la ventaja bruta a la neta. <span>Puntos base al mes.</span></h3>' +
+        '<div class="chart">' + levelChart(r.cascade.map(function (c) { return { label: c.stage, v: c.monthly_bps, note: c.note }; })) + '</div>' +
+        '<div class="kv">' + r.cascade.map(function (c) { return '<div><span>' + esc(c.stage) + '. ' + esc(c.note || '') + '</span><b>' + f2(c.monthly_bps, 1) + ' pb</b></div>'; }).join('') + '</div>' +
+        (r.net_sharpe_estimate != null ? '<p class="note">Sharpe neto aproximado: <b class="num">' + f2(r.net_sharpe_estimate) + '</b></p>' : '') + '</div>';
+    }
+    if (r.stats) {
+      var st = r.stats;
+      h += '<div class="tile ' + (r.cascade && r.cascade.length ? 's2' : 's3') + '"><h3>Credibilidad.</h3><div class="statbig">' +
+        '<div><b>' + f2(st.dsr, 2) + '</b><span>Deflated Sharpe</span></div>' +
+        '<div><b>' + f2(st.t_stat, 2) + '</b><span>Estadístico t</span></div>' +
+        '<div><b>' + f2(st.sharpe_haircut, 2) + '</b><span>Sharpe con recorte</span></div>' +
+        '<div><b>' + f2(st.min_backtest_years, 1) + '</b><span>Años mínimos</span></div></div>' +
+        '<div class="kv"><div><span>p ajustado (Bonferroni)</span><b>' + f2(st.p_adjusted, 3) + '</b></div>' +
+        '<div><span>Umbral t para el mejor de N</span><b>' + f2(st.bonferroni_t_threshold, 2) + '</b></div>' +
+        '<div><span>Mejor Sharpe esperable sin habilidad</span><b>' + f2(st.sr0_annual, 2) + '</b></div></div></div>';
+    }
+    h += '<div class="tile ' + (r.stats ? 's6' : 's3') + '"><h3>Chequeos. <span>Cada uno con su fuente.</span></h3><ul class="checks">' + r.checks.map(function (c) {
+      return '<li><span><span class="chip ' + c.status + '">' + STATUS[c.status] + '</span></span><div style="display:grid;gap:3px;min-width:0">' +
+        '<span class="t">' + esc(c.label) + '</span><span class="d">' + esc(c.detail) + '</span>' + (c.source ? '<span class="s">' + srcLink(c.source) + '</span>' : '') + '</div></li>';
+    }).join('') + '</ul></div>';
+    h += '<div class="tile s3"><h3>Lo que dice la literatura.</h3><div class="facts">' +
+      '<div><span>Afirma</span>' + esc(s.claim) + '</div><div><span>Cifra clave</span>' + esc(s.key_figure) + marks(s.marks) + '</div>' +
+      '<div><span>Crítica</span>' + esc(s.critique) + '</div><div><span>Sobrevive</span>' + esc(s.survives) + '</div></div>' +
+      '<ul class="srcs">' + (r.sources || []).map(function (x) { return '<li>' + srcLink(x) + '</li>'; }).join('') + '</ul></div>';
+    if (r.related_modules && r.related_modules.length) {
+      h += '<div class="tile s3"><h3>En FinceptTerminal.</h3><ul class="mods">' + r.related_modules.slice(0, 8).map(function (m) {
+        return '<li><code>' + esc(m.path) + '</code><span>' + esc(m.summary) + '</span><button type="button" class="more" style="font-size:14px;justify-self:start" data-open="' + esc(m.path) + '">Ver código</button></li>';
+      }).join('') + '</ul></div>';
+    }
+    h += '<div class="tile s6"><h3>Historial. <span>Se guarda solo en este navegador.</span></h3><div class="tablewrap"><table class="hist" id="hist"></table></div></div>';
+    $('results').innerHTML = h;
+    renderHist();
+  }
+  $('results').addEventListener('click', function (ev) {
+    var o = ev.target.closest('[data-open]');
+    if (o) { openCode(o.getAttribute('data-open')); location.hash = 'codigo'; return; }
+    var del = ev.target.closest('[data-del]'), ld = ev.target.closest('[data-load]'), rows = loadHist();
+    if (del) { rows.splice(Number(del.getAttribute('data-del')), 1); store('qe.studio.hist', JSON.stringify(rows)); renderHist(); }
+    if (ld) { var row = rows[Number(ld.getAttribute('data-load'))]; if (row) { writeForm(row.input); location.hash = 'evaluar'; } }
+  });
+
+  function loadHist() {
+    try {
+      var v = JSON.parse(store('qe.studio.hist') || '[]');
+      return Array.isArray(v) ? v.filter(function (x) { return x && typeof x === 'object' && x.input && typeof x.input === 'object'; }) : [];
+    } catch (e) { return []; }
+  }
+  function renderHist() {
+    var t = $('hist'); if (!t) return;
+    var rows = loadHist();
+    if (!rows.length) { t.innerHTML = '<tr><td style="color:var(--ink-2)">Aún no hay decisiones guardadas. Ajusta la configuración y pulsa “Guardar en el historial”.</td></tr>'; return; }
+    t.innerHTML = '<thead><tr><th>Estrategia</th><th>Dictamen</th><th style="text-align:right">Puntaje</th><th style="text-align:right">Neto pb/mes</th><th></th></tr></thead><tbody>' +
+      rows.map(function (x, i) {
+        return '<tr><td><button type="button" class="more" style="font-size:14px" data-load="' + i + '">' + esc(x.name) + '</button></td>' +
+          '<td><span class="chip ' + (VERDICT_CODES.test(x.code) ? x.code : '') + '">' + esc(x.label) + '</span></td>' +
+          '<td class="n">' + (isFinite(x.score) ? Math.floor(x.score) : '—') + '</td><td class="n">' + (x.net == null ? '—' : f2(x.net, 1)) + '</td>' +
+          '<td class="n"><button type="button" class="btn small quiet" data-del="' + i + '" aria-label="Borrar ' + esc(x.name) + '">Borrar</button></td></tr>';
+      }).join('') + '</tbody>';
+  }
+  $('save').addEventListener('click', function () {
+    if (!state.last) return;
+    var rows = loadHist(), r = state.last.result;
+    rows.unshift({ input: state.last.input, name: r.strategy.name, code: r.verdict.code, label: r.verdict.label, score: r.scores.final, net: r.net_monthly_bps });
+    var ok = store('qe.studio.hist', JSON.stringify(rows.slice(0, 30)));
+    renderHist();
+    toast(ok ? 'Guardado en el historial de este navegador.' : 'No se pudo guardar: el almacenamiento de este navegador está bloqueado o lleno.');
+  });
+  $('copyjson').addEventListener('click', function () {
+    var txt = JSON.stringify(readForm(), null, 2);
+    var fallback = function () {
+      var ta = $('jsonout');
+      if (!ta) { ta = document.createElement('textarea'); ta.id = 'jsonout'; ta.className = 'json'; ta.readOnly = true; ta.setAttribute('aria-label', 'JSON de la decisión'); $('toast').after(ta); }
+      ta.value = txt; ta.focus(); ta.select();
+      clearTimeout(toastTimer); $('toast').textContent = 'Selecciona y copia el JSON de abajo:';
+    };
+    try {
+      navigator.clipboard.writeText(txt).then(function () {
+        toast('Copiado. Guárdalo como decision.json y ejecuta: python quant_evidence_cli.py evaluate decision.json');
+      }, fallback);
+    } catch (e) { fallback(); }
+  });
+
+  // ── Strategies ──────────────────────────────────────────────────────────
+  function renderLibSeg() {
+    $('libseg').innerHTML = ['todas'].concat(FAMILIES).map(function (f) {
+      return '<button type="button" data-lf="' + esc(f) + '" aria-pressed="' + (f === state.libFam) + '">' + esc(f === 'todas' ? 'Todas' : FAM_LABEL[f]) + '</button>';
+    }).join('');
+  }
+  function renderCards() {
+    var q = $('libq').value.trim().toLowerCase();
+    var list = KB.strategies.filter(function (s) {
+      return (state.libFam === 'todas' || s.family === state.libFam) && (!q || JSON.stringify(s).toLowerCase().indexOf(q) >= 0);
+    }).sort(function (a, b) { return b.prior.score - a.prior.score; });
+    $('cards').innerHTML = list.length ? list.map(function (s) {
+      return '<article class="card"><span class="fam">' + esc(FAM_LABEL[s.family]) + '</span><h3>' + esc(s.name) + '</h3>' +
+        '<div class="pr"><b>' + s.prior.score + '</b><span>valoración de 100</span></div><div class="meter"><i style="width:' + s.prior.score + '%"></i></div>' +
+        '<p>' + esc(s.survives) + '</p><div class="links"><button type="button" class="more" data-info="' + esc(s.id) + '">Más información</button>' +
+        '<button type="button" class="more" data-eval="' + esc(s.id) + '">Evaluar</button></div></article>';
+    }).join('') : '<p style="color:var(--ink-2)">Ninguna estrategia coincide con la búsqueda.</p>';
+  }
+  $('libseg').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-lf]'); if (!b) return;
+    state.libFam = b.getAttribute('data-lf'); renderLibSeg(); renderCards();
+  });
+  $('libq').addEventListener('input', renderCards);
+  function evalStrategy(id) {
+    writeForm({ strategy_id: id, investor: form.investor, market: form.market });
+    location.hash = 'evaluar';
+  }
+  function openSheet(id) {
+    var s = strat(id), dlg = $('sheet-dlg');
+    var mods = (REPO.modules || []).filter(function (m) { return (m.categories || []).some(function (c) { return s.categories.indexOf(c) >= 0; }); });
+    $('dlg-in').innerHTML = '<button type="button" class="x" data-close aria-label="Cerrar">✕</button>' +
+      '<span class="dlg-fam">' + esc(FAM_LABEL[s.family]) + ' · ' +
+      s.categories.map(function (c) { return esc(CAT[c].name); }).join(', ') + '</span>' +
+      '<h3 id="dlg-h">' + esc(s.name) + '</h3>' +
+      '<div class="facts"><div><span>Afirma</span>' + esc(s.claim) + '</div><div><span>Cifra clave</span>' + esc(s.key_figure) + marks(s.marks) + '</div>' +
+      '<div><span>Crítica</span>' + esc(s.critique) + '</div><div><span>Sobrevive</span>' + esc(s.survives) + '</div>' +
+      '<div><span>Valoración ' + s.prior.score + ' de 100</span>' + esc(s.prior.rationale) + '</div></div>' +
+      '<ul class="srcs">' + s.sources.map(function (x) { return '<li>' + srcLink(x) + '</li>'; }).join('') + '</ul>' +
+      '<p style="font-size:14px;color:var(--ink-2)">' + mods.length + ' módulos del repositorio cubren sus categorías.</p>' +
+      '<div class="actions"><button type="button" class="btn" data-eval="' + esc(s.id) + '">Evaluar esta estrategia</button>' +
+      '<button type="button" class="more" data-codecat="' + esc(s.categories[0]) + '">Ver el código relacionado</button></div>';
+    try { dlg.showModal(); } catch (e) { dlg.setAttribute('open', ''); }
+  }
+  function closeSheet() { var d = $('sheet-dlg'); try { d.close(); } catch (e) { d.removeAttribute('open'); } }
+  document.addEventListener('click', function (ev) {
+    var t = ev.target;
+    var info = t.closest('[data-info]'); if (info) { openSheet(info.getAttribute('data-info')); return; }
+    var ev2 = t.closest('[data-eval]'); if (ev2) { closeSheet(); evalStrategy(ev2.getAttribute('data-eval')); return; }
+    var cc = t.closest('[data-codecat]'); if (cc) { closeSheet(); showCategoryInCode(cc.getAttribute('data-codecat')); return; }
+    if (t.closest('[data-close]')) closeSheet();
+  });
+  $('sheet-dlg').addEventListener('click', function (ev) { if (ev.target === $('sheet-dlg')) closeSheet(); });
+
+  // ── Code explorer ───────────────────────────────────────────────────────
+  var BY_PATH = {};
+  (CODE || []).forEach(function (c) { BY_PATH[c.path] = c; });
+  var MOD_BY_PATH = {};
+  (REPO.modules || []).forEach(function (m) { MOD_BY_PATH[m.path] = m; });
+  function langOf(p) {
+    var ext = (p.split('.').pop() || '').toLowerCase();
+    return { py: 'python', js: 'javascript', cpp: 'cpp', h: 'cpp', hpp: 'cpp', json: 'json', html: 'xml', md: 'markdown', cmake: 'cmake', sh: 'bash' }[ext] || 'plaintext';
+  }
+  function fileButton(path, label) {
+    return '<button type="button" class="f" data-file="' + esc(path) + '" title="' + esc(path) + '"' + (state.codeSel === path ? ' aria-current="true"' : '') + '>' + esc(label || path.split('/').pop()) + '</button>';
+  }
+  function renderCodeSeg() {
+    var views = [['evidencia', 'Por evidencia'], ['nuevo', 'Paquete nuevo']];
+    if (state.live) views.push(['todo', 'Todo el repo']);
+    $('codeseg').innerHTML = views.map(function (v) {
+      return '<button type="button" data-cv="' + v[0] + '" aria-pressed="' + (state.codeView === v[0]) + '">' + v[1] + '</button>';
+    }).join('');
+  }
+  function renderTree(openCat) {
+    var q = $('codeq').value.trim().toLowerCase(), html = '';
+    var match = function (p) { return !q || p.toLowerCase().indexOf(q) >= 0; };
+    if (state.codeView === 'nuevo') {
+      var mine = (CODE || []).filter(function (c) { return c.group === 'nuevo' && match(c.path); });
+      html = '<details open><summary><span>quant_evidence</span><em>' + mine.length + '</em></summary>' +
+        mine.map(function (c) { return fileButton(c.path, c.path.replace('fincept-qt/scripts/Analytics/', '')); }).join('') + '</details>';
+    } else if (state.codeView === 'evidencia') {
+      KB.categories.forEach(function (c) {
+        var files = (REPO.modules || []).filter(function (m) { return (m.categories || []).indexOf(c.key) >= 0 && match(m.path) && (BY_PATH[m.path] || state.live); });
+        if (!files.length) return;
+        html += '<details' + ((openCat === c.key || q) ? ' open' : '') + ' data-cat="' + c.key + '"><summary><span>' + esc(c.name) + '</span><em>' + files.length + '</em></summary>' +
+          files.map(function (m) { return fileButton(m.path); }).join('') + '</details>';
+      });
+    } else {
+      html = '<div id="fulltree" data-dir="fincept-qt"></div>';
+    }
+    $('tree').innerHTML = html || '<p style="padding:12px;color:var(--ink-2);font-size:13px">Ningún archivo coincide.</p>';
+    if (state.codeView === 'todo') loadDir('fincept-qt', $('fulltree'));
+  }
+  function loadDir(path, el) {
+    el.innerHTML = '<p style="padding:6px 28px;color:var(--ink-3);font-size:12px">Cargando…</p>';
+    fetch('/api/repo/tree?path=' + encodeURIComponent(path)).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j.success) throw new Error(j.error);
+      var q = $('codeq').value.trim().toLowerCase();
+      el.innerHTML = j.data.dirs.map(function (d) {
+        return '<details data-dir="' + esc(d.path) + '"><summary><span>' + esc(d.name) + '</span></summary><div></div></details>';
+      }).join('') + j.data.files.filter(function (f) { return !q || f.path.toLowerCase().indexOf(q) >= 0; }).map(function (f) { return fileButton(f.path, f.name); }).join('');
+    }).catch(function (e) { el.innerHTML = '<p style="padding:6px 28px;color:var(--bad);font-size:12px">' + esc(e.message) + '</p>'; });
+  }
+  $('tree').addEventListener('toggle', function (ev) {
+    var d = ev.target;
+    if (d.tagName === 'DETAILS' && d.open && d.getAttribute('data-dir') && d.lastElementChild && !d.lastElementChild.childElementCount) {
+      loadDir(d.getAttribute('data-dir'), d.lastElementChild);
+    }
+  }, true);
+  $('tree').addEventListener('click', function (ev) { var b = ev.target.closest('[data-file]'); if (b) openCode(b.getAttribute('data-file')); });
+  $('codeseg').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-cv]'); if (!b) return;
+    state.codeView = b.getAttribute('data-cv'); renderCodeSeg(); renderTree();
+  });
+  $('codeq').addEventListener('input', function () { renderTree(); });
+  function showCategoryInCode(cat) {
+    state.codeView = 'evidencia'; $('codeq').value = ''; renderCodeSeg(); renderTree(cat);
+    var first = (REPO.modules || []).filter(function (m) { return (m.categories || []).indexOf(cat) >= 0 && (BY_PATH[m.path] || state.live); })[0];
+    if (first) openCode(first.path);
+    location.hash = 'codigo';
+  }
+  function fetchSource(path) {
+    if (state.codeCache[path] != null) return Promise.resolve(state.codeCache[path]);
+    var url;
+    if (state.live) url = '/api/repo/file?path=' + encodeURIComponent(path);
+    else if (BY_PATH[path]) url = 'code/' + BY_PATH[path].id + '.txt';
+    else return Promise.reject(new Error('Este archivo no viene incluido en la versión web. Ábrelo con la app local (python quant_studio.py) para ver todo el repositorio.'));
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error('No se pudo cargar el archivo (HTTP ' + r.status + ').');
+      return state.live ? r.json().then(function (j) { if (!j.success) throw new Error(j.error); return j.data.text; }) : r.text();
+    }).then(function (t) { state.codeCache[path] = t; return t; });
+  }
+  function openCode(path) {
+    state.codeSel = path;
+    document.querySelectorAll('#tree [data-file]').forEach(function (b) { if (b.getAttribute('data-file') === path) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current'); });
+    var m = MOD_BY_PATH[path], c = BY_PATH[path];
+    var cats = m ? m.categories.map(function (k) { return CAT[k] ? CAT[k].name : k; }).join(' · ') : (c && c.group === 'nuevo' ? 'Paquete quant_evidence' : '');
+    $('vhead').innerHTML = '<span class="path">' + esc(path) + '</span>' +
+      '<div class="meta"><span>' + esc(langOf(path)) + '</span>' + (c ? '<span class="num">' + c.lines.toLocaleString('es-MX') + ' líneas</span><span class="num">' + (c.size / 1024).toFixed(1) + ' KB</span>' : '') +
+      (cats ? '<span>' + esc(cats) + '</span>' : '') + '<button type="button" class="btn small quiet" id="copycode">Copiar</button></div>' +
+      (m ? '<p class="sum">' + esc(m.summary_es || m.summary) + '</p>' : (c && c.summary ? '<p class="sum">' + esc(c.summary) + '</p>' : ''));
+    $('code').innerHTML = '<div class="empty">Cargando…</div>';
+    fetchSource(path).then(function (txt) {
+      if (state.codeSel !== path) return;
+      var n = txt.split('\n').length, gut = '';
+      for (var i = 1; i <= n; i++) gut += i + '\n';
+      var body = esc(txt), lang = langOf(path);
+      if (window.hljs && txt.length < 160000 && lang !== 'plaintext') {
+        try { body = window.hljs.highlight(txt, { language: lang, ignoreIllegals: true }).value; } catch (e) { body = esc(txt); }
+      }
+      $('code').innerHTML = '<pre class="gut" aria-hidden="true">' + gut + '</pre><pre class="src"><code>' + body + '</code></pre>';
+      $('code').scrollTop = 0;
+    }, function (e) { if (state.codeSel === path) $('code').innerHTML = '<div class="empty">' + esc(e.message) + '</div>'; });
+  }
+  $('vhead').addEventListener('click', function (ev) {
+    if (!ev.target.closest('#copycode')) return;
+    var txt = state.codeCache[state.codeSel];
+    if (txt == null) return;
+    try { navigator.clipboard.writeText(txt).then(function () { ev.target.textContent = 'Copiado'; }, function () { ev.target.textContent = 'Selecciona el código'; }); }
+    catch (e) { ev.target.textContent = 'Selecciona el código'; }
+  });
+
+  // ── Run console (local app only) ────────────────────────────────────────
+  function initRun() {
+    fetch('/api/run/list').then(function (r) { return r.json(); }).then(function (j) {
+      if (!j.success) return;
+      $('run-script').innerHTML = j.data.map(function (s) { return '<option value="' + esc(s.id) + '">' + esc(s.label) + '</option>'; }).join('');
+      $('runbox').hidden = false;
+    });
+    $('run-go').addEventListener('click', function () {
+      var params;
+      try { params = JSON.parse($('run-params').value || '{}'); } catch (e) { $('run-out').textContent = 'Los parámetros no son JSON válido: ' + e.message; return; }
+      $('run-out').textContent = 'Ejecutando…';
+      fetch('/api/run', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ script: $('run-script').value, command: $('run-cmd').value.trim(), params: params }) })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (!j.success) { $('run-out').textContent = j.error; return; }
+          var d = j.data;
+          $('run-out').textContent = (d.parsed ? JSON.stringify(d.parsed, null, 2) : d.stdout || '(sin salida)') +
+            (d.stderr ? '\n\n— stderr —\n' + d.stderr : '') + '\n\n(código de salida ' + d.returncode + ', ' + d.seconds + ' s)';
+        }).catch(function (e) { $('run-out').textContent = 'No se pudo ejecutar: ' + e.message; });
+    });
+  }
+
+  // ── Repo + method ───────────────────────────────────────────────────────
+  function renderRepo() {
+    var mods = REPO.modules || [], auto = REPO.auto_index;
+    $('repo-lede').innerHTML = '<b>' + mods.length + ' módulos</b> leídos uno por uno y clasificados en las ' + KB.categories.length + ' categorías del informe' +
+      (auto ? ', más un escaneo de vocabulario sobre ' + auto.files_scanned.toLocaleString('es-MX') + ' archivos.' : '.');
+    $('cats').innerHTML = KB.categories.map(function (c) {
+      var n = mods.filter(function (m) { return (m.categories || []).indexOf(c.key) >= 0; }).length;
+      var ss = KB.strategies.filter(function (s) { return s.categories.indexOf(c.key) >= 0; }).sort(function (a, b) { return b.prior.score - a.prior.score; });
+      var a = auto && auto.categories[c.key] ? auto.categories[c.key].file_count : null;
+      return '<article class="cat"><span class="fam">' + esc(c.family) + '</span><h3>' + esc(c.name) + '</h3>' +
+        '<div class="nums"><div><b>' + n + '</b><span>módulos</span></div>' + (a != null ? '<div><b>' + a + '</b><span>con su vocabulario</span></div>' : '') +
+        '<div><b>' + ss.length + '</b><span>estrategias</span></div></div>' +
+        (ss.length ? '<p>Mejor valorada: ' + esc(ss[0].name) + ' (' + ss[0].prior.score + ')</p>' : '') +
+        (n ? '<button type="button" class="more" style="font-size:14px;justify-self:start" data-codecat="' + c.key + '">Ver código</button>' : '') + '</article>';
+    }).join('');
+    var order = { alta: 0, media: 1, baja: 2 };
+    $('gaps').innerHTML = (REPO.gaps || []).slice().sort(function (a, b) { return (order[a.severity] || 3) - (order[b.severity] || 3); }).map(function (g) {
+      if (typeof g === 'string') return '<li><span><span class="chip info">Nota</span></span><p class="gt">' + esc(g) + '</p></li>';
+      return '<li><span><span class="chip ' + esc(g.severity) + '">' + esc(g.severity) + '</span></span><div style="min-width:0">' +
+        '<p class="gc">' + esc(CAT[g.category] ? CAT[g.category].name : g.category) + '</p><p class="gt">' + esc(g.text) + '</p>' +
+        (g.files && g.files.length ? '<p class="gf">' + g.files.map(esc).join(' · ') + '</p>' : '') +
+        (g.covered_by ? '<p class="gv">Cubierto aquí: ' + esc(g.covered_by) + '</p>' : '') + '</div></li>';
+    }).join('');
+    $('marks').innerHTML = Object.keys(KB.meta.marks).map(function (k) {
+      return '<div><span><span class="mk" style="margin:0">' + esc(MARK_LABEL[k] || k) + '</span></span>' + esc(KB.meta.marks[k]) + '</div>';
+    }).join('');
+    $('habits').innerHTML = KB.habits.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('');
+    $('disclaimer').textContent = KB.meta.disclaimer + ' ' + KB.meta.prior_note;
+  }
+
+  // ── Boot ────────────────────────────────────────────────────────────────
+  function setMode(live) {
+    state.live = live;
+    $('mode').className = 'mode' + (live ? ' live' : '');
+    $('mode-label').textContent = live ? 'Motor Python local' : 'Motor en el navegador';
+    $('code-lede').textContent = live
+      ? 'Todo el repositorio de FinceptTerminal desde tu equipo: navega por evidencia, por el paquete nuevo o por la estructura completa de carpetas.'
+      : 'El paquete nuevo y los ' + (CODE || []).filter(function (c) { return c.group !== 'nuevo'; }).length + ' archivos de FinceptTerminal que implementan cada categoría, con su resumen y su código fuente completo.';
+    renderCodeSeg();
+  }
+  renderHero(); renderRepo(); renderLibSeg(); renderCards(); setMode(false); renderTree('backtest_overfitting');
+  writeForm(EXAMPLE);
+  openCode('fincept-qt/scripts/Analytics/quant_evidence/evaluator.py');
+  if (/^https?:$/.test(location.protocol)) {
+    fetch('/api/health', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (j && j.success && j.data && j.data.app === 'quant-studio') { setMode(true); renderTree(); initRun(); render(); }
+    }).catch(function () { /* static hosting: stay in browser mode */ });
+  }
+})();
+</script>

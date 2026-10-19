@@ -1,0 +1,1561 @@
+<title>Laboratorio Fincept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a research bench. A slim control rail on the left feeds a results sheet on the right;
+   the verdict sits at the top of the sheet, evidence and method live in their own tabs. */
+:root {
+  --paper: #f2f4f6;
+  --sheet: #fcfdfd;
+  --ink: #14202a;
+  --ink-2: #4a5864;
+  --ink-3: #6f7c87;
+  --rule: #d9dfe4;
+  --rule-2: #e7ebee;
+  --accent: #1f5fbf;
+  --accent-ink: #ffffff;
+  --accent-soft: #e3ecf8;
+  --series-1: #2a78d6;
+  --series-fill: rgba(42, 120, 214, 0.10);
+  --series-2: #eb6834;
+  --neg-fill: rgba(208, 59, 59, 0.13);
+  --good: #0ca30c;
+  --warn: #fab219;
+  --bad: #d03b3b;
+  --good-ink: #0b6e0b;
+  --warn-ink: #8a5a00;
+  --bad-ink: #a52626;
+  --chip: #e9edf0;
+  --font-display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f151b; --sheet: #151c23; --ink: #e4eaef; --ink-2: #b2bec8; --ink-3: #8794a0;
+    --rule: #2a343e; --rule-2: #212a33; --accent: #7aa5ff; --accent-ink: #0d1520; --accent-soft: #1b2a40;
+    --series-1: #3987e5; --series-2: #d95926; --series-fill: rgba(57, 135, 229, 0.16); --neg-fill: rgba(230, 103, 103, 0.18);
+    --good-ink: #5fd35f; --warn-ink: #fab219; --bad-ink: #ff8a8a; --chip: #202a33; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f151b; --sheet: #151c23; --ink: #e4eaef; --ink-2: #b2bec8; --ink-3: #8794a0;
+  --rule: #2a343e; --rule-2: #212a33; --accent: #7aa5ff; --accent-ink: #0d1520; --accent-soft: #1b2a40;
+  --series-1: #3987e5; --series-2: #d95926; --series-fill: rgba(57, 135, 229, 0.16); --neg-fill: rgba(230, 103, 103, 0.18);
+  --good-ink: #5fd35f; --warn-ink: #fab219; --bad-ink: #ff8a8a; --chip: #202a33; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 14px; line-height: 1.5; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 18px 40px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: 22px; }
+h2 { font-size: 17px; }
+h3 { font-size: 14px; font-family: var(--font-body); font-weight: 600; letter-spacing: 0; }
+p { margin: 0; }
+a { color: var(--accent); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num, td.n, .mono { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.eyebrow { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+.muted { color: var(--ink-3); }
+.small { font-size: 12.5px; }
+
+/* Top bar */
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; padding-bottom: 14px; border-bottom: 1px solid var(--rule); }
+.brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.brand .tag { font-size: 12.5px; color: var(--ink-2); }
+.status { display: flex; gap: 8px; flex-wrap: wrap; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; background: var(--chip); font-size: 12px; color: var(--ink-2); white-space: nowrap; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); flex: none; }
+.dot.on { background: var(--good); } .dot.off { background: var(--bad); } .dot.wait { background: var(--warn); }
+
+nav.tabs { display: flex; gap: 2px; margin-top: 14px; overflow-x: auto; }
+nav.tabs button { border: 0; background: transparent; padding: 9px 14px; border-radius: var(--radius) var(--radius) 0 0; cursor: pointer; color: var(--ink-2); font-weight: 500; white-space: nowrap; border-bottom: 2px solid transparent; }
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+nav.tabs button:hover { color: var(--ink); }
+section.view { padding-top: 18px; }
+
+/* Audit layout */
+.bench { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 980px) { .bench { grid-template-columns: minmax(0, 1fr); } }
+.rail { display: grid; gap: 16px; position: sticky; top: env(safe-area-inset-top, 0px); }
+@media (max-width: 980px) { .rail { position: static; } }
+.card { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); }
+.rail .card { padding: 14px; display: grid; gap: 12px; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--chip); border-radius: var(--radius); padding: 3px; gap: 3px; }
+.seg button { border: 0; background: transparent; padding: 6px 4px; border-radius: 4px; cursor: pointer; font-size: 13px; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--sheet); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+label.f { display: grid; gap: 4px; font-size: 12.5px; color: var(--ink-2); }
+input[type=text], input[type=number], select, textarea { width: 100%; background: var(--sheet); border: 1px solid var(--rule); border-radius: 5px; padding: 7px 9px; min-width: 0; }
+textarea { min-height: 120px; resize: vertical; font-family: var(--font-data); font-size: 12px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; color: var(--ink-2); }
+.check input { margin-top: 3px; }
+.btn { border: 1px solid var(--rule); background: var(--sheet); padding: 7px 12px; border-radius: 5px; cursor: pointer; font-weight: 500; }
+.btn:hover { border-color: var(--ink-3); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn:disabled { opacity: 0.55; cursor: default; }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.note { font-size: 12px; color: var(--ink-3); }
+.err { font-size: 12.5px; color: var(--bad-ink); }
+
+/* Results sheet */
+.sheet { display: grid; gap: 16px; min-width: 0; }
+.verdict { padding: 18px 20px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: center; }
+@media (max-width: 560px) { .verdict { grid-template-columns: minmax(0, 1fr); } }
+.score { display: grid; place-items: center; width: 108px; height: 108px; border-radius: 50%; position: relative; }
+.score svg { position: absolute; inset: 0; }
+.score b { font-family: var(--font-display); font-size: 34px; line-height: 1; }
+.score span { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+.score .inner { display: grid; place-items: center; text-align: center; }
+.vstate { display: inline-flex; gap: 7px; align-items: center; font-weight: 600; padding: 4px 10px; border-radius: 999px; font-size: 13px; }
+.vstate.good { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good-ink); }
+.vstate.warn { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn-ink); }
+.vstate.bad { background: color-mix(in srgb, var(--bad) 15%, transparent); color: var(--bad-ink); }
+.vtext { display: grid; gap: 8px; min-width: 0; }
+.vtext p { color: var(--ink-2); max-width: 70ch; }
+.srcline { font-size: 12px; color: var(--ink-3); }
+
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; }
+@media (max-width: 760px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.kpi { background: var(--sheet); padding: 12px 14px; display: grid; gap: 3px; align-content: start; min-width: 0; }
+.kpi .v { font-family: var(--font-data); font-size: 20px; font-variant-numeric: tabular-nums; }
+.kpi .k { font-size: 12px; color: var(--ink-2); font-weight: 500; }
+.kpi .d { font-size: 11.5px; color: var(--ink-3); }
+.kpi .flag { display: inline-flex; gap: 5px; align-items: center; font-size: 11.5px; font-weight: 600; }
+.flag.good { color: var(--good-ink); } .flag.warn { color: var(--warn-ink); } .flag.bad { color: var(--bad-ink); } .flag.info { color: var(--ink-3); }
+.ico { width: 13px; height: 13px; flex: none; }
+
+.panel { padding: 16px 18px; display: grid; gap: 12px; min-width: 0; align-content: start; }
+.panel header { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart .axis text { fill: var(--ink-3); font-size: 10.5px; font-family: var(--font-data); }
+.chart .grid line { stroke: var(--rule-2); stroke-width: 1; }
+.chart .zero { stroke: var(--ink-3); stroke-width: 1; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--paper); font-size: 11.5px; padding: 6px 8px; border-radius: 5px; white-space: nowrap; transform: translate(-50%, -110%); font-family: var(--font-data); z-index: 3; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); }
+.legend i { display: inline-block; width: 14px; height: 2px; vertical-align: middle; margin-right: 5px; background: var(--series-1); }
+
+ul.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+ul.checks li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; padding: 9px 0; border-top: 1px solid var(--rule-2); }
+ul.checks li:first-child { border-top: 0; }
+ul.checks .lbl { font-weight: 600; font-size: 13px; }
+ul.checks .det { color: var(--ink-2); font-size: 12.5px; }
+ul.checks .src { font-size: 11.5px; }
+
+.cascade { display: grid; gap: 6px; }
+.cascade .st { display: grid; grid-template-columns: 150px minmax(0, 1fr) 72px; gap: 10px; align-items: center; font-size: 12.5px; }
+@media (max-width: 560px) { .cascade .st { grid-template-columns: 110px minmax(0, 1fr) 62px; } }
+.cascade .bar { height: 10px; border-radius: 0 4px 4px 0; background: var(--series-1); min-width: 2px; }
+.cascade .bar.neg { background: var(--bad); border-radius: 4px 0 0 4px; margin-left: auto; }
+.cascade .track { position: relative; height: 10px; }
+.cascade .val { text-align: right; font-family: var(--font-data); }
+.cascade .why { grid-column: 2 / 4; font-size: 11.5px; color: var(--ink-3); margin-top: -4px; }
+
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--rule-2); white-space: nowrap; }
+th { font-weight: 600; color: var(--ink-2); font-size: 11.5px; }
+td.n, th.n { text-align: right; }
+td.pos { color: var(--good-ink); } td.neg { color: var(--bad-ink); }
+tr.click { cursor: pointer; } tr.click:hover td { background: var(--accent-soft); }
+
+.memo { font-size: 13.5px; line-height: 1.6; display: grid; gap: 8px; max-width: 75ch; }
+.memo h4 { margin: 8px 0 0; font-size: 14px; }
+.memo ul { margin: 0; padding-left: 20px; }
+.qa { display: flex; gap: 8px; }
+.qa input { flex: 1; }
+
+/* Evidence */
+.ev { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 20px; align-items: start; }
+@media (max-width: 900px) { .ev { grid-template-columns: minmax(0, 1fr); } }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chips button { border: 1px solid var(--rule); background: var(--sheet); border-radius: 999px; padding: 3px 10px; font-size: 12px; cursor: pointer; color: var(--ink-2); }
+.chips button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.slist { display: grid; }
+.srow { display: grid; grid-template-columns: minmax(0, 1fr) 92px; gap: 12px; align-items: center; padding: 9px 12px; border: 0; border-top: 1px solid var(--rule-2); background: transparent; text-align: left; cursor: pointer; width: 100%; }
+.srow:hover, .srow[aria-current="true"] { background: var(--accent-soft); }
+.srow .nm { font-weight: 500; }
+.srow .fam { font-size: 11.5px; color: var(--ink-3); }
+.meter { height: 6px; background: var(--rule-2); border-radius: 3px; overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--series-1); border-radius: 3px; }
+.mark { display: inline-block; font-family: var(--font-data); font-size: 10.5px; padding: 0 5px; border: 1px solid var(--rule); border-radius: 3px; color: var(--ink-2); margin-left: 4px; }
+.detail { padding: 18px; display: grid; gap: 12px; }
+.detail dl { margin: 0; display: grid; gap: 10px; }
+.detail dt { font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+.detail dd { margin: 2px 0 0; color: var(--ink); }
+.papers { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.paper { padding: 14px; display: grid; gap: 7px; align-content: start; }
+.paper .meta { font-size: 11.5px; color: var(--ink-3); }
+.paper q { font-size: 12px; color: var(--ink-2); font-style: italic; quotes: "“" "”"; }
+
+/* Method */
+.method { display: grid; gap: 14px; max-width: 860px; }
+.method .card { padding: 16px 18px; display: grid; gap: 8px; }
+.formula { font-family: var(--font-data); font-size: 12.5px; background: var(--chip); padding: 8px 10px; border-radius: 5px; overflow-x: auto; white-space: nowrap; }
+
+/* Signals */
+.sigbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.sigbar label.f { min-width: 160px; }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; }
+@media (max-width: 560px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tile { background: var(--sheet); padding: 10px 12px; display: grid; gap: 2px; min-width: 0; }
+.tile .v { font-family: var(--font-data); font-size: 18px; font-variant-numeric: tabular-nums; }
+.tile .k { font-size: 11.5px; color: var(--ink-2); }
+.srcs { display: flex; flex-wrap: wrap; gap: 6px; }
+.legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.foot { margin-top: 28px; font-size: 12px; color: var(--ink-3); max-width: 90ch; }
+@media (prefers-reduced-motion: no-preference) { .fade { animation: fade .25s ease both; } @keyframes fade { from { opacity: .4; } to { opacity: 1; } } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Laboratorio Fincept</h1>
+      <span class="tag">Auditoría automática de estrategias contra la evidencia académica</span>
+    </div>
+    <div class="status" aria-live="polite">
+      <span class="pill" id="st-yahoo"><span class="dot"></span><span>Yahoo: comprobando</span></span>
+      <span class="pill" id="st-claude"><span class="dot"></span><span>Claude: comprobando</span></span>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Secciones">
+    <button role="tab" id="tab-audit" aria-controls="v-audit" aria-selected="true">Auditoría</button>
+    <button role="tab" id="tab-monitor" aria-controls="v-monitor" aria-selected="false">Monitor de factores</button>
+    <button role="tab" id="tab-signals" aria-controls="v-signals" aria-selected="false">Señales</button>
+    <button role="tab" id="tab-evidence" aria-controls="v-evidence" aria-selected="false">Evidencia</button>
+    <button role="tab" id="tab-method" aria-controls="v-method" aria-selected="false">Método</button>
+  </nav>
+
+  <!-- ── Auditoría ─────────────────────────────────────────────────────── -->
+  <section class="view" id="v-audit" role="tabpanel" aria-labelledby="tab-audit">
+    <div class="bench">
+      <aside class="rail">
+        <div class="card">
+          <div class="eyebrow">Datos</div>
+          <div class="seg" role="group" aria-label="Fuente de datos">
+            <button type="button" id="src-example" aria-pressed="true">Ejemplo</button>
+            <button type="button" id="src-ticker" aria-pressed="false">Tickers</button>
+            <button type="button" id="src-paste" aria-pressed="false">Mis datos</button>
+          </div>
+          <div id="pane-example" class="small muted">20 variantes simuladas de una misma estrategia mensual, 12 años. Ninguna es mejor que otra: sirve para ver cómo la mejor en el papel no se sostiene fuera de muestra.</div>
+          <div id="pane-ticker" hidden>
+            <label class="f" for="in-tickers">Uno o varios tickers (separados por coma)
+              <input type="text" id="in-tickers" value="SPY, MTUM, QUAL, USMV" autocomplete="off" spellcheck="false">
+            </label>
+            <div class="btns" style="margin-top:8px"><button class="btn primary" type="button" id="btn-fetch">Traer y auditar</button></div>
+            <p class="note" style="margin-top:6px">Precios mensuales ajustados de Yahoo Finance, guardados en la base de esta página. La actualización automática está en pausa: la fecha de los precios aparece arriba, en «Yahoo». Acepta acciones de EE. UU. y de la BMV (WALMEX.MX), índices (^MXX, ^GSPC) y divisas (USDMXN=X). Si un ticker aún no está en la base, la página lo anota para la siguiente actualización. Varios tickers cuentan como variantes comparadas.</p>
+          </div>
+          <div id="pane-paste" hidden>
+            <label class="f" for="in-data">Pega una tabla: fecha y una columna por variante
+              <textarea id="in-data" spellcheck="false" placeholder="fecha;estrategia_A;estrategia_B&#10;2015-01-31;1.2%;0.8%&#10;2015-02-28;-0.4%;0.1%"></textarea>
+            </label>
+            <div class="row2" style="margin-top:8px">
+              <label class="f" for="in-kind">Los valores son
+                <select id="in-kind"><option value="auto">Detectar</option><option value="prices">Precios</option><option value="returns">Rendimientos (0.01)</option><option value="percent">Rendimientos en %</option></select>
+              </label>
+              <label class="f" for="in-ppy">Frecuencia
+                <select id="in-ppy"><option value="auto">Detectar</option><option value="252">Diaria</option><option value="52">Semanal</option><option value="12">Mensual</option><option value="4">Trimestral</option></select>
+              </label>
+            </div>
+            <div class="btns" style="margin-top:8px">
+              <button class="btn primary" type="button" id="btn-paste">Auditar</button>
+              <label class="btn" for="in-file">Subir CSV</label>
+              <input type="file" id="in-file" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden>
+            </div>
+          </div>
+          <p class="err" id="data-err" hidden></p>
+        </div>
+
+        <div class="card">
+          <div class="eyebrow">Contexto</div>
+          <label class="f" for="in-strategy">Tipo de estrategia (para la evidencia)
+            <select id="in-strategy"></select>
+          </label>
+          <label class="f" for="in-series">Serie a auditar
+            <select id="in-series"></select>
+          </label>
+          <div class="row2">
+            <label class="f" for="in-trials">Variantes probadas
+              <input type="number" id="in-trials" min="1" step="1" placeholder="auto">
+            </label>
+            <label class="f" for="in-cost">Costo ida y vuelta (pb)
+              <input type="number" id="in-cost" min="0" step="1" placeholder="auto">
+            </label>
+          </div>
+          <div class="row2">
+            <label class="f" for="in-market">Mercado
+              <select id="in-market"><option value="global">Global</option><option value="us">EE. UU.</option><option value="mx">México</option><option value="other">Otro</option></select>
+            </label>
+            <label class="f" for="in-investor">Inversionista
+              <select id="in-investor"><option value="retail">Minorista</option><option value="institutional">Institucional</option></select>
+            </label>
+          </div>
+          <label class="f" for="in-turnover">Rotación mensual (%)
+            <input type="number" id="in-turnover" min="0" step="1" placeholder="la típica de la estrategia">
+          </label>
+          <label class="check" for="in-live"><input type="checkbox" id="in-live"> <span>Son resultados en vivo, no un backtest</span></label>
+          <label class="check" for="in-published"><input type="checkbox" id="in-published" checked> <span>La idea viene de una investigación publicada</span></label>
+          <p class="note">Todo se recalcula solo al cambiar un dato.</p>
+        </div>
+      </aside>
+
+      <div class="sheet" id="sheet">
+        <div class="card verdict fade" id="verdict"></div>
+        <div class="kpis" id="kpis"></div>
+        <div class="grid2">
+          <div class="card panel">
+            <header><h2>Crecimiento de 1 peso</h2><span class="small muted">escala logarítmica</span></header>
+            <div class="chart" id="ch-equity"></div>
+            <div class="chart" id="ch-dd"></div>
+          </div>
+          <div class="card panel">
+            <header><h2 id="roll-title">Sharpe móvil</h2><span class="small muted" id="roll-note"></span></header>
+            <div class="chart" id="ch-roll"></div>
+            <div id="pbo-wrap">
+              <header style="margin-top:6px"><h2>Sobreajuste: rango fuera de muestra</h2></header>
+              <div class="chart" id="ch-pbo"></div>
+              <p class="small muted" id="pbo-note"></p>
+            </div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="card panel">
+            <header><h2>Chequeos</h2><span class="small muted" id="checks-count"></span></header>
+            <ul class="checks" id="checks"></ul>
+          </div>
+          <div class="card panel">
+            <header><h2>De la ventaja bruta a la neta</h2><span class="small muted">pb al mes</span></header>
+            <div class="cascade" id="cascade"></div>
+            <p class="small muted" id="cascade-note"></p>
+          </div>
+        </div>
+        <div class="card panel" id="years-panel">
+          <header><h2>Rendimiento por año</h2><span class="small muted" id="years-note"></span></header>
+          <div class="tablewrap" id="years"></div>
+        </div>
+        <div class="card panel" id="memo-panel">
+          <header>
+            <h2>Informe del analista</h2>
+            <div class="btns">
+              <button class="btn primary" type="button" id="btn-memo">Redactar informe con Claude</button>
+              <button class="btn" type="button" id="btn-stop" hidden>Detener</button>
+              <button class="btn" type="button" id="btn-dl-md" hidden>Descargar informe (.md)</button>
+              <button class="btn" type="button" id="btn-dl-csv" hidden>Descargar rendimientos (.csv)</button>
+            </div>
+          </header>
+          <div class="memo" id="memo"><p class="muted">Claude redacta un informe con las cifras de esta auditoría y la literatura relacionada. Usa tu cuenta de Claude; la primera vez te pide permiso.</p></div>
+          <form class="qa" id="qa" hidden>
+            <input type="text" id="in-question" placeholder="Pregunta algo sobre esta auditoría" autocomplete="off">
+            <button class="btn" type="submit" id="btn-ask">Preguntar</button>
+          </form>
+          <p class="err" id="memo-err" hidden></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Monitor ───────────────────────────────────────────────────────── -->
+  <section class="view" id="v-monitor" role="tabpanel" aria-labelledby="tab-monitor" hidden>
+    <div class="card panel">
+      <header>
+        <div style="display:grid;gap:4px">
+          <h2>¿Los ETF de factores le ganan al mercado en vivo?</h2>
+          <p class="small muted">Rendimientos mensuales ajustados desde que existe cada ETF. La prueba que importa es la columna «contra SPY»: el rendimiento extra sobre el índice y si sobrevive a haber comparado varios ETF.</p>
+        </div>
+        <div class="btns"><button class="btn" type="button" id="btn-mon-refresh">Actualizar ahora</button></div>
+      </header>
+      <p class="small" id="mon-status"></p>
+      <div class="tablewrap">
+        <table id="mon-table">
+          <thead><tr>
+            <th>ETF</th><th>Qué es</th><th>Desde</th><th class="n">Sharpe</th><th class="n">Rend. anual</th><th class="n">Máx. caída</th><th class="n">12 meses</th>
+            <th class="n">Sharpe contra SPY</th><th class="n">DSR contra SPY</th><th class="n">Años para probarlo</th><th>Trayectoria</th><th></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="note">DSR contra SPY: probabilidad de que el rendimiento extra sea real después de haber mirado todos los ETF de la tabla. «Años para probarlo»: historial mínimo para afirmar con 95% de confianza que el rendimiento extra es positivo (Bailey y López de Prado, 2012).</p>
+    </div>
+  </section>
+
+  <!-- ── Señales alternativas ──────────────────────────────────────────── -->
+  <section class="view" id="v-signals" role="tabpanel" aria-labelledby="tab-signals" hidden>
+    <div style="display:grid;gap:16px">
+      <div class="card panel">
+        <div style="display:grid;gap:4px">
+          <h2>Señales alternativas</h2>
+          <p class="small muted">Qué compran y venden los congresistas de EE. UU. y los directivos de la empresa, y cuánto gasta la empresa en lobbying y recibe en contratos de gobierno. Datos de Quiver Quant con tu conector (requiere su plan Hobbyist o superior); se guardan 12 h en este navegador.</p>
+        </div>
+        <form class="sigbar" id="sig-form">
+          <label class="f" for="in-sig">Ticker de EE. UU.
+            <input type="text" id="in-sig" value="NVDA" autocomplete="off" spellcheck="false">
+          </label>
+          <button class="btn primary" type="submit" id="btn-sig">Consultar</button>
+          <button class="btn" type="button" id="btn-sig-refresh">Actualizar</button>
+        </form>
+        <div class="srcs" id="sig-srcs"></div>
+      </div>
+      <div class="grid2">
+        <div class="card panel">
+          <header><h2>Congreso</h2><span class="small muted" id="sig-c-note"></span></header>
+          <div id="sig-congress"><p class="small muted">Escribe un ticker y presiona Consultar.</p></div>
+        </div>
+        <div class="card panel">
+          <header><h2>Directivos de la empresa</h2><span class="small muted" id="sig-i-note"></span></header>
+          <div id="sig-insider"><p class="small muted">Formulario 4 de la SEC: compras y ventas de directores, ejecutivos y accionistas mayores.</p></div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="card panel">
+          <header><h2>Washington</h2><span class="small muted">lobbying y contratos · Quiver Quant</span></header>
+          <div id="sig-dc"><p class="small muted">Lobbying y contratos federales de la empresa.</p></div>
+        </div>
+        <div class="card panel">
+          <header><h2>Qué dice la evidencia</h2></header>
+          <div id="sig-evidence"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Evidencia ─────────────────────────────────────────────────────── -->
+  <section class="view" id="v-evidence" role="tabpanel" aria-labelledby="tab-evidence" hidden>
+    <div class="ev">
+      <div class="card" style="overflow:hidden">
+        <div style="padding:14px;display:grid;gap:10px">
+          <label class="f" for="in-ev-q">Buscar estrategia
+            <input type="text" id="in-ev-q" placeholder="momentum, calendario, México…" autocomplete="off">
+          </label>
+          <div class="chips" id="ev-fam" role="group" aria-label="Familia"></div>
+        </div>
+        <div class="slist" id="ev-list"></div>
+      </div>
+      <div class="card detail" id="ev-detail"></div>
+    </div>
+    <div id="papers-wrap" style="margin-top:22px;display:grid;gap:12px">
+      <div style="display:grid;gap:4px">
+        <h2>Investigación reciente</h2>
+        <p class="small muted" id="papers-note"></p>
+      </div>
+      <div class="chips" id="papers-topics" role="group" aria-label="Tema"></div>
+      <div class="papers" id="papers"></div>
+    </div>
+  </section>
+
+  <!-- ── Método ────────────────────────────────────────────────────────── -->
+  <section class="view" id="v-method" role="tabpanel" aria-labelledby="tab-method" hidden>
+    <div class="method">
+      <div class="card"><h2>Cómo decide el laboratorio</h2>
+        <p>Cada auditoría junta dos fuentes. Los <strong>datos</strong> dicen qué tan probable es que el resultado sea suerte o sobreajuste. La <strong>literatura</strong> dice cuánto suele quedar de esa clase de estrategia después de publicarse, de los costos y de las microcaps. El puntaje de 0 a 100 es el del motor de Fincept: 35% evidencia previa, 25% estadística, 25% implementabilidad y 15% contexto, con topes cuando la ventaja neta desaparece.</p>
+      </div>
+      <div class="card"><h3>Sharpe deflactado (DSR)</h3>
+        <p>Probabilidad de que el Sharpe verdadero sea mayor que el mejor que darían N variantes sin habilidad. Corrige por el número de pruebas, la asimetría y las colas gruesas. Bailey y López de Prado (2014).</p>
+        <div class="formula">DSR = Φ( (SR − SR₀)·√(T−1) / √(1 − γ₃·SR + (γ₄−1)/4·SR²) ),  SR₀ = √V[SRₙ] · E[máx de N normales]</div>
+      </div>
+      <div class="card"><h3>Sharpe probabilístico (PSR) y registro mínimo (MinTRL)</h3>
+        <p>El PSR es la misma fórmula con referencia cero: la probabilidad de que el Sharpe real sea positivo. El MinTRL es cuántas observaciones hacen falta para afirmarlo con 95% de confianza. Bailey y López de Prado (2012).</p>
+        <div class="formula">MinTRL = 1 + (1 − γ₃·SR + (γ₄−1)/4·SR²) · ( z₀.₉₅ / (SR − SR*) )²</div>
+      </div>
+      <div class="card"><h3>Probabilidad de sobreajuste (PBO)</h3>
+        <p>Con varias variantes, se parte la muestra en 16 bloques y se prueban las 12,870 formas de usar la mitad para elegir la mejor y la otra mitad para medirla. El PBO es la fracción de veces en que la elegida queda en la mitad de abajo fuera de muestra. Bailey, Borwein, López de Prado y Zhu (2017).</p>
+        <div class="formula">λ = ln( ω / (1−ω) ),  ω = rango fuera de muestra / (N+1);   PBO = Pr[λ ≤ 0]</div>
+      </div>
+      <div class="card"><h3>Intervalo del Sharpe</h3>
+        <p>Remuestreo estacionario por bloques (Politis y Romano, 1994), 2,000 repeticiones con bloques de longitud media T^(1/3), que respeta la autocorrelación. Se reporta el intervalo de 95% y la fracción de remuestras con Sharpe ≤ 0.</p>
+      </div>
+      <div class="card"><h3>Recorte por pruebas múltiples y cascada</h3>
+        <p>El Sharpe se pasa a estadístico t, se ajusta el valor p por el número de pruebas (Bonferroni, Harvey, Liu y Zhu 2016) y se vuelve a Sharpe. La cascada aplica después el decaimiento tras publicación (−58%, McLean y Pontiff 2016) o fuera de muestra (−26%), la parte del alfa en microcaps y el costo de la rotación. Con resultados en vivo no se aplica el decaimiento por publicación: ya está en los datos.</p>
+      </div>
+      <div class="card"><h3>Qué no hace</h3>
+        <p>No predice precios ni recomienda comprar valores concretos. Los precios vienen de Yahoo Finance, guardados en la base de esta página por una tarea programada que se puede pausar. Las señales del Congreso, los directivos, el lobbying y los contratos vienen de Quiver Quant. Sin esas fuentes, el laboratorio no muestra cifras de mercado. Yahoo no tiene API oficial: su acceso público no tiene garantía de servicio y sus condiciones lo limitan al uso personal. Es material educativo, no asesoría financiera personalizada.</p>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot">Motor de evidencia de FinceptTerminal (quant_evidence): las mismas fórmulas que el CLI, el servidor MCP y el plugin de Claude Code, con pruebas de paridad entre Python y JavaScript. Material educativo; no es asesoría financiera personalizada.</p>
+</div>
+
+<script>
+/*__ENGINE__*/
+</script>
+<script>
+/*__SERIES__*/
+</script>
+<script>
+var KB = /*__KB__*/null;
+var PAPERS = /*__PAPERS__*/null;
+</script>
+<script>
+(function () {
+  'use strict';
+  var E = window.QuantEvidence, S = window.QuantSeries;
+  var $ = function (id) { return document.getElementById(id); };
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function fmt(x, d) { if (x != null && isFinite(x) && Math.abs(x) < 0.5 * Math.pow(10, -(d == null ? 2 : d))) x = 0; return x == null || !isFinite(x) ? '—' : Number(x).toLocaleString('es-MX', { minimumFractionDigits: d == null ? 2 : d, maximumFractionDigits: d == null ? 2 : d }); }
+  function pct(x, d) { return x == null || !isFinite(x) ? '—' : fmt(x * 100, d == null ? 1 : d) + '%'; }
+  function store(k, v) { try { if (v === undefined) return JSON.parse(localStorage.getItem(k)); localStorage.setItem(k, JSON.stringify(v)); } catch (e) { return null; } }
+  var ICON = {
+    good: '<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="var(--good)"/><path d="M4.8 8.2l2.1 2.1 4.3-4.6" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    warn: '<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5l7 12.5H1z" fill="var(--warn)"/><path d="M8 6v3.6M8 11.6v.1" stroke="#3a2a00" stroke-width="1.7" stroke-linecap="round"/></svg>',
+    bad: '<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="var(--bad)"/><path d="M5.5 5.5l5 5M10.5 5.5l-5 5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    info: '<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="var(--ink-3)" stroke-width="1.4"/><path d="M8 7.2v4M8 4.8v.1" stroke="var(--ink-3)" stroke-width="1.6" stroke-linecap="round"/></svg>'
+  };
+  var STATUS = { pass: 'good', warn: 'warn', fail: 'bad', info: 'info' };
+  var STATUS_WORD = { good: 'bien', warn: 'atención', bad: 'falla', info: 'dato' };
+  var FAMILY_ES = { base: 'Base', factores: 'Factores', 'machine learning': 'Machine learning', timing: 'Timing', cartera: 'Cartera', comportamiento: 'Comportamiento', calendario: 'Calendario' };
+
+  // ── Tabs ─────────────────────────────────────────────────────────────
+  var TABS = ['audit', 'monitor', 'signals', 'evidence', 'method'];
+  function showTab(name) {
+    TABS.forEach(function (t) {
+      $('tab-' + t).setAttribute('aria-selected', t === name ? 'true' : 'false');
+      $('v-' + t).hidden = t !== name;
+    });
+    store('lab.tab', name);
+    if (name === 'monitor') monitorOpen();
+    if (name === 'signals') signalsOpen();
+    if (name === 'audit') redrawCharts();
+  }
+  TABS.forEach(function (t) { $('tab-' + t).onclick = function () { showTab(t); }; });
+
+  // ── Capabilities ─────────────────────────────────────────────────────
+  var cap = { mcp: null, sample: null, downloads: null, db: null, mcpChecked: false };
+  function setPill(id, state, text) {
+    var el = $(id);
+    el.querySelector('.dot').className = 'dot ' + state;
+    el.querySelector('span:last-child').textContent = text;
+  }
+  var capsReady = (window.claude && typeof window.claude.use === 'function')
+    ? Promise.all([
+        window.claude.use('mcp').catch(function () { return null; }),
+        window.claude.use('sample').catch(function () { return null; }),
+        window.claude.use('downloads').catch(function () { return null; }),
+        window.claude.use('db').catch(function () { return null; })
+      ]).then(function (r) { cap.mcp = r[0]; cap.sample = r[1]; cap.downloads = r[2]; cap.db = r[3]; })
+    : Promise.resolve();
+  capsReady.then(function () {
+    cap.mcpChecked = true;
+    yahooStatus();
+    setPill('st-claude', cap.sample ? 'wait' : 'off', cap.sample ? 'Claude: listo al usarlo' : 'Claude: no disponible aquí');
+    if (!cap.sample) { $('btn-memo').disabled = true; $('memo').innerHTML = '<p class="muted">El informe con Claude solo funciona dentro de claude.ai. Las cifras de la auditoría no dependen de él.</p>'; }
+    if (!$('v-monitor').hidden) monitorOpen();
+    if (!$('v-signals').hidden) signalsOpen();
+  });
+
+  // ── Connector (Quiver Quant) ───────────────────────────────────────────
+  var QV = 'Quiver Quant';
+  function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function connError(server, e) {
+    var code = e && e.code, msg = String((e && e.message) || '');
+    var copy = {
+      server_not_connected: 'Agrega el conector de ' + server + ' en claude.ai → Ajustes → Conectores y vuelve a intentar.',
+      needs_reauth: 'Vuelve a conectar ' + server + ' en claude.ai → Ajustes → Conectores.',
+      selection_required: 'Tienes más de un conector de ' + server + ': elige uno en el aviso de claude.ai.',
+      not_in_manifest: 'Esta página no tiene permiso para usar ' + server + '. Ábrelo en el menú Permisos del artefacto.',
+      consent_required: 'Esta página no tiene permiso para usar ' + server + '. Vuelve a intentar y acepta el aviso.',
+      blocked_by_policy: 'Tu organización bloquea esta herramienta de ' + server + '.',
+      approval_required: 'La consulta necesita tu aprobación. Vuelve a intentar y acepta el aviso.'
+    };
+    if (code && copy[code]) return { message: copy[code], fatal: true };
+    if (code === 'server_unavailable') return { message: server + ' no respondió. Intenta en unos minutos.', retry: true, retryAfterMs: e.retryAfterMs };
+    if (code === 'not_granted' || code === 'capability_disabled' || code === 'capability_removed') return { message: 'Esta vista no puede usar conectores.', fatal: true };
+    if (/subscription|subscribe/i.test(msg)) return { message: 'Tu cuenta de ' + server + ' no tiene una suscripción activa. Esta sección se activa sola cuando la tengas.', sub: true };
+    if (code === 'tool_error') return { message: server + ' rechazó la consulta: ' + msg.slice(0, 160) };
+    return { message: msg ? msg.slice(0, 200) : 'Falló la consulta a ' + server + '.' };
+  }
+  function noMcp() { return { message: cap.mcpChecked ? 'Esta vista no puede usar conectores. Usa «Mis datos» o el ejemplo.' : 'Todavía comprobando los conectores; intenta en unos segundos.' }; }
+  function qvCall(tool, input) {
+    if (!cap.mcp) return Promise.reject(noMcp());
+    return cap.mcp.callTool(QV, tool, input, { cache: false }).then(function (res) { return res; }, function (e) { throw connError(QV, e); });
+  }
+  // ── Yahoo Finance (through this page's database) ────────────────────
+  // A scheduled task downloads monthly adjusted prices from Yahoo on weekdays and
+  // writes prices/<id>; the page reads them here and leaves requests/<id> for
+  // symbols it does not have yet.
+  function yahooId(sym) { return String(sym).replace(/\^/g, '~').replace(/=/g, ':'); }
+  function yahooStatus() {
+    if (!cap.db) { setPill('st-yahoo', 'off', 'Yahoo: no disponible aquí'); return; }
+    cap.db.doc('meta/status').get().then(function (snap) {
+      var d = snap.exists ? snap.data() : null;
+      if (!d || !d.ran_at) { setPill('st-yahoo', 'wait', 'Yahoo: sin actualizar todavía'); return; }
+      var when = new Date(d.ran_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+      setPill('st-yahoo', d.failed && d.failed.length ? 'wait' : 'on', 'Yahoo: ' + (d.symbols || 0) + ' símbolos al ' + when);
+    }, function () { setPill('st-yahoo', 'off', 'Yahoo: sin acceso'); });
+  }
+  function fetchYahoo(sym) {
+    if (!cap.db) return Promise.resolve(null);
+    var ref;
+    try { ref = cap.db.doc('prices/' + yahooId(sym)); } catch (e) { return Promise.resolve(null); }
+    return ref.get().then(function (snap) {
+      var d = snap.exists ? snap.data() : null;
+      if (!d || !Array.isArray(d.dates) || !Array.isArray(d.closes) || d.dates.length !== d.closes.length || d.dates.length < 13) return null;
+      return { data: { sym: sym, dates: d.dates.slice(), closes: d.closes.slice(), source: 'Yahoo Finance', name: d.name || sym, adjusted: d.adjusted !== false },
+        at: Date.parse(d.updated_at) || null, source: 'yahoo' };
+    }, function () { return null; });
+  }
+  function requestYahoo(sym) {
+    if (!cap.db) return Promise.resolve(false);
+    try {
+      return cap.db.doc('requests/' + yahooId(sym)).set({ symbol: sym, requested_at: new Date().toISOString() }).then(function () { return true; }, function () { return false; });
+    } catch (e) { return Promise.resolve(false); }
+  }
+  /** Monthly adjusted prices from the page's Yahoo database; a missing symbol is requested for the next update. */
+  function fetchMonthly(sym) {
+    if (!cap.db) return Promise.reject({ message: cap.mcpChecked ? 'Esta vista no puede leer la base de precios. Abre la página en claude.ai.' : 'Todavía comprobando la base de precios; intenta en unos segundos.' });
+    return fetchYahoo(sym).then(function (y) {
+      if (y) return y;
+      return requestYahoo(sym).then(function (ok) {
+        throw { message: sym + ' no está en la base de precios de Yahoo.' + (ok ? ' Quedó anotado para cuando se actualice la base (la actualización automática está en pausa).' : '') };
+      });
+    });
+  }
+
+  // ── Data sources ─────────────────────────────────────────────────────
+  var data = null;          // {label, kind, ppy, dates (ms)|null, names, cols (returns), live}
+  var src = 'example';
+  function setSource(s) {
+    src = s;
+    ['example', 'ticker', 'paste'].forEach(function (k) {
+      $('src-' + k).setAttribute('aria-pressed', k === s ? 'true' : 'false');
+      $('pane-' + k).hidden = k !== s;
+    });
+    store('lab.src', s);
+    if (s === 'example') loadExample();
+  }
+  ['example', 'ticker', 'paste'].forEach(function (k) { $('src-' + k).onclick = function () { setSource(k); }; });
+  function showDataError(msg) { var el = $('data-err'); el.textContent = msg || ''; el.hidden = !msg; }
+
+  function monthEnds(n, endYear) {
+    var out = [], y = endYear - Math.ceil(n / 12), m = 12 - (n % 12 || 12);
+    for (var i = 0; i < n; i++) { m++; if (m > 12) { m = 1; y++; } out.push(Date.UTC(y, m, 0)); }
+    return out;
+  }
+  function loadExample() {
+    showDataError('');
+    var cols = S.simulatedVariants(20, 12, 2026);
+    data = { label: 'Ejemplo simulado: 20 variantes aleatorias, datos inventados', kind: 'example', ppy: 12, dates: monthEnds(cols[0].length, 2026),
+      names: cols.map(function (_, i) { return 'Variante ' + (i + 1); }), cols: cols, live: false };
+    $('in-strategy').value = 'technical_rules';
+    $('in-live').checked = false;
+    afterLoad();
+  }
+  /** Aligns monthly series on their common months ('YYYY-MM'). */
+  function alignTickers(list) {
+    var common = null;
+    var months = list.map(function (d) {
+      var map = {}; d.dates.forEach(function (k, i) { map[String(k).slice(0, 7)] = d.closes[i]; });
+      return map;
+    });
+    months.forEach(function (map) {
+      var keys = Object.keys(map);
+      common = common ? common.filter(function (k) { return k in map; }) : keys;
+    });
+    common.sort();
+    var cols = months.map(function (map) { return S.toReturns(common.map(function (k) { return map[k]; }), 'prices'); });
+    return { dates: common.slice(1).map(function (k) { return Date.UTC(+k.slice(0, 4), +k.slice(5, 7), 0); }), cols: cols };
+  }
+  function fetchTickers() {
+    var syms = $('in-tickers').value.toUpperCase().split(/[\s,;]+/).filter(function (s) { return /^\^?[A-Z0-9][A-Z0-9.\-]{0,14}(=X|=F)?$/.test(s); });
+    syms = syms.filter(function (s, i) { return syms.indexOf(s) === i; }).slice(0, 8);
+    if (!syms.length) { showDataError('Escribe al menos un ticker, por ejemplo SPY.'); return; }
+    showDataError('');
+    var btn = $('btn-fetch'); btn.disabled = true; btn.textContent = 'Trayendo ' + syms.length + '…';
+    var got = [], errors = [];
+    var chain = Promise.resolve();
+    syms.forEach(function (s) {
+      chain = chain.then(function () {
+        return fetchMonthly(s).then(function (r) { got.push(r.data); }, function (e) { errors.push(s + ': ' + e.message); });
+      });
+    });
+    chain.then(function () {
+      btn.disabled = false; btn.textContent = 'Traer y auditar';
+      if (!got.length) { showDataError(errors.join(' ')); return; }
+      if (errors.length) showDataError('Sin datos para ' + errors.join(' · '));
+      var al = alignTickers(got);
+      if (al.dates.length < 12) { showDataError('Los tickers comparten menos de 12 meses de historia.'); return; }
+      var bySrc = {};
+      got.forEach(function (d) { (bySrc[d.source || 'Yahoo Finance'] = bySrc[d.source || 'Yahoo Finance'] || []).push(d.sym); });
+      data = { label: 'Precios mensuales ajustados · ' + Object.keys(bySrc).map(function (k) { return k + ': ' + bySrc[k].join(', '); }).join(' · '), kind: 'ticker', ppy: 12,
+        dates: al.dates, names: got.map(function (d) { return d.sym; }), cols: al.cols, live: true };
+      store('lab.tickers', $('in-tickers').value);
+      $('in-live').checked = true;
+      if (/^(technical_rules)$/.test($('in-strategy').value)) $('in-strategy').value = got.length > 1 ? 'factor_fund_long_only' : 'buy_hold_single_country';
+      afterLoad();
+    });
+  }
+  $('btn-fetch').onclick = fetchTickers;
+  $('in-tickers').addEventListener('keydown', function (e) { if (e.key === 'Enter') fetchTickers(); });
+
+  function loadPasted(text) {
+    try {
+      var t = S.parseTable(text);
+      var kindSel = $('in-kind').value, ppySel = $('in-ppy').value;
+      var kind = S.detectKind([].concat.apply([], t.columns), kindSel === 'auto' ? null : kindSel);
+      var cols = t.columns.map(function (c) { return S.toReturns(c, kind); });
+      var dates = t.dates ? (kind === 'prices' ? t.dates.slice(1) : t.dates) : null;
+      var ppy = ppySel !== 'auto' ? +ppySel : (S.inferPeriodsPerYear(t.dates) || 12);
+      if (cols[0].length < 12) throw new Error('Hacen falta al menos 12 periodos de rendimiento.');
+      var kindEs = { prices: 'precios', returns: 'rendimientos', percent: 'rendimientos en %' }[kind];
+      data = { label: 'Tus datos: ' + cols.length + ' serie(s), ' + kindEs + (t.skipped ? ', ' + t.skipped + ' fila(s) ignoradas' : ''), kind: 'paste', ppy: ppy,
+        dates: dates, names: t.names, cols: cols, live: $('in-live').checked };
+      showDataError('');
+      afterLoad();
+    } catch (e) { showDataError(e.message || String(e)); }
+  }
+  $('btn-paste').onclick = function () { loadPasted($('in-data').value); };
+  $('in-file').onchange = function () {
+    var f = this.files && this.files[0];
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function () { $('in-data').value = String(r.result || ''); loadPasted($('in-data').value); };
+    r.onerror = function () { showDataError('No pude leer el archivo.'); };
+    r.readAsText(f);
+    this.value = '';
+  };
+
+  // ── Context controls ─────────────────────────────────────────────────
+  (function fillStrategies() {
+    var sel = $('in-strategy'), groups = {};
+    KB.strategies.forEach(function (s) { (groups[s.family] = groups[s.family] || []).push(s); });
+    Object.keys(groups).forEach(function (fam) {
+      var g = document.createElement('optgroup'); g.label = FAMILY_ES[fam] || fam;
+      groups[fam].forEach(function (s) { var o = document.createElement('option'); o.value = s.id; o.textContent = s.name; g.appendChild(o); });
+      sel.appendChild(g);
+    });
+  })();
+  function afterLoad() {
+    var sel = $('in-series'); sel.innerHTML = '';
+    if (data.cols.length > 1) { var o = document.createElement('option'); o.value = 'best'; o.textContent = 'La de mejor Sharpe (la que elegirías)'; sel.appendChild(o); }
+    data.names.forEach(function (n, i) { var o = document.createElement('option'); o.value = String(i); o.textContent = n; sel.appendChild(o); });
+    run();
+  }
+  var timer = null;
+  function schedule() { clearTimeout(timer); timer = setTimeout(run, 180); }
+  ['in-strategy', 'in-series', 'in-trials', 'in-cost', 'in-market', 'in-investor', 'in-turnover', 'in-live', 'in-published'].forEach(function (id) {
+    $(id).addEventListener('input', schedule); $(id).addEventListener('change', schedule);
+  });
+
+  // ── The audit ────────────────────────────────────────────────────────
+  var R = null;   // last result
+  function numIn(id) { var v = $(id).value.trim(); if (v === '') return null; var x = Number(v); return isFinite(x) ? x : null; }
+  function run() {
+    if (!data) return;
+    var ppy = data.ppy, cols = data.cols;
+    var sharpes = cols.map(function (c) { return S.sharpe(c); });
+    var pick = $('in-series').value;
+    var idx = pick === 'best' || pick === '' ? sharpes.indexOf(Math.max.apply(null, sharpes)) : +pick;
+    var r = cols[idx];
+    var sum = S.summarize(r, ppy);
+    var nTrials = numIn('in-trials') || Math.max(1, cols.length);
+    var varTr = cols.length >= 2 ? S.trialSharpeVariance(cols, ppy).variance : null;
+    var live = $('in-live').checked;
+    var cost = numIn('in-cost'), turn = numIn('in-turnover');
+    var raw = {
+      strategy_id: $('in-strategy').value, sharpe_annual: sum.sharpe_annual, years: sum.years, n_trials: nTrials,
+      periods_per_year: ppy, skew: sum.skew, kurtosis: sum.kurtosis, volatility_annual: sum.vol_annual,
+      market: $('in-market').value, investor: $('in-investor').value,
+      published: live ? false : $('in-published').checked, out_of_sample: live, live_months: live ? Math.round(sum.years * 12) : 0
+    };
+    if (varTr != null && varTr > 0) raw.var_trials_sr = varTr;
+    if (cost != null) raw.roundtrip_cost_bps = cost;
+    if (turn != null) raw.turnover_monthly = turn / 100;
+    var ev;
+    try { ev = E.evaluateDecision(raw, KB, null); } catch (e) { showDataError('El motor no pudo evaluar: ' + e.message); return; }
+    var psr = E.probabilisticSharpeRatio(sum.sharpe_period, 0, sum.n, sum.skew, sum.kurtosis);
+    var mintrl = S.minTrackRecordLength(sum.sharpe_period, 0, sum.skew, sum.kurtosis, 0.05);
+    var boot = S.bootstrapSharpe(r, ppy, { seed: 7 });
+    var pb = null, pbErr = null;
+    if (cols.length >= 2) { try { pb = S.pbo(cols); } catch (e) { pbErr = e.message; } }
+    var dd = S.drawdowns(r);
+    var win = ppy >= 52 ? ppy : ppy * 3;
+    R = { idx: idx, name: data.names[idx], r: r, sum: sum, ev: ev, psr: psr, mintrl: mintrl, mintrlYears: mintrl / ppy, boot: boot, pbo: pb, pboErr: pbErr,
+      dd: dd, nTrials: nTrials, varTr: varTr, live: live, roll: S.rollingSharpe(r, win, ppy), rollWin: win, at: new Date() };
+    R.dataChecks = dataChecks(R);
+    render();
+  }
+
+  function dataChecks(R) {
+    var out = [], s = R.sum;
+    out.push(R.psr >= 0.95 ? ['pass', 'Sharpe positivo con 95% de confianza', 'PSR ' + pct(R.psr) + ': la probabilidad de que el Sharpe real sea mayor que cero.']
+      : R.psr >= 0.8 ? ['warn', 'Sharpe positivo, sin confianza suficiente', 'PSR ' + pct(R.psr) + '. Hace falta 95% para descartar suerte.']
+      : ['fail', 'No se distingue de cero', 'PSR ' + pct(R.psr) + ': con estos datos el Sharpe real podría ser cero o negativo.']);
+    if (isFinite(R.mintrlYears)) {
+      out.push(s.years >= R.mintrlYears ? ['pass', 'Historial suficiente', 'Tienes ' + fmt(s.years, 1) + ' años; el mínimo para este Sharpe es ' + fmt(R.mintrlYears, 1) + ' (MinTRL).']
+        : ['warn', 'Historial corto', 'Tienes ' + fmt(s.years, 1) + ' años y harían falta ' + fmt(R.mintrlYears, 1) + ' para afirmar que el Sharpe es positivo (MinTRL).']);
+    } else out.push(['fail', 'Sin ventaja que probar', 'El Sharpe observado no es positivo, así que ningún historial lo haría significativo.']);
+    out.push(R.boot.lo > 0 ? ['pass', 'El intervalo del Sharpe excluye el cero', 'Intervalo de 95% por remuestreo: ' + fmt(R.boot.lo) + ' a ' + fmt(R.boot.hi) + '.']
+      : ['warn', 'El intervalo del Sharpe incluye el cero', 'Intervalo de 95% por remuestreo: ' + fmt(R.boot.lo) + ' a ' + fmt(R.boot.hi) + '; ' + pct(R.boot.prob_le_zero, 0) + ' de las remuestras dan Sharpe ≤ 0.']);
+    if (R.pbo) {
+      var p = R.pbo.pbo;
+      out.push(p < 0.2 ? ['pass', 'Poco sobreajuste al elegir', 'PBO ' + pct(p, 0) + ': la variante elegida suele seguir arriba fuera de muestra.']
+        : p < 0.5 ? ['warn', 'Sobreajuste moderado', 'PBO ' + pct(p, 0) + ': en ese porcentaje de las particiones la elegida cae a la mitad de abajo fuera de muestra.']
+        : ['fail', 'Elegir la mejor variante no sirve', 'PBO ' + pct(p, 0) + ': la mejor en la muestra cae a la mitad de abajo fuera de muestra la mayoría de las veces.']);
+    } else if (R.pboErr) out.push(['info', 'PBO no calculado', R.pboErr]);
+    else out.push(['info', 'PBO no aplica', 'Con una sola serie no se puede medir el sobreajuste de la elección. Sube todas las variantes que probaste.']);
+    out.push(R.dd.max > -0.35 ? ['info', 'Máxima caída ' + pct(R.dd.max, 0), 'Peor caída desde un máximo en el periodo.']
+      : ['warn', 'Caída profunda: ' + pct(R.dd.max, 0), 'Una caída así exige recuperar ' + pct(1 / (1 + R.dd.max) - 1, 0) + ' para volver al máximo.']);
+    return out;
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────
+  function vclass(code) { return code === 'respaldada' ? 'good' : code === 'condicionada' || code === 'debil' ? 'warn' : 'bad'; }
+  function ring(score, cls) {
+    var r = 48, c = 2 * Math.PI * r, f = Math.max(0, Math.min(100, score)) / 100;
+    var col = cls === 'good' ? 'var(--good)' : cls === 'warn' ? 'var(--warn)' : 'var(--bad)';
+    return '<svg viewBox="0 0 108 108" aria-hidden="true"><circle cx="54" cy="54" r="' + r + '" fill="none" stroke="var(--rule-2)" stroke-width="7"/>' +
+      '<circle cx="54" cy="54" r="' + r + '" fill="none" stroke="' + col + '" stroke-width="7" stroke-linecap="round" stroke-dasharray="' + (c * f) + ' ' + c + '" transform="rotate(-90 54 54)"/></svg>';
+  }
+  function render() {
+    var ev = R.ev, s = R.sum, cls = vclass(ev.verdict.code);
+    var dataSum = R.dataChecks.filter(function (c) { return c[0] === 'fail'; }).length;
+    $('verdict').innerHTML =
+      '<div class="score">' + ring(ev.scores.final, cls) + '<div class="inner"><b class="num">' + Math.round(ev.scores.final) + '</b><span>de 100</span></div></div>' +
+      '<div class="vtext"><div><span class="vstate ' + cls + '">' + ICON[cls] + esc(ev.verdict.label) + '</span></div>' +
+      '<p>' + esc(ev.verdict.summary) + '</p>' +
+      '<p class="srcline">' + esc(data.label) + ' · serie auditada: <strong>' + esc(R.name) + '</strong> · ' + fmt(s.years, 1) + ' años, ' + s.n + ' periodos' +
+      (dataSum ? ' · ' + dataSum + ' alerta(s) roja(s) en los datos' : '') + '</p></div>';
+    var st = ev.stats || {};
+    var k = [
+      ['Sharpe anual', fmt(s.sharpe_annual), 'IC 95%: ' + fmt(R.boot.lo) + ' a ' + fmt(R.boot.hi), R.boot.lo > 0 ? 'good' : 'warn'],
+      ['Sharpe deflactado', st.dsr != null ? pct(st.dsr, 0) : '—', 'tras ' + R.nTrials + ' variante(s); meta 95%', st.dsr >= 0.95 ? 'good' : st.dsr >= 0.5 ? 'warn' : 'bad'],
+      ['Probabilidad de sobreajuste', R.pbo ? pct(R.pbo.pbo, 0) : '—', R.pbo ? R.pbo.splits.toLocaleString('es-MX') + ' particiones CSCV' : 'requiere 2 o más variantes', R.pbo ? (R.pbo.pbo < 0.2 ? 'good' : R.pbo.pbo < 0.5 ? 'warn' : 'bad') : 'info'],
+      ['Sharpe tras recorte', st.sharpe_haircut != null ? fmt(st.sharpe_haircut) : '—', st.haircut_pct != null ? '−' + pct(st.haircut_pct, 0) + ' por pruebas múltiples' : '', st.haircut_pct != null && st.haircut_pct < 0.5 ? 'good' : 'warn'],
+      ['Años mínimos (MinTRL)', isFinite(R.mintrlYears) ? fmt(R.mintrlYears, 1) : '∞', 'tienes ' + fmt(s.years, 1), isFinite(R.mintrlYears) && s.years >= R.mintrlYears ? 'good' : 'warn'],
+      ['Rendimiento anual', pct(s.cagr), 'volatilidad ' + pct(s.vol_annual), 'info'],
+      ['Máxima caída', pct(s.max_drawdown, 0), 'Calmar ' + fmt(s.calmar), s.max_drawdown > -0.35 ? 'info' : 'warn'],
+      ['Ventaja neta estimada', ev.net_monthly_bps != null ? fmt(ev.net_monthly_bps, 1) + ' pb' : '—', 'al mes, tras la cascada', ev.net_monthly_bps > 0 ? 'good' : 'bad']
+    ];
+    $('kpis').innerHTML = k.map(function (x) {
+      return '<div class="kpi"><span class="k">' + esc(x[0]) + '</span><span class="v">' + esc(x[1]) + '</span><span class="d">' + esc(x[2]) + '</span>' +
+        (x[3] !== 'info' ? '<span class="flag ' + x[3] + '">' + ICON[x[3]] + STATUS_WORD[x[3]] + '</span>' : '') + '</div>';
+    }).join('');
+    // Checks: data first, then engine.
+    var all = R.dataChecks.map(function (c) { return { status: STATUS[c[0]], label: c[1], detail: c[2], src: null, group: 'Datos' }; })
+      .concat(ev.checks.map(function (c) { return { status: STATUS[c.status] || 'info', label: c.label, detail: c.detail, src: c.source, group: 'Motor' }; }));
+    var counts = { good: 0, warn: 0, bad: 0 };
+    all.forEach(function (c) { if (counts[c.status] != null) counts[c.status]++; });
+    $('checks-count').textContent = counts.bad + ' en rojo · ' + counts.warn + ' con advertencia · ' + counts.good + ' bien';
+    $('checks').innerHTML = all.map(function (c) {
+      return '<li>' + ICON[c.status] + '<div><div class="lbl">' + esc(c.label) + ' <span class="muted small">· ' + c.group + '</span></div><div class="det">' + esc(c.detail) + '</div>' +
+        (c.src && c.src.url ? '<div class="src"><a href="' + esc(c.src.url) + '" target="_blank" rel="noopener">' + esc(c.src.label || 'Fuente') + '</a></div>' : '') + '</div></li>';
+    }).join('');
+    renderCascade(ev);
+    renderYears();
+    redrawCharts();
+    $('btn-dl-md').hidden = !cap.downloads; $('btn-dl-csv').hidden = !cap.downloads;
+    memoReset();
+  }
+
+  function renderCascade(ev) {
+    var c = ev.cascade || [];
+    if (!c.length) { $('cascade').innerHTML = '<p class="small muted">Esta estrategia no tiene una ventaja medible en pb; se juzga por evidencia y contexto.</p>'; $('cascade-note').textContent = ''; return; }
+    var max = Math.max.apply(null, c.map(function (x) { return Math.abs(x.monthly_bps); })) || 1;
+    $('cascade').innerHTML = c.map(function (x) {
+      var w = Math.abs(x.monthly_bps) / max * 100, neg = x.monthly_bps < 0;
+      return '<div class="st"><span>' + esc(x.stage) + '</span><div class="track"><div class="bar' + (neg ? ' neg' : '') + '" style="width:' + w.toFixed(1) + '%"></div></div><span class="val">' + fmt(x.monthly_bps, 1) + '</span>' +
+        '<span class="why">' + esc(x.note || '') + '</span></div>';
+    }).join('');
+    $('cascade-note').textContent = R.live ? 'Resultados en vivo: no se descuenta el decaimiento por publicación, que ya está en los datos.' : 'Parte de la ventaja bruta implícita en el Sharpe y la volatilidad de la serie.';
+  }
+
+  function renderYears() {
+    if (!data.dates) { $('years-panel').hidden = true; return; }
+    $('years-panel').hidden = false;
+    var rows = {}, order = [];
+    R.r.forEach(function (x, i) {
+      var y = new Date(data.dates[i]).getUTCFullYear();
+      if (!rows[y]) { rows[y] = { g: 1, n: 0, worst: 0, eq: 1, peak: 1 }; order.push(y); }
+      var o = rows[y]; o.g *= 1 + x; o.n++;
+      o.eq *= 1 + x; o.peak = Math.max(o.peak, o.eq); o.worst = Math.min(o.worst, o.eq / o.peak - 1);
+    });
+    $('years-note').textContent = R.name + (data.ppy === 12 ? ', meses por año' : '');
+    $('years').innerHTML = '<table><thead><tr><th>Año</th><th class="n">Rendimiento</th><th class="n">Peor caída en el año</th><th class="n">Periodos</th></tr></thead><tbody>' +
+      order.slice().reverse().map(function (y) {
+        var o = rows[y], g = o.g - 1;
+        return '<tr><td class="num">' + y + '</td><td class="n ' + (g >= 0 ? 'pos' : 'neg') + '">' + pct(g) + '</td><td class="n">' + pct(o.worst) + '</td><td class="n">' + o.n + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+
+  // ── Charts ───────────────────────────────────────────────────────────
+  function niceTicks(lo, hi, n) {
+    if (!(hi > lo)) { hi = lo + 1; }
+    var step = Math.pow(10, Math.floor(Math.log10((hi - lo) / n))), err = (hi - lo) / n / step;
+    step *= err >= 7.5 ? 10 : err >= 3.5 ? 5 : err >= 1.5 ? 2 : 1;
+    var out = [];
+    for (var v = Math.ceil(lo / step) * step; v <= hi + 1e-12; v += step) out.push(+v.toFixed(10));
+    return out;
+  }
+  function xLabel(i) {
+    if (!data.dates) return 'periodo ' + (i + 1);
+    var d = new Date(data.dates[i]);
+    return d.toLocaleDateString('es-MX', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+  }
+  /**
+   * One-series line chart with hover. opts: values, height, log, area ('pos'|'neg'|null),
+   * yFmt, tipFmt, zero (draw y=0), xIndexOffset.
+   */
+  function lineChart(el, opts) {
+    var W = Math.max(280, el.clientWidth || 600), H = opts.height || 180;
+    var m = { l: 46, r: 10, t: 8, b: 22 };
+    var vals = opts.values, n = vals.length;
+    var ys = vals.map(function (v) { return v == null ? null : opts.log ? Math.log(v) : v; });
+    var fin = ys.filter(function (v) { return v != null && isFinite(v); });
+    if (!fin.length) { el.innerHTML = ''; return; }
+    var lo = Math.min.apply(null, fin), hi = Math.max.apply(null, fin);
+    if (opts.zero) { lo = Math.min(lo, 0); hi = Math.max(hi, 0); }
+    if (opts.maxZero) hi = Math.max(hi, 0);
+    var pad = (hi - lo) * 0.06 || 0.1; lo -= opts.maxZero ? pad : pad; hi += opts.maxZero ? 0 : pad;
+    var X = function (i) { return m.l + (n <= 1 ? 0 : i / (n - 1)) * (W - m.l - m.r); };
+    var Y = function (v) { return m.t + (1 - (v - lo) / (hi - lo)) * (H - m.t - m.b); };
+    var ticks;
+    if (opts.log) {
+      var cands = [0.25, 0.5, 1, 1.5, 2, 3, 4, 6, 8, 10, 15, 20, 30, 50, 100].map(Math.log).filter(function (t) { return t >= lo && t <= hi; });
+      ticks = cands.length > 5 ? cands.filter(function (_, i) { return i % 2 === 0; }) : cands;
+      if (!ticks.length) ticks = [lo + (hi - lo) / 2];
+    } else ticks = niceTicks(lo, hi, 4);
+    var path = '', started = false, i;
+    for (i = 0; i < n; i++) {
+      if (ys[i] == null || !isFinite(ys[i])) { started = false; continue; }
+      path += (started ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(ys[i]).toFixed(1);
+      started = true;
+    }
+    var area = '';
+    if (opts.area) {
+      var base = Y(opts.log ? Math.log(1) : 0);
+      var first = ys.findIndex(function (v) { return v != null; });
+      area = '<path d="' + path + 'L' + X(n - 1).toFixed(1) + ' ' + base.toFixed(1) + 'L' + X(first).toFixed(1) + ' ' + base.toFixed(1) + 'Z" fill="' + (opts.area === 'neg' ? 'var(--neg-fill)' : 'var(--series-fill)') + '"/>';
+    }
+    var yF = opts.yFmt || function (v) { return fmt(v, 1); };
+    var grid = ticks.map(function (t) { return '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(t).toFixed(1) + '" y2="' + Y(t).toFixed(1) + '"/>'; }).join('');
+    var ylab = ticks.map(function (t) { return '<text x="' + (m.l - 6) + '" y="' + (Y(t) + 3.5).toFixed(1) + '" text-anchor="end">' + esc(yF(opts.log ? Math.exp(t) : t)) + '</text>'; }).join('');
+    var xt = [0, Math.floor((n - 1) / 2), n - 1].filter(function (v, k, a) { return a.indexOf(v) === k; });
+    var off = opts.xIndexOffset || 0;
+    var xlab = xt.map(function (j, k) { return '<text x="' + X(j).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="' + (k === 0 ? 'start' : k === xt.length - 1 ? 'end' : 'middle') + '">' + esc(xLabel(j + off)) + '</text>'; }).join('');
+    var zero = opts.zero && lo < 0 && hi > 0 ? '<line class="zero" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(0).toFixed(1) + '" y2="' + Y(0).toFixed(1) + '"/>' : '';
+    var lastI = n - 1; while (lastI > 0 && (ys[lastI] == null || !isFinite(ys[lastI]))) lastI--;
+    el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" height="' + H + '" role="img" aria-label="' + esc(opts.label || '') + '">' +
+      '<g class="grid">' + grid + '</g>' + zero + area +
+      '<path d="' + path + '" fill="none" stroke="' + (opts.color || 'var(--series-1)') + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+      '<circle cx="' + X(lastI).toFixed(1) + '" cy="' + Y(ys[lastI]).toFixed(1) + '" r="4" fill="' + (opts.color || 'var(--series-1)') + '" stroke="var(--sheet)" stroke-width="2"/>' +
+      '<g class="axis">' + ylab + xlab + '</g>' +
+      '<line class="cross" x1="0" x2="0" y1="' + m.t + '" y2="' + (H - m.b) + '" stroke="var(--ink-3)" stroke-width="1" visibility="hidden"/>' +
+      '<circle class="hdot" r="4" fill="' + (opts.color || 'var(--series-1)') + '" stroke="var(--sheet)" stroke-width="2" visibility="hidden"/>' +
+      '<rect x="' + m.l + '" y="0" width="' + (W - m.l - m.r) + '" height="' + H + '" fill="transparent" class="hit"/></svg><div class="tip" hidden></div>';
+    var svg = el.querySelector('svg'), tip = el.querySelector('.tip'), cross = el.querySelector('.cross'), hd = el.querySelector('.hdot');
+    function move(ev) {
+      var rect = svg.getBoundingClientRect(), x = (ev.clientX - rect.left) * W / rect.width;
+      var j = Math.round((x - m.l) / (W - m.l - m.r) * (n - 1)); j = Math.max(0, Math.min(n - 1, j));
+      if (ys[j] == null || !isFinite(ys[j])) { tip.hidden = true; return; }
+      cross.setAttribute('x1', X(j)); cross.setAttribute('x2', X(j)); cross.setAttribute('visibility', 'visible');
+      hd.setAttribute('cx', X(j)); hd.setAttribute('cy', Y(ys[j])); hd.setAttribute('visibility', 'visible');
+      tip.hidden = false; tip.textContent = xLabel(j + off) + ' · ' + (opts.tipFmt || yF)(vals[j]);
+      tip.style.left = (X(j) / W * rect.width) + 'px'; tip.style.top = (Y(ys[j]) / H * rect.height) + 'px';
+    }
+    function leave() { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); hd.setAttribute('visibility', 'hidden'); }
+    svg.addEventListener('pointermove', move); svg.addEventListener('pointerleave', leave);
+  }
+  function histChart(el, logits) {
+    var W = Math.max(280, el.clientWidth || 600), H = 146, m = { l: 46, r: 10, t: 24, b: 22 };
+    var lo = -4, hi = 4, bins = 24, w = (hi - lo) / bins, counts = new Array(bins).fill(0);
+    logits.forEach(function (l) { var b = Math.floor((Math.max(lo, Math.min(hi - 1e-9, l)) - lo) / w); counts[b]++; });
+    var max = Math.max.apply(null, counts) || 1, total = logits.length;
+    var X = function (v) { return m.l + (v - lo) / (hi - lo) * (W - m.l - m.r); };
+    var Y = function (c) { return m.t + (1 - c / max) * (H - m.t - m.b); };
+    var bars = counts.map(function (c, i) {
+      var x0 = X(lo + i * w) + 1, x1 = X(lo + (i + 1) * w) - 1, y = Y(c), left = lo + (i + 0.5) * w <= 0;
+      return c ? '<rect x="' + x0.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + Math.max(1, x1 - x0).toFixed(1) + '" height="' + (H - m.b - y).toFixed(1) + '" rx="2" fill="' + (left ? 'var(--bad)' : 'var(--series-1)') + '" fill-opacity="' + (left ? 0.75 : 0.85) + '"><title>' +
+        esc('logit ' + fmt(lo + i * w, 1) + ' a ' + fmt(lo + (i + 1) * w, 1) + ': ' + pct(c / total, 1) + ' de las particiones') + '</title></rect>' : '';
+    }).join('');
+    var xl = [-4, -2, 0, 2, 4].map(function (v) { return '<text x="' + X(v).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle">' + v + '</text>'; }).join('');
+    el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" height="' + H + '" role="img" aria-label="Distribución del logit del rango fuera de muestra">' +
+      '<line class="zero" x1="' + X(0) + '" x2="' + X(0) + '" y1="' + m.t + '" y2="' + (H - m.b) + '"/>' + bars +
+      '<g class="axis">' + xl + '<text x="' + X(-4) + '" y="11">← sobreajuste</text><text x="' + X(4) + '" y="11" text-anchor="end">se sostiene →</text></g></svg>';
+  }
+  function redrawCharts() {
+    if (!R || $('v-audit').hidden) return;
+    lineChart($('ch-equity'), { values: R.dd.equity.slice(1), log: true, area: 'pos', height: 170, label: 'Crecimiento de 1 peso',
+      yFmt: function (v) { return fmt(v, v < 10 ? 1 : 0); }, tipFmt: function (v) { return fmt(v, 2) + ' (' + pct(v - 1, 0) + ')'; } });
+    lineChart($('ch-dd'), { values: R.dd.drawdown.slice(1), area: 'neg', height: 90, maxZero: true, color: 'var(--bad)', label: 'Caída desde el máximo',
+      yFmt: function (v) { return pct(v, 0); } });
+    $('roll-title').textContent = 'Sharpe móvil de ' + (data.ppy >= 52 ? '1 año' : '3 años');
+    $('roll-note').textContent = 'anualizado';
+    lineChart($('ch-roll'), { values: R.roll, height: 150, zero: true, label: 'Sharpe móvil', yFmt: function (v) { return fmt(v, 1); } });
+    if (R.pbo) {
+      $('pbo-wrap').hidden = false;
+      histChart($('ch-pbo'), R.pbo.logits);
+      $('pbo-note').textContent = 'Cada barra cuenta particiones de la muestra. A la izquierda de cero, la variante que ganó dentro de muestra quedó en la mitad de abajo fuera de muestra. PBO = ' + pct(R.pbo.pbo, 0) +
+        '; Sharpe medio de la elegida: ' + fmt(R.pbo.is_sharpe_mean * Math.sqrt(data.ppy)) + ' dentro y ' + fmt(R.pbo.oos_sharpe_mean * Math.sqrt(data.ppy)) + ' fuera de muestra.';
+    } else $('pbo-wrap').hidden = true;
+  }
+  var lastW = 0;
+  window.addEventListener('resize', function () { var w = window.innerWidth; if (Math.abs(w - lastW) > 30) { lastW = w; redrawCharts(); monitorRender(); } });
+
+  // ── Claude report ────────────────────────────────────────────────────
+  var memo = { turns: [], ctl: null, text: '' };
+  function memoReset() {
+    memo.turns = []; memo.text = '';
+    if (cap.sample) $('memo').innerHTML = '<p class="muted">Claude redacta un informe con las cifras de esta auditoría y la literatura relacionada. Usa tu cuenta de Claude; la primera vez te pide permiso.</p>';
+    $('qa').hidden = true; $('memo-err').hidden = true;
+  }
+  function relatedPapers(sid) {
+    return (PAPERS && PAPERS.papers || []).filter(function (p) { return (p.related_strategy_ids || []).indexOf(sid) >= 0; }).slice(0, 6);
+  }
+  function auditFacts() {
+    var s = R.sum, ev = R.ev, st = ev.stats || {}, strat = ev.strategy || {};
+    var r2 = function (x, d) { return x == null || !isFinite(x) ? null : +Number(x).toFixed(d == null ? 3 : d); };
+    return {
+      fuente: data.label, serie: R.name, variantes_en_datos: data.cols.length, variantes_declaradas: R.nTrials, resultados_en_vivo: R.live,
+      periodos_por_anio: data.ppy, anios: r2(s.years, 2), sharpe_anual: r2(s.sharpe_annual), ic95_sharpe: [r2(R.boot.lo), r2(R.boot.hi)],
+      rendimiento_anual: r2(s.cagr, 4), volatilidad_anual: r2(s.vol_annual, 4), maxima_caida: r2(s.max_drawdown, 4), asimetria: r2(s.skew), curtosis: r2(s.kurtosis),
+      psr: r2(R.psr), dsr: r2(st.dsr), mintrl_anios: isFinite(R.mintrlYears) ? r2(R.mintrlYears, 2) : 'infinito', sharpe_tras_recorte: r2(st.sharpe_haircut), recorte_pct: r2(st.haircut_pct),
+      pbo: R.pbo ? r2(R.pbo.pbo) : null, pbo_particiones: R.pbo ? R.pbo.splits : null,
+      puntaje_motor: r2(ev.scores.final, 1), veredicto: ev.verdict.label, ventaja_neta_pb_mes: r2(ev.net_monthly_bps, 1),
+      cascada: (ev.cascade || []).map(function (c) { return c.stage + ': ' + fmt(c.monthly_bps, 1) + ' pb'; }),
+      chequeos: R.dataChecks.map(function (c) { return c[0] + ' · ' + c[1] + ' · ' + c[2]; }).concat(ev.checks.map(function (c) { return c.status + ' · ' + c.label + ' · ' + c.detail; })),
+      estrategia: { nombre: strat.name, afirmacion: strat.claim, cifra_clave: strat.key_figure, critica: strat.critique, que_sobrevive: strat.survives,
+        fuentes: (strat.sources || []).map(function (x) { return x.label; }) },
+      investigacion_reciente: relatedPapers(strat.id).map(function (p) { return { cita: p.authors + ' (' + p.year + '), ' + p.title + ', ' + p.venue, hallazgo: p.finding_es, cifra: p.key_figure }; })
+    };
+  }
+  var RULES = 'Eres el analista de riesgo del Laboratorio Fincept. Escribe en español, claro y directo, para un inversionista no experto.\n' +
+    'Reglas: usa SOLO las cifras del bloque DATOS (no inventes precios, rendimientos ni estudios); cita a los autores tal como aparecen; no recomiendes comprar ni vender valores concretos; ' +
+    'si los datos son un ejemplo simulado, dilo. Termina con una línea que diga que es material educativo y no asesoría financiera personalizada.\n';
+  function renderMd(t) {
+    var html = esc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    var out = [], list = false;
+    html.split(/\n/).forEach(function (line) {
+      var l = line.trim();
+      if (/^[-*•] /.test(l)) { if (!list) { out.push('<ul>'); list = true; } out.push('<li>' + l.replace(/^[-*•] /, '') + '</li>'); return; }
+      if (list) { out.push('</ul>'); list = false; }
+      if (/^#{1,4} /.test(l)) out.push('<h4>' + l.replace(/^#{1,4} /, '') + '</h4>');
+      else if (l) out.push('<p>' + l + '</p>');
+    });
+    if (list) out.push('</ul>');
+    return out.join('');
+  }
+  function sampleError(e) {
+    var c = e && e.code;
+    if (c === 'cancelled') return null;
+    if (c === 'not_granted' || c === 'sampling_disabled' || c === 'capability_disabled' || c === 'capability_removed' || c === 'not_declared') { $('btn-memo').disabled = true; return 'Claude no está disponible para esta página. Las cifras de la auditoría siguen siendo válidas.'; }
+    if (c === 'rate_limited') return 'Llegaste al límite de uso de Claude por ahora. Intenta más tarde.';
+    if (c === 'session_expired') return 'Tu sesión expiró. Vuelve a iniciar sesión en claude.ai.';
+    if (c === 'refused') return 'Claude no respondió a esta solicitud. Cambia la pregunta.';
+    if (c === 'prompt_too_large') return 'La auditoría es demasiado grande para enviarla completa.';
+    return 'Se interrumpió la respuesta. Intenta de nuevo.';
+  }
+  function ask(turns, onDone) {
+    memo.ctl = new AbortController();
+    $('btn-stop').hidden = false; $('btn-memo').disabled = true; $('btn-ask').disabled = true; $('memo-err').hidden = true;
+    var box = $('memo'), prefix = memo.text ? renderMd(memo.text) + '<hr style="border:0;border-top:1px solid var(--rule)">' : '';
+    box.innerHTML = prefix + '<p class="muted">Pensando…</p>';
+    cap.sample(turns, { signal: memo.ctl.signal, cache: false, onText: function (u) { box.innerHTML = prefix + renderMd(u.text); } })
+      .then(function (res) { onDone(res.text); if (res.truncated) { $('memo-err').textContent = 'La respuesta quedó cortada por su longitud.'; $('memo-err').hidden = false; } },
+        function (e) {
+          var msg = sampleError(e);
+          if (e && e.text) box.innerHTML = prefix + renderMd(e.text); else if (!memo.text) memoReset(); else box.innerHTML = renderMd(memo.text);
+          if (msg) { $('memo-err').textContent = msg; $('memo-err').hidden = false; }
+        })
+      .then(function () { $('btn-stop').hidden = true; $('btn-memo').disabled = !cap.sample; $('btn-ask').disabled = false; });
+  }
+  $('btn-memo').onclick = function () {
+    if (!cap.sample || !R) return;
+    memo.text = '';
+    var prompt = RULES + '\nEscribe un informe de auditoría con estas secciones en Markdown: "## Veredicto" (dos frases), "## Lo que dicen los datos", "## Lo que dice la literatura", ' +
+      '"## Riesgos principales" (viñetas), "## Qué haría falta para creerle" (viñetas concretas). Máximo 450 palabras.\n\nDATOS:\n' + JSON.stringify(auditFacts());
+    memo.turns = [{ role: 'user', content: prompt }];
+    ask(memo.turns, function (text) { memo.text = text; memo.turns.push({ role: 'assistant', content: text }); $('qa').hidden = false; });
+  };
+  $('btn-stop').onclick = function () { if (memo.ctl) memo.ctl.abort(); };
+  $('qa').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var q = $('in-question').value.trim();
+    if (!q || !cap.sample) return;
+    $('in-question').value = '';
+    var turns = memo.turns.concat([{ role: 'user', content: RULES + 'Responde en máximo 180 palabras, con las cifras de DATOS del primer mensaje.\nPregunta: ' + q }]);
+    ask(turns, function (text) { memo.turns = turns.concat([{ role: 'assistant', content: text }]); memo.text += '\n\n**Pregunta:** ' + q + '\n\n' + text; $('memo').innerHTML = renderMd(memo.text); });
+  });
+
+  // ── Downloads ────────────────────────────────────────────────────────
+  function save(filename, text) {
+    if (!cap.downloads) return;
+    cap.downloads.save({ filename: filename, data: text }).catch(function (e) {
+      if (e && e.code === 'declined') return;
+      $('memo-err').textContent = e && e.code === 'unavailable' ? 'Las descargas no están disponibles en esta vista.' : 'No se pudo preparar el archivo.';
+      $('memo-err').hidden = false;
+    });
+  }
+  $('btn-dl-md').onclick = function () {
+    if (!R) return;
+    var f = auditFacts(), lines = ['# Auditoría — ' + f.serie, '', f.fuente, '', '| Métrica | Valor |', '|---|---|'];
+    [['Puntaje del motor', f.puntaje_motor + '/100 · ' + f.veredicto], ['Sharpe anual', f.sharpe_anual + ' (IC 95% ' + f.ic95_sharpe.join(' a ') + ')'], ['Sharpe deflactado (DSR)', f.dsr],
+      ['PSR', f.psr], ['PBO', f.pbo == null ? 'no aplica' : f.pbo], ['MinTRL (años)', f.mintrl_anios], ['Años de datos', f.anios], ['Rendimiento anual', f.rendimiento_anual],
+      ['Máxima caída', f.maxima_caida], ['Ventaja neta (pb/mes)', f.ventaja_neta_pb_mes]].forEach(function (r) { lines.push('| ' + r[0] + ' | ' + r[1] + ' |'); });
+    lines.push('', '## Chequeos', '');
+    f.chequeos.forEach(function (c) { lines.push('- ' + c); });
+    if (memo.text) lines.push('', '## Informe del analista', '', memo.text);
+    lines.push('', '_Material educativo; no es asesoría financiera personalizada._');
+    save('auditoria-' + String(f.serie).replace(/[^\w-]+/g, '_').toLowerCase() + '.md', lines.join('\n'));
+  };
+  $('btn-dl-csv').onclick = function () {
+    if (!data) return;
+    var head = (data.dates ? 'fecha,' : '') + data.names.map(function (n) { return '"' + String(n).replace(/"/g, '""') + '"'; }).join(',');
+    var rows = data.cols[0].map(function (_, i) {
+      return (data.dates ? new Date(data.dates[i]).toISOString().slice(0, 10) + ',' : '') + data.cols.map(function (c) { return c[i].toFixed(6); }).join(',');
+    });
+    save('rendimientos.csv', [head].concat(rows).join('\n'));
+  };
+
+  // ── Monitor ──────────────────────────────────────────────────────────
+  var WATCH = [
+    { sym: 'SPY', what: 'S&P 500 (referencia)', sid: 'buy_hold_single_country', market: 'us' },
+    { sym: 'ACWI', what: 'Acciones globales', sid: 'buy_hold_global', market: 'global' },
+    { sym: 'EWW', what: 'México (MSCI)', sid: 'buy_hold_single_country', market: 'mx' },
+    { sym: 'MTUM', what: 'Momentum', sid: 'factor_fund_long_only', market: 'us' },
+    { sym: 'VLUE', what: 'Valor', sid: 'factor_fund_long_only', market: 'us' },
+    { sym: 'QUAL', what: 'Calidad', sid: 'factor_fund_long_only', market: 'us' },
+    { sym: 'USMV', what: 'Mínima volatilidad', sid: 'factor_fund_long_only', market: 'us' }
+  ];
+  // ETFs that copy congressional trades, when the research data lists them.
+  (PAPERS && PAPERS.etfs || []).forEach(function (e) {
+    if (!/^[A-Z]{2,6}$/.test(e.symbol || '') || WATCH.some(function (w) { return w.sym === e.symbol; })) return;
+    WATCH.push({ sym: e.symbol, what: e.short_es || e.symbol, market: 'us',
+      sid: KB.strategies.some(function (s) { return s.id === 'congress_copy'; }) ? 'congress_copy' : 'factor_fund_long_only' });
+  });
+  var mon = { started: false, rows: {}, busy: false };
+  function monitorOpen() { if (!mon.started && cap.mcpChecked) { mon.started = true; monitorLoad(false); } else monitorRender(); }
+  function monitorLoad(force) {
+    if (mon.busy) return;
+    if (!cap.db) { $('mon-status').innerHTML = '<span class="err">' + esc('Esta vista no puede leer la base de precios de Yahoo, así que no hay cifras de mercado. Abre la página en claude.ai.') + '</span>'; monitorRender(); return; }
+    mon.busy = true; $('btn-mon-refresh').disabled = true;
+    var done = 0, chain = Promise.resolve();
+    $('mon-status').textContent = 'Cargando 0 de ' + WATCH.length + '…';
+    WATCH.forEach(function (w) {
+      chain = chain.then(function () {
+        return fetchMonthly(w.sym, force).then(function (r) { mon.rows[w.sym] = { data: r.data, at: r.at, err: null }; },
+          function (e) { mon.rows[w.sym] = mon.rows[w.sym] && mon.rows[w.sym].data ? Object.assign(mon.rows[w.sym], { err: e.message }) : { err: e.message }; })
+          .then(function () { done++; $('mon-status').textContent = 'Cargando ' + done + ' de ' + WATCH.length + '…'; monitorRender(); });
+      });
+    });
+    chain.then(function () {
+      mon.busy = false; $('btn-mon-refresh').disabled = false;
+      var ats = WATCH.map(function (w) { return mon.rows[w.sym] && mon.rows[w.sym].at; }).filter(Boolean);
+      var errs = WATCH.filter(function (w) { return mon.rows[w.sym] && mon.rows[w.sym].err; });
+      var srcs = {};
+      WATCH.forEach(function (w) { var r = mon.rows[w.sym]; if (r && r.data) srcs[r.data.source || 'Yahoo Finance'] = (srcs[r.data.source || 'Yahoo Finance'] || 0) + 1; });
+      $('mon-status').innerHTML = (ats.length ? esc('Precios al ' + new Date(Math.min.apply(null, ats)).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) +
+        ' · ' + Object.keys(srcs).map(function (k) { return k + ': ' + srcs[k]; }).join(' · ') + '. ') : '') +
+        (errs.length ? '<span class="err">' + esc(errs[0].err) + '</span>' : '');
+      monitorRender();
+    });
+  }
+  $('btn-mon-refresh').onclick = function () { monitorLoad(true); };
+  function spark(eq) {
+    var W = 96, H = 26, n = eq.length, lo = Math.min.apply(null, eq), hi = Math.max.apply(null, eq);
+    var p = eq.map(function (v, i) { return (i ? 'L' : 'M') + (i / (n - 1) * (W - 4) + 2).toFixed(1) + ' ' + (H - 3 - (Math.log(v) - Math.log(lo)) / ((Math.log(hi) - Math.log(lo)) || 1) * (H - 6)).toFixed(1); }).join('');
+    return '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true"><path d="' + p + '" fill="none" stroke="var(--series-1)" stroke-width="1.5"/></svg>';
+  }
+  function monitorRender() {
+    var spy = mon.rows.SPY && mon.rows.SPY.data;
+    var active = WATCH.filter(function (w) { return w.sym !== 'SPY' && mon.rows[w.sym] && mon.rows[w.sym].data; });
+    // Cross-ETF variance of active Sharpe ratios, for the DSR of each active series.
+    var act = {};
+    if (spy) active.forEach(function (w) {
+      var al = alignTickers([mon.rows[w.sym].data, spy]);
+      var ex = al.cols[0].map(function (x, i) { return x - al.cols[1][i]; });
+      act[w.sym] = { ex: ex, sum: S.summarize(ex, 12) };
+    });
+    var srs = Object.keys(act).map(function (k) { return act[k].sum.sharpe_annual; });
+    var mean = srs.reduce(function (a, b) { return a + b; }, 0) / (srs.length || 1);
+    var varA = srs.length > 1 ? srs.reduce(function (a, b) { return a + (b - mean) * (b - mean); }, 0) / (srs.length - 1) : null;
+    var nT = Math.max(1, srs.length);
+    $('mon-table').querySelector('tbody').innerHTML = WATCH.map(function (w) {
+      var row = mon.rows[w.sym];
+      if (!row || !row.data) return '<tr><td><strong>' + w.sym + '</strong></td><td>' + esc(w.what) + '</td><td colspan="10" class="muted small">' + esc(row && row.err ? row.err : (mon.busy || !cap.mcpChecked ? 'esperando…' : 'sin datos')) + '</td></tr>';
+      var d = row.data, r = S.toReturns(d.closes, 'prices'), s = S.summarize(r, 12), eq = S.drawdowns(r).equity;
+      var last12 = r.slice(-12).reduce(function (g, x) { return g * (1 + x); }, 1) - 1;
+      var a = act[w.sym], dsr = null, minY = null;
+      if (a) {
+        var as = a.sum;
+        dsr = E.deflatedSharpeRatio(as.sharpe_annual, nT, as.years, 12, varA, as.skew, as.kurtosis).dsr;
+        var mt = S.minTrackRecordLength(as.sharpe_period, 0, as.skew, as.kurtosis, 0.05);
+        minY = isFinite(mt) ? mt / 12 : Infinity;
+      }
+      var cls = function (v) { return v == null ? '' : v >= 0 ? 'pos' : 'neg'; };
+      return '<tr class="click" data-sym="' + w.sym + '" tabindex="0" title="Auditar ' + w.sym + '"><td><strong>' + w.sym + '</strong></td><td>' + esc(w.what) + '</td><td class="num">' + d.dates[0].slice(0, 7) + '</td>' +
+        '<td class="n">' + fmt(s.sharpe_annual) + '</td><td class="n">' + pct(s.cagr) + '</td><td class="n">' + pct(s.max_drawdown, 0) + '</td><td class="n ' + cls(last12) + '">' + pct(last12) + '</td>' +
+        '<td class="n ' + (a ? cls(a.sum.sharpe_annual) : '') + '">' + (a ? fmt(a.sum.sharpe_annual) : w.sym === 'SPY' ? 'referencia' : '—') + '</td>' +
+        '<td class="n">' + (dsr == null ? '—' : pct(dsr, 0)) + '</td><td class="n">' + (minY == null ? '—' : isFinite(minY) ? fmt(minY, 0) : 'nunca') + '</td>' +
+        '<td>' + spark(eq) + '</td><td><button class="btn" type="button" data-audit="' + w.sym + '">Auditar</button></td></tr>';
+    }).join('');
+  }
+  $('mon-table').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-audit]'), tr = e.target.closest('tr[data-sym]');
+    var sym = b ? b.getAttribute('data-audit') : tr ? tr.getAttribute('data-sym') : null;
+    if (!sym) return;
+    var w = WATCH.filter(function (x) { return x.sym === sym; })[0];
+    $('in-tickers').value = sym === 'SPY' ? 'SPY' : sym + ', SPY';
+    $('in-strategy').value = w.sid; $('in-market').value = w.market;
+    showTab('audit'); setSource('ticker'); fetchTickers();
+  });
+  $('mon-table').addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.matches('tr[data-sym]')) e.target.click(); });
+
+  // ── Evidence ─────────────────────────────────────────────────────────
+  var evState = { q: '', fam: null, sel: 'momentum', topic: null };
+  function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+  (function () {
+    var fams = []; KB.strategies.forEach(function (s) { if (fams.indexOf(s.family) < 0) fams.push(s.family); });
+    $('ev-fam').innerHTML = '<button type="button" aria-pressed="true" data-fam="">Todas</button>' + fams.map(function (f) { return '<button type="button" aria-pressed="false" data-fam="' + esc(f) + '">' + esc(FAMILY_ES[f] || f) + '</button>'; }).join('');
+    $('ev-fam').onclick = function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      evState.fam = b.getAttribute('data-fam') || null;
+      Array.prototype.forEach.call(this.children, function (c) { c.setAttribute('aria-pressed', c === b ? 'true' : 'false'); });
+      evRender();
+    };
+    $('in-ev-q').addEventListener('input', function () { evState.q = this.value; evRender(); });
+    $('ev-list').onclick = function (e) { var b = e.target.closest('[data-id]'); if (b) { evState.sel = b.getAttribute('data-id'); evRender(); } };
+  })();
+  function evRender() {
+    var q = norm(evState.q).split(/\s+/).filter(Boolean);
+    var list = KB.strategies.filter(function (s) {
+      if (evState.fam && s.family !== evState.fam) return false;
+      var hay = norm(s.id + ' ' + s.name + ' ' + s.claim + ' ' + s.categories.join(' '));
+      return q.every(function (t) { return hay.indexOf(t) >= 0; });
+    }).sort(function (a, b) { return b.prior.score - a.prior.score; });
+    $('ev-list').innerHTML = list.map(function (s) {
+      return '<button type="button" class="srow" data-id="' + esc(s.id) + '"' + (s.id === evState.sel ? ' aria-current="true"' : '') + '><span><span class="nm">' + esc(s.name) + '</span><br><span class="fam">' + esc(FAMILY_ES[s.family] || s.family) + '</span></span>' +
+        '<span style="display:grid;gap:3px;justify-items:end"><span class="num small">' + s.prior.score + '/100</span><span class="meter" style="width:80px"><i style="width:' + s.prior.score + '%"></i></span></span></button>';
+    }).join('') || '<p class="small muted" style="padding:12px">Nada coincide con la búsqueda.</p>';
+    var s = KB.strategies.filter(function (x) { return x.id === evState.sel; })[0];
+    if (!s) return;
+    var marks = function (ms) { return (ms || []).map(function (m) { return '<span class="mark" title="' + esc((KB.meta.marks || {})[m] || '') + '">' + esc(m) + '</span>'; }).join(''); };
+    var rel = relatedPapers(s.id);
+    $('ev-detail').innerHTML = '<div style="display:grid;gap:6px"><span class="eyebrow">' + esc(FAMILY_ES[s.family] || s.family) + ' · evidencia ' + s.prior.score + '/100</span><h2>' + esc(s.name) + marks(s.marks) + '</h2></div>' +
+      '<dl><div><dt>Qué afirma</dt><dd>' + esc(s.claim) + '</dd></div><div><dt>Cifra clave</dt><dd>' + esc(s.key_figure) + '</dd></div><div><dt>La crítica</dt><dd>' + esc(s.critique) + '</dd></div>' +
+      '<div><dt>Qué sobrevive</dt><dd>' + esc(s.survives) + '</dd></div><div><dt>Por qué esta valoración</dt><dd>' + esc(s.prior.rationale) + '</dd></div>' +
+      '<div><dt>Fuentes</dt><dd>' + (s.sources || []).map(function (x) { return x.url ? '<a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.label) + '</a>' : esc(x.label); }).join(' · ') + '</dd></div>' +
+      (rel.length ? '<div><dt>Investigación reciente relacionada</dt><dd>' + rel.map(function (p) { return '<div style="margin-top:6px"><a href="' + esc(p.url) + '" target="_blank" rel="noopener">' + esc(p.authors + ' (' + p.year + ')') + '</a>: ' + esc(p.finding_es) + '</div>'; }).join('') + '</dd></div>' : '') +
+      '</dl><div class="btns"><button class="btn" type="button" id="btn-use-strategy">Usar en la auditoría</button></div>';
+    $('btn-use-strategy').onclick = function () { $('in-strategy').value = s.id; showTab('audit'); run(); };
+  }
+  var TOPIC_ES = { replication_decay: 'Replicación y decaimiento', costs: 'Costos de transacción', overfitting: 'Sobreajuste y pruebas múltiples', machine_learning: 'Machine learning',
+    llm_text: 'LLM y texto', alt_signals: 'Señales alternativas', factor_etfs: 'ETF de factores y desempeño reciente', emerging_mexico: 'Emergentes y México' };
+  function papersRender() {
+    var P = PAPERS && PAPERS.papers;
+    if (!P || !P.length) { $('papers-wrap').hidden = true; return; }
+    var topics = []; P.forEach(function (p) { if (topics.indexOf(p.topic) < 0) topics.push(p.topic); });
+    $('papers-note').textContent = P.length + ' trabajos de ' + Math.min.apply(null, P.map(function (p) { return p.year; })) + ' a ' + Math.max.apply(null, P.map(function (p) { return p.year; })) +
+      ', verificados en su página original. WP = working paper, la versión publicada puede cambiar. ' + (PAPERS.compiled ? 'Revisión: ' + PAPERS.compiled + '.' : '');
+    $('papers-topics').innerHTML = '<button type="button" aria-pressed="' + (!evState.topic) + '" data-t="">Todos</button>' + topics.map(function (t) { return '<button type="button" aria-pressed="' + (evState.topic === t) + '" data-t="' + esc(t) + '">' + esc(TOPIC_ES[t] || t) + '</button>'; }).join('');
+    $('papers').innerHTML = P.filter(function (p) { return !evState.topic || p.topic === evState.topic; }).map(function (p) {
+      return '<article class="card paper"><span class="meta">' + esc(TOPIC_ES[p.topic] || p.topic) + ' · ' + esc(p.year) + (p.reliability === 'WP' ? '<span class="mark">WP</span>' : '') + '</span>' +
+        '<h3><a href="' + esc(p.url) + '" target="_blank" rel="noopener">' + esc(p.title) + '</a></h3><span class="meta">' + esc(p.authors) + ' · ' + esc(p.venue) + '</span>' +
+        '<p class="small">' + esc(p.finding_es) + '</p>' + (p.key_figure_quote ? '<q>' + esc(p.key_figure_quote) + '</q>' : '') +
+        (p.how_it_changes_the_evidence_es ? '<p class="small muted">' + esc(p.how_it_changes_the_evidence_es) + '</p>' : '') + '</article>';
+    }).join('');
+  }
+  $('papers-topics').onclick = function (e) { var b = e.target.closest('button'); if (!b) return; evState.topic = b.getAttribute('data-t') || null; papersRender(); };
+
+  // ── Señales alternativas ─────────────────────────────────────────────
+  var SIG_TTL = 12 * 3600e3, DAY = 864e5;
+  var sig = { sym: null, res: {}, busy: false, opened: false };
+  function isObj(x) { return x != null && typeof x === 'object' && !Array.isArray(x); }
+  /** The records array of a connector answer, whatever it is called. */
+  function recordsOf(p) {
+    if (typeof p === 'string') { try { p = JSON.parse(p); } catch (e) { return []; } }
+    if (Array.isArray(p)) return p.filter(isObj);
+    if (!isObj(p)) return [];
+    var keys = ['data', 'results', 'trades', 'records', 'items', 'rows', 'transactions', 'contracts', 'lobbying'];
+    for (var i = 0; i < keys.length; i++) if (Array.isArray(p[keys[i]])) return p[keys[i]].filter(isObj);
+    for (var k in p) if (Array.isArray(p[k]) && p[k].length && isObj(p[k][0])) return p[k].filter(isObj);
+    return [];
+  }
+  function pick(o, names) {
+    var low = {};
+    Object.keys(o).forEach(function (k) { low[k.toLowerCase().replace(/[\s_]/g, '')] = o[k]; });
+    for (var i = 0; i < names.length; i++) {
+      var v = low[names[i].toLowerCase().replace(/[\s_]/g, '')];
+      if (v != null && v !== '') return v;
+    }
+    return null;
+  }
+  function toDay(v) {
+    if (v == null) return null;
+    var s = String(v).slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return Date.parse(s + 'T00:00:00Z');
+    var t = Date.parse(String(v));
+    return isFinite(t) ? t : null;
+  }
+  function money(v) {
+    if (v == null || v === '') return null;
+    if (typeof v === 'number') return isFinite(v) ? v : null;
+    var n = parseFloat(String(v).replace(/[$,\s]/g, ''));
+    return isFinite(n) ? n : null;
+  }
+  function rangeOf(v) {
+    var m = String(v || '').replace(/[$,\s]/g, '').match(/^(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)$/);
+    return m ? [+m[1], +m[2]] : null;
+  }
+  function congressRow(r) {
+    var t = String(pick(r, ['transaction_type', 'transaction', 'type']) || '');
+    var side = /purchase|buy|^p\b/i.test(t) ? 'buy' : /sale|sell|^s\b/i.test(t) ? 'sell' : 'other';
+    var lo = money(pick(r, ['amount_min', 'min_amount'])), hi = money(pick(r, ['amount_max', 'max_amount']));
+    if (lo == null) {
+      var rg = rangeOf(pick(r, ['range', 'amount_range', 'amount']));
+      if (rg) { lo = rg[0]; hi = rg[1]; } else { lo = hi = money(pick(r, ['amount', 'value', 'trade_size_usd'])); }
+    }
+    var party = String(pick(r, ['party']) || '');
+    return { date: toDay(pick(r, ['transaction_date', 'traded', 'transactiondate', 'trade_date', 'date'])),
+      filed: toDay(pick(r, ['filed_date', 'filed', 'reportdate', 'report_date', 'disclosure_date', 'notification_date'])),
+      name: String(pick(r, ['politician_canonical', 'politician', 'representative', 'name', 'member']) || '—'),
+      party: /^d/i.test(party) ? 'D' : /^r/i.test(party) ? 'R' : party ? party.slice(0, 1).toUpperCase() : '',
+      chamber: String(pick(r, ['chamber', 'house']) || ''), side: side, lo: lo, hi: hi };
+  }
+  function insiderRow(r) {
+    var code = String(pick(r, ['transaction_code', 'transactioncode', 'acquisition_or_disposal', 'acquireddisposed', 'transaction_type', 'type']) || '').trim();
+    var price = money(pick(r, ['share_price', 'transaction_price_per_share', 'price_per_share', 'pricepershare', 'price']));
+    var shares = money(pick(r, ['shares', 'transaction_shares', 'shares_traded', 'sharestraded']));
+    var side = /^p$|purchase|buy/i.test(code) ? 'buy' : /^s$|sale|sell/i.test(code) ? 'sell' : /^a$/i.test(code) ? (price > 0 ? 'buy' : 'grant') : /^d$/i.test(code) ? 'sell' : 'other';
+    return { date: toDay(pick(r, ['transaction_date', 'transactiondate', 'date', 'file_date', 'filed'])),
+      name: String(pick(r, ['executive', 'insider_name', 'name', 'owner_name', 'reporting_owner', 'owner']) || '—'),
+      title: String(pick(r, ['executive_title', 'title', 'officer_title', 'relationship', 'position']) || ''),
+      side: side, shares: shares, price: price, value: shares != null && price != null ? Math.abs(shares * price) : money(pick(r, ['value', 'transaction_value'])) };
+  }
+  /**
+   * Cohen, Malloy & Pomorski (2012): an insider is "routine" if they traded in the
+   * same calendar month in each of the three previous years; everyone else is
+   * "opportunistic". Needs at least 4 years of this company's history.
+   */
+  function classifyInsiders(rows) {
+    var seen = {}, minY = Infinity;
+    rows.forEach(function (r) {
+      if (!r.date) return;
+      var d = new Date(r.date), y = d.getUTCFullYear(), m = d.getUTCMonth();
+      minY = Math.min(minY, y);
+      (seen[r.name] = seen[r.name] || {})[y + '-' + m] = true;
+    });
+    rows.forEach(function (r) {
+      if (!r.date) { r.kind = null; return; }
+      var d = new Date(r.date), y = d.getUTCFullYear(), m = d.getUTCMonth();
+      if (y - 3 < minY) { r.kind = null; return; }
+      var s = seen[r.name] || {};
+      r.kind = s[(y - 1) + '-' + m] && s[(y - 2) + '-' + m] && s[(y - 3) + '-' + m] ? 'routine' : 'opportunistic';
+    });
+    return isFinite(minY) ? minY : null;
+  }
+  function usd(x) {
+    if (x == null || !isFinite(x)) return '—';
+    var a = Math.abs(x);
+    return (a >= 1e9 ? fmt(x / 1e9, 1) + ' mil M' : a >= 1e6 ? fmt(x / 1e6, 1) + ' M' : a >= 1e3 ? fmt(x / 1e3, 0) + ' mil' : fmt(x, 0)) + ' US$';
+  }
+  function dstr(t) { return t ? new Date(t).toISOString().slice(0, 10) : '—'; }
+
+  // Each source: how to call it and how to read the answer into rows.
+  function since(days) { return new Date(Date.now() - days * DAY).toISOString().slice(0, 10); }
+  var SOURCES = {
+    qv_congress: { label: 'Congreso · Quiver', server: QV, call: function (s) { return qvCall('get_congress_trades', { ticker: s, date_field: 'traded', date_from: since(4 * 365), limit: 500 }); },
+      read: function (p) { return { rows: recordsOf(p).map(congressRow) }; } },
+    qv_insider: { label: 'Directivos · Quiver', server: QV, call: function (s) { return qvCall('get_insider_trading', { ticker: s, date_from: since(5 * 365), limit: 500 }); },
+      read: function (p) { return { rows: recordsOf(p).map(insiderRow) }; } },
+    qv_lobby: { label: 'Lobbying · Quiver', server: QV, call: function (s) { return qvCall('get_lobbying', { ticker: s, year_from: new Date().getUTCFullYear() - 3, limit: 500 }); },
+      read: function (p) { return { rows: recordsOf(p).map(function (r) {
+        return { date: toDay(pick(r, ['date', 'filing_date', 'period'])) || (pick(r, ['year']) ? Date.UTC(+pick(r, ['year']), 6, 1) : null), year: +pick(r, ['year']) || null,
+          amount: money(pick(r, ['amount', 'income', 'expenses', 'spending'])), issue: String(pick(r, ['issue', 'issues', 'specific_issue', 'general_issue']) || '') };
+      }) }; } },
+    qv_contracts: { label: 'Contratos · Quiver', server: QV, call: function (s) { return qvCall('get_gov_contracts', { ticker: s, date_from: since(3 * 365), limit: 500 }); },
+      read: function (p) { return { rows: recordsOf(p).map(function (r) {
+        return { date: toDay(pick(r, ['action_date', 'date', 'award_date'])), amount: money(pick(r, ['total_dollars_obligated', 'amount', 'value', 'obligated'])),
+          agency: String(pick(r, ['awarding_agency_name', 'agency', 'awarding_agency', 'funding_agency']) || ''), what: String(pick(r, ['description', 'award_description', 'title']) || '') };
+      }) }; } }
+  };
+  var ORDER = ['qv_congress', 'qv_insider', 'qv_lobby', 'qv_contracts'];
+
+  function signalsOpen() {
+    sig.opened = true;
+    signalsEvidence();
+    if (!sig.sym && cap.mcpChecked) loadSignals(false);
+  }
+  function loadSignals(force) {
+    var s = $('in-sig').value.trim().toUpperCase();
+    if (!/^[A-Z][A-Z0-9.\-]{0,9}$/.test(s)) { $('sig-srcs').innerHTML = '<span class="err">Escribe un ticker de EE. UU., por ejemplo NVDA.</span>'; return; }
+    if (sig.busy) return;
+    sig.busy = true; sig.sym = s; sig.res = {};
+    $('btn-sig').disabled = $('btn-sig-refresh').disabled = true;
+    store('lab.sig.last', s);
+    renderSignals();
+    var jobs = ORDER.map(function (id) {
+      var src = SOURCES[id], key = 'lab.sig.' + id + '.' + s, hit = store(key);
+      var go = function () {
+        if (!force && hit && hit.t && Date.now() - hit.t < SIG_TTL && hit.v) { sig.res[id] = { ok: true, v: hit.v, at: hit.t, cached: true }; renderSignals(); return Promise.resolve(); }
+        sig.res[id] = { busy: true }; renderSignals();
+        return src.call(s).then(function (res) {
+          var v = src.read(res ? res.payload : null);
+          var at = res && res.cache ? res.cache.storedAt : Date.now();
+          sig.res[id] = { ok: true, v: v, at: at };
+          if (v.rows.length) store(key, { t: at, v: v });
+        }, function (e) {
+          sig.res[id] = { ok: false, err: (e && e.message) || 'Falló la consulta.', sub: !!(e && e.sub) };
+        }).then(renderSignals);
+      };
+      return go();
+    });
+    Promise.all(jobs).then(function () { sig.busy = false; $('btn-sig').disabled = $('btn-sig-refresh').disabled = false; renderSignals(); });
+  }
+  $('sig-form').addEventListener('submit', function (e) { e.preventDefault(); loadSignals(false); });
+  $('btn-sig-refresh').onclick = function () { loadSignals(true); };
+
+  function srcChip(id) {
+    var r = sig.res[id], label = SOURCES[id].label;
+    if (!r) return '';
+    var state = r.busy ? 'wait' : r.ok ? (r.v.rows.length ? 'on' : 'wait') : r.sub ? 'wait' : 'off';
+    var text = r.busy ? 'consultando…' : r.ok ? (r.v.rows.length ? r.v.rows.length + ' registros' + (r.cached ? ' (guardados)' : '') : 'sin registros') : r.sub ? 'requiere suscripción' : 'error';
+    return '<span class="pill" title="' + esc(r.err || '') + '"><span class="dot ' + state + '"></span>' + esc(label + ': ' + text) + '</span>';
+  }
+  /** Rows of the first source that answered with data, plus where they came from. */
+  function bestOf(ids) {
+    for (var i = 0; i < ids.length; i++) { var r = sig.res[ids[i]]; if (r && r.ok && r.v.rows.length) return { id: ids[i], rows: r.v.rows, v: r.v }; }
+    return null;
+  }
+  /** Errors per section: one line per distinct message; a missing subscription is a note, not an error. */
+  function sourceProblems(ids) {
+    var out = [], seen = {};
+    ids.forEach(function (id) {
+      var r = sig.res[id];
+      if (!r || r.ok || r.busy || seen[r.err]) return;
+      seen[r.err] = true;
+      out.push({ text: r.sub ? r.err : SOURCES[id].label + ': ' + r.err, sub: r.sub });
+    });
+    return out;
+  }
+  function monthBars(rows, months) {
+    var now = new Date(), keys = [];
+    for (var i = months - 1; i >= 0; i--) { var d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1)); keys.push(d.getUTCFullYear() + '-' + d.getUTCMonth()); }
+    var buy = {}, sell = {};
+    rows.forEach(function (r) {
+      if (!r.date) return;
+      var d = new Date(r.date), k = d.getUTCFullYear() + '-' + d.getUTCMonth();
+      if (r.side === 'buy') buy[k] = (buy[k] || 0) + 1; else if (r.side === 'sell') sell[k] = (sell[k] || 0) + 1;
+    });
+    var max = Math.max(1, Math.max.apply(null, keys.map(function (k) { return Math.max(buy[k] || 0, sell[k] || 0); })));
+    var W = 520, H = 120, mid = (H - 16) / 2, bw = W / months;
+    var mlab = function (k) { var q = k.split('-'); return new Date(Date.UTC(+q[0], +q[1], 1)).toLocaleDateString('es-MX', { month: 'short', year: 'numeric', timeZone: 'UTC' }); };
+    var bars = keys.map(function (k, i) {
+      var b = buy[k] || 0, s = sell[k] || 0, x = i * bw + 2, w = Math.max(2, bw - 4);
+      var parts = k.split('-'), lab = new Date(Date.UTC(+parts[0], +parts[1], 1)).toLocaleDateString('es-MX', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+      var hb = b / max * (mid - 6), hs = s / max * (mid - 6);
+      return (b ? '<rect x="' + x.toFixed(1) + '" y="' + (mid - 1 - hb).toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + hb.toFixed(1) + '" rx="2" fill="var(--series-1)"><title>' + esc(lab + ': ' + b + ' compra(s)') + '</title></rect>' : '') +
+        (s ? '<rect x="' + x.toFixed(1) + '" y="' + (mid + 1).toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + hs.toFixed(1) + '" rx="2" fill="var(--series-2)"><title>' + esc(lab + ': ' + s + ' venta(s)') + '</title></rect>' : '');
+    }).join('');
+    return '<div class="legend"><span><span class="sw" style="background:var(--series-1)"></span>compras</span><span><span class="sw" style="background:var(--series-2)"></span>ventas</span><span class="muted">por mes, últimos ' + months + ' meses</span></div>' +
+      '<div class="chart"><svg viewBox="0 0 ' + W + ' ' + H + '" height="' + H + '" role="img" aria-label="Compras y ventas por mes"><line class="zero" x1="0" x2="' + W + '" y1="' + mid + '" y2="' + mid + '"/>' + bars +
+      '<g class="axis"><text x="2" y="' + (H - 3) + '">' + esc(mlab(keys[0])) + '</text><text x="' + (W - 2) + '" y="' + (H - 3) + '" text-anchor="end">' + esc(mlab(keys[keys.length - 1])) + '</text></g></svg></div>';
+  }
+  function tiles(list) { return '<div class="tiles">' + list.map(function (t) { return '<div class="tile"><span class="k">' + esc(t[0]) + '</span><span class="v">' + esc(t[1]) + '</span></div>'; }).join('') + '</div>'; }
+  function median(a) { if (!a.length) return null; var s = a.slice().sort(function (x, y) { return x - y; }); return s[Math.floor(s.length / 2)]; }
+
+  function renderSignals() {
+    $('sig-srcs').innerHTML = ORDER.map(srcChip).join('');
+    if (!sig.sym) return;
+    var yearAgo = Date.now() - 365 * DAY;
+    // Congress
+    var c = bestOf(['qv_congress']), box = $('sig-congress');
+    if (c) {
+      var rows = c.rows.filter(function (r) { return r.date; }).sort(function (a, b) { return b.date - a.date; });
+      var last = rows.filter(function (r) { return r.date >= yearAgo; });
+      var b = last.filter(function (r) { return r.side === 'buy'; }), s = last.filter(function (r) { return r.side === 'sell'; });
+      var mid = function (rs) { return rs.reduce(function (a, r) { return a + (r.lo != null && r.hi != null ? (r.lo + r.hi) / 2 : 0); }, 0); };
+      var lags = rows.filter(function (r) { return r.filed && r.date && r.filed >= r.date; }).slice(0, 200).map(function (r) { return (r.filed - r.date) / DAY; });
+      var people = {}; last.forEach(function (r) { people[r.name] = true; });
+      $('sig-c-note').textContent = SOURCES[c.id].label.split('· ')[1] + (c.v.partial ? ' · muestra parcial' : '');
+      box.innerHTML = tiles([['Compras, 12 meses', String(b.length)], ['Ventas, 12 meses', String(s.length)], ['Monto estimado comprado', usd(mid(b))], ['Monto estimado vendido', usd(mid(s))],
+          ['Congresistas distintos', String(Object.keys(people).length)], ['Retraso mediano de divulgación', lags.length ? fmt(median(lags), 0) + ' días' : '—']]) +
+        monthBars(rows, 24) +
+        '<p class="small muted">Los montos son rangos declarados (por ejemplo 1,001 a 15,000 US$); se suma el punto medio. El retraso es lo que tarda en hacerse pública cada operación: copiar solo es posible después.</p>' +
+        '<div class="tablewrap"><table><thead><tr><th>Operó</th><th>Divulgó</th><th>Congresista</th><th></th><th>Tipo</th><th class="n">Monto (US$)</th></tr></thead><tbody>' +
+        rows.slice(0, 12).map(function (r) {
+          return '<tr><td class="num">' + dstr(r.date) + '</td><td class="num">' + dstr(r.filed) + '</td><td>' + esc(r.name) + '</td><td class="muted">' + esc(r.party) + '</td><td>' + (r.side === 'buy' ? 'Compra' : r.side === 'sell' ? 'Venta' : 'Otra') + '</td>' +
+            '<td class="n">' + (r.lo != null ? (r.lo === r.hi ? fmt(r.lo, 0) : fmt(r.lo, 0) + ' – ' + fmt(r.hi, 0)) : '—') + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    } else box.innerHTML = signalEmpty(['qv_congress'], 'Ningún congresista reportó operaciones con ' + sig.sym + ' en las fuentes disponibles.');
+    // Insiders
+    var ins = bestOf(['qv_insider']), ib = $('sig-insider');
+    if (ins) {
+      var ir = ins.rows.filter(function (r) { return r.date; }).sort(function (a, b) { return b.date - a.date; });
+      var firstYear = classifyInsiders(ir);
+      var il = ir.filter(function (r) { return r.date >= yearAgo; });
+      var ib2 = il.filter(function (r) { return r.side === 'buy'; }), is2 = il.filter(function (r) { return r.side === 'sell'; });
+      var opp = ib2.filter(function (r) { return r.kind === 'opportunistic'; });
+      var sumv = function (rs) { return rs.reduce(function (a, r) { return a + (r.value || 0); }, 0); };
+      var classifiable = il.some(function (r) { return r.kind; });
+      $('sig-i-note').textContent = SOURCES[ins.id].label.split('· ')[1] + (firstYear ? ' · desde ' + firstYear : '');
+      ib.innerHTML = tiles([['Compras, 12 meses', String(ib2.length)], ['Ventas, 12 meses', String(is2.length)], ['Valor comprado', usd(sumv(ib2))], ['Valor vendido', usd(sumv(is2))],
+          ['Compras oportunistas', classifiable ? String(opp.length) : 'sin historia'], ['Directivos distintos', String(Object.keys(il.reduce(function (o, r) { o[r.name] = 1; return o; }, {})).length)]]) +
+        monthBars(ir, 24) +
+        '<p class="small muted">«Oportunista» sigue a Cohen, Malloy y Pomorski (2012): no operó en el mismo mes en cada uno de los tres años anteriores. Las ventas suelen ser por liquidez o diversificación; la evidencia se concentra en las compras.' +
+        '</p>' +
+        '<div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Directivo</th><th>Cargo</th><th>Tipo</th><th class="n">Acciones</th><th class="n">Valor (US$)</th><th>Patrón</th></tr></thead><tbody>' +
+        ir.slice(0, 12).map(function (r) {
+          return '<tr><td class="num">' + dstr(r.date) + '</td><td>' + esc(r.name) + '</td><td class="muted">' + esc(r.title.slice(0, 40)) + '</td><td>' + ({ buy: 'Compra', sell: 'Venta', grant: 'Asignación' }[r.side] || 'Otra') + '</td>' +
+            '<td class="n">' + fmt(r.shares, 0) + '</td><td class="n">' + fmt(r.value, 0) + '</td><td class="muted">' + (r.kind === 'routine' ? 'rutinario' : r.kind === 'opportunistic' ? 'oportunista' : '—') + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    } else ib.innerHTML = signalEmpty(['qv_insider'], 'Las fuentes disponibles no tienen operaciones de directivos de ' + sig.sym + '.');
+    // Washington
+    var lob = sig.res.qv_lobby, con = sig.res.qv_contracts, dc = $('sig-dc');
+    if ((lob && lob.ok) || (con && con.ok)) {
+      var byYear = {};
+      (lob && lob.ok ? lob.v.rows : []).forEach(function (r) { var y = r.year || (r.date ? new Date(r.date).getUTCFullYear() : null); if (y && r.amount != null) byYear[y] = (byYear[y] || 0) + r.amount; });
+      var crow = con && con.ok ? con.v.rows.filter(function (r) { return r.date; }).sort(function (a, b) { return b.date - a.date; }) : [];
+      var c12 = crow.filter(function (r) { return r.date >= yearAgo; });
+      var years = Object.keys(byYear).sort().reverse().slice(0, 3);
+      dc.innerHTML = tiles(years.map(function (y) { return ['Lobbying ' + y, usd(byYear[y])]; }).concat([['Contratos, 12 meses', String(c12.length)],
+          ['Monto obligado, 12 meses', usd(c12.reduce(function (a, r) { return a + (r.amount || 0); }, 0))]])) +
+        (crow.length ? '<div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Dependencia</th><th class="n">Monto (US$)</th></tr></thead><tbody>' +
+          crow.slice(0, 8).map(function (r) { return '<tr><td class="num">' + dstr(r.date) + '</td><td>' + esc(r.agency.slice(0, 60)) + '</td><td class="n">' + fmt(r.amount, 0) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '');
+    } else dc.innerHTML = signalEmpty(['qv_lobby', 'qv_contracts'], 'Quiver no reporta lobbying ni contratos de ' + sig.sym + '.');
+  }
+  function signalEmpty(ids, emptyText) {
+    if (ids.some(function (id) { return sig.res[id] && sig.res[id].busy; })) return '<p class="small muted">Consultando…</p>';
+    var probs = sourceProblems(ids);
+    var answered = ids.some(function (id) { return sig.res[id] && sig.res[id].ok; });
+    return (answered ? '<p class="small">' + esc(emptyText) + '</p>' : '') + probs.map(function (m) { return '<p class="small ' + (m.sub ? 'muted' : 'err') + '">' + esc(m.text) + '</p>'; }).join('') +
+      (!answered && !probs.length ? '<p class="small muted">Sin datos todavía.</p>' : '');
+  }
+  function signalsEvidence() {
+    var ids = ['congress_copy', 'insider_purchases'];
+    var strs = KB.strategies.filter(function (s) { return ids.indexOf(s.id) >= 0; });
+    var papers = (PAPERS && PAPERS.papers || []).filter(function (p) { return p.topic === 'alt_signals'; });
+    var html = strs.map(function (s) {
+      return '<div style="display:grid;gap:4px;margin-bottom:12px"><div><strong>' + esc(s.name) + '</strong> <span class="num small">· evidencia ' + s.prior.score + '/100</span></div>' +
+        '<p class="small">' + esc(s.claim) + '</p><p class="small muted"><strong>Crítica:</strong> ' + esc(s.critique) + '</p><p class="small muted"><strong>Qué sobrevive:</strong> ' + esc(s.survives) + '</p>' +
+        '<p class="small">' + (s.sources || []).map(function (x) { return x.url ? '<a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.label) + '</a>' : esc(x.label); }).join(' · ') + '</p></div>';
+    }).join('');
+    if (papers.length) html += '<p class="small muted">' + papers.length + ' trabajos relacionados en Evidencia → Investigación reciente.</p>';
+    var etfs = PAPERS && PAPERS.etfs || [];
+    if (etfs.length) html += '<div class="btns"><button class="btn" type="button" id="btn-audit-congress">Auditar ' + etfs.map(function (e) { return e.symbol; }).join(' y ') + ' contra SPY</button></div>' +
+      '<p class="small muted">' + etfs.map(function (e) { return esc(e.symbol + ': ' + e.what_it_copies); }).join(' · ') + '</p>';
+    $('sig-evidence').innerHTML = html || '<p class="small muted">Sin evidencia cargada.</p>';
+    var btn = $('btn-audit-congress');
+    if (btn) btn.onclick = function () {
+      $('in-tickers').value = etfs.map(function (e) { return e.symbol; }).concat(['SPY']).join(', ');
+      if (KB.strategies.some(function (s) { return s.id === 'congress_copy'; })) $('in-strategy').value = 'congress_copy';
+      showTab('audit'); setSource('ticker'); fetchTickers();
+    };
+  }
+  (function () { var last = store('lab.sig.last'); if (typeof last === 'string' && /^[A-Z][A-Z0-9.\-]{0,9}$/.test(last)) $('in-sig').value = last; })();
+
+  // ── Boot ─────────────────────────────────────────────────────────────
+  var savedTick = store('lab.tickers'); if (typeof savedTick === 'string' && savedTick) $('in-tickers').value = savedTick;
+  evRender(); papersRender();
+  loadExample();
+  var t0 = store('lab.tab'); if (TABS.indexOf(t0) >= 0 && t0 !== 'audit') showTab(t0);
+})();
+</script>

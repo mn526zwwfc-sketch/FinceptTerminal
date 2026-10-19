@@ -1,0 +1,768 @@
+{
+ "compiled": "2026-10-11",
+ "scope": "Papers 2023-2026 que actualizan la evidencia de evidence_kb.json (versión 2026-10-04). Cada entrada se verificó abriendo la URL indicada (abstract en RePEc, arXiv, NBER, páginas institucionales o del editor).",
+ "verification": "SSRN, ScienceDirect, Wiley, ResearchGate y GitHub devolvieron 403 desde este entorno; para esos casos se usó RePEc u otra página con el abstract. Cifras en key_figure solo cuando aparecen en el abstract leído; key_figure_quote se copió del abstract (las expresiones $...$ son LaTeX tal como aparecen en arXiv).",
+ "papers": [
+  {
+   "id": "chen_lopezlira_zimmermann_peer_review",
+   "authors": "Andrew Y. Chen, Alejandro Lopez-Lira, Tom Zimmermann",
+   "year": 2025,
+   "title": "Does Peer-Reviewed Research Help Predict Stock Returns?",
+   "venue": "working paper (arXiv 2212.10317, v. dic-2025; presentado en AEA/AFA)",
+   "url": "https://arxiv.org/abs/2212.10317",
+   "topic": "replication_decay",
+   "finding_es": "Minar 29,000 razones contables y quedarse con las que tienen t>2 produce una predictibilidad parecida a la de las señales publicadas tras revisión por pares; en ambos casos solo cerca de la mitad sobrevive fuera de la muestra original. Tener una explicación teórica (riesgo o equilibrio) no protege contra ese decaimiento.",
+   "key_figure": "≈50% de la predictibilidad persiste después del periodo muestral original (señales minadas y publicadas por igual)",
+   "key_figure_quote": "Mining 29,000 accounting ratios for t-statistics > 2.0 leads to cross-sectional return predictability similar to the peer review process. For both, ≈50% of predictability remains after the original sample periods.",
+   "related_strategy_ids": [
+    "anomaly_single",
+    "anomaly_combo",
+    "factor_model_tilt",
+    "profitability_quality"
+   ],
+   "reliability": "WP",
+   "how_it_changes_the_evidence_es": "Refuerza el supuesto oos_retention de ~0.42-0.50 que la base toma de McLean y Pontiff, y matiza que la etiqueta de 'factor de riesgo' no justifica esperar menos decaimiento."
+  },
+  {
+   "id": "muravyev_pearson_pollet_2025",
+   "authors": "Dmitriy Muravyev, Neil D. Pearson, Joshua M. Pollet",
+   "year": 2025,
+   "title": "Anomalies and Their Short-Sale Costs",
+   "venue": "Journal of Finance 80(6):3639-3694",
+   "url": "https://ideas.repec.org/a/bla/jfinan/v80y2025i6p3639-3694.html",
+   "topic": "costs",
+   "finding_es": "Con 162 anomalías, el rendimiento largo-corto promedio es de 0.14% mensual antes de los costos de préstamo de acciones y viene casi todo de la pata corta; al descontar las comisiones de préstamo cae a -0.01% mensual. Si se excluyen las acciones caras de pedir prestadas (12% de las observaciones), las anomalías no son rentables ni siquiera antes de comisiones.",
+   "key_figure": "0.14% mensual bruto vs. -0.01% mensual neto de comisiones de préstamo (162 anomalías)",
+   "key_figure_quote": "Using a comprehensive sample of 162 anomalies, the average long‐short portfolio return is a significant 0.14% per month before short‐sale costs, and the returns are due to the short leg. However, the average is −0.01% once returns are adjusted for borrow fees.",
+   "related_strategy_ids": [
+    "anomaly_single",
+    "anomaly_combo",
+    "factor_model_tilt",
+    "betting_against_beta"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Debilita aún más la cascada de Chen y Velikov: añade un costo (préstamo de acciones) que la base no modela y que por sí solo lleva a cero el rendimiento largo-corto promedio; refuerza que requires_short=true debe penalizar fuerte."
+  },
+  {
+   "id": "johansson_sabbatucci_tamoni_2025",
+   "authors": "Andreas Johansson, Riccardo Sabbatucci, Andrea Tamoni",
+   "year": 2025,
+   "title": "Tradable Risk Factors for Institutional and Retail Investors",
+   "venue": "Review of Finance 29(1):103-139",
+   "url": "https://ideas.repec.org/a/oup/revfin/v29y2025i1p103-139..html",
+   "topic": "costs",
+   "finding_es": "Construyen factores realmente invertibles con fondos mutuos y ETFs grandes (incluyendo el costo de vender ETFs en corto) y los comparan con los factores 'de papel' académicos: los invertibles rinden de 2 a 4 puntos porcentuales menos al año. Comisiones de préstamo y costos de transacción explican 58% de la diferencia.",
+   "key_figure": "Déficit de implementación de 2-4% anual frente a factores 'de papel'; 58% explicado por costos de corto y de transacción",
+   "key_figure_quote": "Assessing the performance of our tradable factors against standard “on-paper” factors, we uncover an implementation shortfall of 2–4 percent annually.",
+   "related_strategy_ids": [
+    "factor_fund_long_only",
+    "factor_model_tilt",
+    "value",
+    "momentum",
+    "profitability_quality"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Refuerza con una cifra concreta (2-4% anual) la advertencia de que el factor académico no es lo que obtiene un inversionista con fondos o ETFs."
+  },
+  {
+   "id": "novy_marx_velikov_assaying_anomalies",
+   "authors": "Robert Novy-Marx, Mihail Velikov",
+   "year": 2024,
+   "title": "Assaying Anomalies",
+   "venue": "working paper (SSRN 4338007, rev. feb-2024)",
+   "url": "https://ue.poznan.pl/en/news/15th-online-seminar-in-finance-mihail-velikov-pennsylvania-state-university/",
+   "topic": "costs",
+   "finding_es": "Proponen un protocolo estándar (con aplicación web y código libre) para evaluar una señal nueva: va más allá de la regresión contra modelos de factores, revisa límites al arbitraje y costos que hacen que una estrategia se vea bien en papel pero no se pueda operar, y la ubica entre anomalías parecidas del 'factor zoo'.",
+   "related_strategy_ids": [
+    "anomaly_single",
+    "anomaly_combo"
+   ],
+   "reliability": "WP",
+   "how_it_changes_the_evidence_es": "Matiza: no cambia cifras de la base, pero ofrece una lista de chequeo (costos, microcaps, similitud con anomalías existentes) que el evaluador puede imitar.",
+   "notes": "Página verificada: resumen del seminario de Poznań (SSRN bloqueado desde este entorno). SSRN: https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4338007 (no se pudo abrir)."
+  },
+  {
+   "id": "lopez_de_prado_lipton_zoonekynd_2026",
+   "authors": "Marcos López de Prado, Alexander Lipton, Vincent Zoonekynd",
+   "year": 2026,
+   "title": "Sharpe Ratio Inference: A New Standard for Decision Making and Reporting (versión SSRN: 'How to Use the Sharpe Ratio', 2025)",
+   "venue": "Journal of Portfolio Management 52(6), 2026",
+   "url": "https://www.adialab.ae/research-series/how-to-use-the-sharpe-ratio",
+   "topic": "overfitting",
+   "finding_es": "Identifican cinco errores comunes al usar el Sharpe (reportarlo sin significancia, suponer rendimientos normales e independientes, ignorar potencia y longitud mínima de muestra, confundir el p-valor con la probabilidad de que la estrategia sea buena, y no corregir por pruebas múltiples) y derivan una aproximación cerrada a la distribución del Sharpe con rendimientos no normales y autocorrelacionados.",
+   "related_strategy_ids": [
+    "anomaly_single",
+    "technical_rules",
+    "ml_cross_section",
+    "active_funds",
+    "tsmom_futures"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Refuerza (y actualiza a 2026) el marco PSR/MinTRL/DSR que el evaluador debería aplicar a cualquier backtest; sin esas correcciones el Sharpe 'se vuelve un generador de falsos descubrimientos'."
+  },
+  {
+   "id": "chen_2025_t_hurdles",
+   "authors": "Andrew Y. Chen",
+   "year": 2025,
+   "title": "Do t-Statistic Hurdles Need to Be Raised?",
+   "venue": "Management Science 71(7):5830-5848",
+   "url": "https://ideas.repec.org/a/inm/ormnsc/v71y2025i7p5830-5848.html",
+   "topic": "overfitting",
+   "finding_es": "Muestra que, por el sesgo de publicación (los resultados que no pasan el umbral no se ven), los datos publicados casi no permiten saber si hay que subir, mantener o bajar el umbral de t; en cambio, la contracción bayesiana empírica y la tasa de falsos descubrimientos (FDR) sí se estiman bien.",
+   "related_strategy_ids": [
+    "anomaly_single",
+    "anomaly_combo"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Matiza la regla de Harvey-Liu-Zhu (t>3): recomienda reportar contracción y FDR en lugar de un umbral fijo."
+  },
+  {
+   "id": "chen_2025_mostly_true_fdr",
+   "authors": "Andrew Y. Chen",
+   "year": 2025,
+   "title": "Most claimed statistical findings in cross-sectional return predictability are likely true",
+   "venue": "working paper (arXiv 2206.15365, v. nov-2025)",
+   "url": "https://arxiv.org/abs/2206.15365",
+   "topic": "overfitting",
+   "finding_es": "Con una cota sencilla (5% dividido entre la fracción de señales significativas) muestra que la tasa de falsos descubrimientos en la literatura de anomalías es como máximo 25%, y con una cota más fina, 9%: la mayoría de los hallazgos publicados son estadísticamente 'verdaderos', aunque eso no implica que sean rentables después de costos o de publicación.",
+   "key_figure": "FDR ≤ 25% (cota simple, 8 de 9 estudios); FDR ≤ 9% (cota refinada)",
+   "key_figure_quote": "The simplest bound requires just a few lines of math and finds \\text{FDR} \\le 25% based on summary statistics in eight out of nine previous studies. A more refined bound finds \\text{FDR} \\le 9%.",
+   "related_strategy_ids": [
+    "anomaly_single",
+    "anomaly_combo"
+   ],
+   "reliability": "WP",
+   "how_it_changes_the_evidence_es": "Matiza: el problema principal del factor zoo no es que los hallazgos sean falsos sino que se encogen tras publicación y costos (coherente con la cascada de Chen y Velikov)."
+  },
+  {
+   "id": "harvey_sancetta_zhao_2026",
+   "authors": "Campbell R. Harvey, Alessio Sancetta, Yuqian Zhao",
+   "year": 2026,
+   "title": "What Threshold Should be Applied to Tests of Factor Models?",
+   "venue": "working paper (NBER w34898, feb-2026)",
+   "url": "https://www.nber.org/papers/w34898",
+   "topic": "overfitting",
+   "finding_es": "Argumentan que la inferencia correcta con cientos de factores probados debe considerar la dependencia entre pruebas, la distribución nula correcta y el sesgo de selección; su marco da una cota inferior al umbral válido de t de al menos 3.0 y recomiendan reportar el FDR local (probabilidad de que la hipótesis nula sea cierta dado el t observado).",
+   "key_figure": "Umbral de t de al menos 3.0",
+   "key_figure_quote": "We develop a simple framework that avoids assumptions about the total number of tests run and yields a lower bound on valid significance thresholds - implying that researchers should employ a t-statistic cutoff of at least 3.0.",
+   "related_strategy_ids": [
+    "anomaly_single",
+    "factor_model_tilt",
+    "technical_rules"
+   ],
+   "reliability": "WP",
+   "how_it_changes_the_evidence_es": "Refuerza (2026) la regla t>3 de Harvey-Liu-Zhu 2016, en tensión con Chen (2025), que sostiene que el umbral está mal identificado: el debate sigue abierto."
+  },
+  {
+   "id": "chen_pelger_zhu_2024",
+   "authors": "Luyang Chen, Markus Pelger, Jason Zhu",
+   "year": 2024,
+   "title": "Deep Learning in Asset Pricing",
+   "venue": "Management Science 70(2):714-750",
+   "url": "https://ideas.repec.org/a/inm/ormnsc/v70y2024i2p714-750.html",
+   "topic": "machine_learning",
+   "finding_es": "Estiman un modelo de valuación con redes neuronales profundas usando la condición de no arbitraje como criterio, activos de prueba adversariales y estados macro; fuera de muestra supera a los modelos de referencia en Sharpe, varianza explicada y errores de valuación (cifras brutas, sin costos de transacción en el resumen).",
+   "related_strategy_ids": [
+    "ml_cross_section"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Refuerza que el ML con restricciones económicas mejora la predicción bruta, pero no responde la crítica de Avramov, Cheng y Metzker sobre microcaps y costos."
+  },
+  {
+   "id": "fallahgoul_2025",
+   "authors": "Hasan Fallahgoul",
+   "year": 2025,
+   "title": "High-Dimensional Learning in Finance",
+   "venue": "working paper (arXiv 2506.03780)",
+   "url": "https://arxiv.org/abs/2506.03780",
+   "topic": "machine_learning",
+   "finding_es": "Demuestra que estandarizar dentro de la muestra cambia el kernel que aproximan las Random Fourier Features usadas en 'Virtue of Complexity', y calcula cotas de información: con 12,000 variables, 12 observaciones mensuales y R² de 2-3% se necesitarían más de 25-30 años de datos para aprender de verdad, así que el éxito observado vendría de efectos de menor complejidad.",
+   "key_figure": "Se requieren más de 25-30 años de datos (12,000 variables, ventana de 12 meses, R² 2-3%)",
+   "key_figure_quote": "A detailed quantitative calibration of the polynomial lower bound shows that with typical parameter choices, e.g., 12,000 features, 12 monthly observations, and R-square 2-3%, the required sample size to escape the bound exceeds 25-30 years of data--well beyond any rolling-window actually used.",
+   "related_strategy_ids": [
+    "complexity_timing"
+   ],
+   "reliability": "WP",
+   "how_it_changes_the_evidence_es": "Debilita la tesis de Kelly-Malamud-Zhou y se suma a Nagel y Buncic (ya en la base)."
+  },
+  {
+   "id": "guo_huang_li_yu_2026",
+   "authors": "Hui Guo, Jiawei Huang, Runze Li, Yan Yu",
+   "year": 2026,
+   "title": "(Mis)Understanding Benign Overfitting in Equity Return Prediction",
+   "venue": "working paper (arXiv 2608.23761)",
+   "url": "https://arxiv.org/abs/2608.23761",
+   "topic": "machine_learning",
+   "finding_es": "Reproducen el 'doble descenso' de los modelos sobreparametrizados al predecir el mercado, pero ni el ridge óptimo ni el ridgeless superan al simple promedio histórico; concluyen que los predictores estándar carecen de poder real y que, sin señal, los modelos complejos colapsan al promedio histórico.",
+   "related_strategy_ids": [
+    "complexity_timing",
+    "predictive_regressions"
+   ],
+   "reliability": "WP",
+   "how_it_changes_the_evidence_es": "Debilita complexity_timing y refuerza el resultado de Goyal-Welch-Zafirov (ya en la base) de que el promedio histórico es difícil de vencer."
+  },
+  {
+   "id": "kelly_malamud_aqr_2025",
+   "authors": "Bryan T. Kelly, Semyon Malamud (AQR; la página lista a estos autores)",
+   "year": 2025,
+   "title": "Understanding The Virtue of Complexity",
+   "venue": "working paper (AQR, 10-jul-2025)",
+   "url": "https://www.aqr.com/Insights/Research/Working-Paper/Understanding-The-Virtue-of-Complexity",
+   "topic": "machine_learning",
+   "finding_es": "Respuesta de los autores originales a las críticas: discuten complejidad 'nominal' vs. 'efectiva', regularización implícita y límites al aprendizaje, presentan nuevos análisis y proponen la 'virtud de la complejidad en ensamble'.",
+   "related_strategy_ids": [
+    "complexity_timing"
+   ],
+   "reliability": "WP",
+   "how_it_changes_the_evidence_es": "Matiza: la controversia sigue abierta, pero la réplica proviene de autores con conflicto de interés declarado (AQR) y no presenta resultados netos de costos en el resumen."
+  },
+  {
+   "id": "cakici_fieberg_metko_zaremba_2023",
+   "authors": "Nusret Cakici, Christian Fieberg, Daniel Metko, Adam Zaremba",
+   "year": 2023,
+   "title": "Machine learning goes global: Cross-sectional return predictability in international stock markets",
+   "venue": "Journal of Economic Dynamics and Control 155",
+   "url": "https://ideas.repec.org/a/eee/dyncon/v155y2023ics0165188923001318.html",
+   "topic": "machine_learning",
+   "finding_es": "En 46 mercados y con 148 características, el ML extrae predictibilidad sobre todo de factores simples (momentum, reversión, valor, tamaño); el desempeño depende mucho del tamaño de las empresas, de tener información reciente, del número de emisoras del mercado y del riesgo idiosincrático que limita el arbitraje.",
+   "key_figure": "46 mercados, 148 características",
+   "key_figure_quote": "We examine return predictability with machine learning in 46 stock markets around the world.",
+   "related_strategy_ids": [
+    "ml_cross_section",
+    "momentum",
+    "value",
+    "mexico_factors"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Matiza para mercados chicos como México: con pocas emisoras y alto riesgo idiosincrático el ML rinde distinto y depende de microcaps, coherente con la pérdida de alfa en microcaps de Avramov et al."
+  },
+  {
+   "id": "lopez_lira_tang_2025_update",
+   "authors": "Alejandro Lopez-Lira, Yuehua Tang",
+   "year": 2025,
+   "title": "Can ChatGPT Forecast Stock Price Movements? Return Predictability and Large Language Models (versión revisada oct-2025)",
+   "venue": "working paper (arXiv 2304.07619 v. oct-2025)",
+   "url": "https://arxiv.org/abs/2304.07619",
+   "topic": "llm_text",
+   "finding_es": "La versión revisada usa solo titulares posteriores al corte de conocimiento de GPT-4: acierta ~90% en la reacción inicial (que no se puede operar) y predice la deriva posterior sobre todo en acciones pequeñas y noticias negativas; además, los rendimientos de la estrategia caen a medida que aumenta la adopción de LLMs.",
+   "key_figure": "≈90% de aciertos portafolio-día en la reacción inicial no operable",
+   "key_figure_quote": "Using post-knowledge-cutoff headlines, GPT-4 captures initial market responses, achieving approximately 90% portfolio-day hit rates for the non-tradable initial reaction.",
+   "related_strategy_ids": [
+    "llm_news"
+   ],
+   "reliability": "WP",
+   "how_it_changes_the_evidence_es": "Matiza la fuente ya citada en la base: el abstract nuevo ya no presume rendimientos acumulados, separa la reacción no operable de la deriva y reconoce decaimiento por adopción."
+  },
+  {
+   "id": "lopez_lira_tang_zhu_memorization",
+   "authors": "Alejandro Lopez-Lira, Yuehua Tang, Mingyin Zhu",
+   "year": 2025,
+   "title": "The Memorization Problem: Can We Trust LLMs' Economic Forecasts?",
+   "venue": "working paper (arXiv 2504.14765, v. dic-2025)",
+   "url": "https://arxiv.org/abs/2504.14765",
+   "topic": "llm_text",
+   "finding_es": "Los LLMs memorizan datos económicos y financieros y recuerdan valores exactos anteriores a su fecha de corte; pedirles que 'respeten' la fecha o enmascarar nombres no evita el problema, así que cualquier backtest dentro del periodo de entrenamiento no permite distinguir habilidad de memoria.",
+   "related_strategy_ids": [
+    "llm_news"
+   ],
+   "reliability": "WP",
+   "how_it_changes_the_evidence_es": "Debilita cualquier backtest de LLM que use datos anteriores al corte de conocimiento y refuerza la crítica de Glasserman y Lin (ya en la base)."
+  },
+  {
+   "id": "yan_et_al_datedgpt_2026",
+   "authors": "Yutong Yan, Raphael Tang, Zhenyu Gao, Wenxi Jiang, Yao Lu",
+   "year": 2026,
+   "title": "DatedGPT: Preventing Lookahead Bias in Large Language Models with Time-Aware Pretraining",
+   "venue": "working paper (arXiv 2603.11838)",
+   "url": "https://arxiv.org/abs/2603.11838",
+   "topic": "llm_text",
+   "finding_es": "Entrenan doce modelos con cortes anuales estrictos (2013-2024) para evitar ver el futuro; con titulares de noticias, los modelos sin sesgo siguen prediciendo, pero los modelos cuyo entrenamiento cubre el periodo evaluado añaden una 'prima de mirar adelante' de 26.4 pb por desviación estándar, significativa al 1%.",
+   "key_figure": "Prima por sesgo de anticipación de 26.4 pb por desviación estándar",
+   "key_figure_quote": "Lookahead-biased models, whose training data covers the outcome period, add a lookahead premium of 26.4 b.p. per standard deviation, significant at the 1% level.",
+   "related_strategy_ids": [
+    "llm_news"
+   ],
+   "reliability": "WP",
+   "how_it_changes_the_evidence_es": "Matiza: cuantifica cuánto infla el sesgo de anticipación y muestra que parte de la señal sobrevive con modelos fechados (el Sharpe de 3.20 que reporta es bruto, sin costos)."
+  },
+  {
+   "id": "kelly_malamud_schwab_xu_2026",
+   "authors": "Bryan T. Kelly, Semyon Malamud, Johannes Schwab, Teng Andrea Xu",
+   "year": 2026,
+   "title": "Scaling Point-in-Time Language Models",
+   "venue": "working paper (NBER w35247, may-2026)",
+   "url": "https://www.nber.org/papers/w35247",
+   "topic": "llm_text",
+   "finding_es": "Entrenan modelos de lenguaje solo con texto disponible hasta cada fecha (checkpoints mensuales 2013-2024) para eliminar la fuga de información futura; en una evaluación estrictamente fuera de muestra, los portafolios con estos embeddings logran Sharpe positivos cercanos a los de modelos que sí violan la validez temporal.",
+   "related_strategy_ids": [
+    "llm_news"
+   ],
+   "reliability": "WP",
+   "how_it_changes_the_evidence_es": "Matiza: sugiere que parte de la señal de texto no es artefacto de anticipación, aunque no reporta resultados netos de costos y los autores declaran vínculos con AQR."
+  },
+  {
+   "id": "huang_song_xiang_2024",
+   "authors": "Shiyang Huang, Yang Song, Hong Xiang",
+   "year": 2024,
+   "title": "The Smart Beta Mirage",
+   "venue": "Journal of Financial and Quantitative Analysis 59(6):2515-2546",
+   "url": "https://ideas.repec.org/a/cup/jfinqa/v59y2024i6p2515-2546_2.html",
+   "topic": "factor_etfs",
+   "finding_es": "El rendimiento ajustado por mercado de los índices smart beta pasa de cerca de 3% 'en papel' antes de lanzar el ETF a entre -0.5% y -1% después; no lo explican primas de factores ni rendimientos decrecientes a escala, sino minería de datos al construir los índices, porque los inversionistas responden a los backtests.",
+   "key_figure": "De ~3% en papel antes del lanzamiento a -0.50% / -1% después",
+   "key_figure_quote": "While smart beta is purported to deliver excess returns through factor exposures, the market-adjusted return of smart beta indexes drops from about 3% “on paper” before ETF listings to about −0.50% to −1% after ETF listings.",
+   "related_strategy_ids": [
+    "factor_fund_long_only",
+    "factor_model_tilt"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Refuerza con evidencia publicada que el backtest de un ETF de factores no es predictor de su desempeño en vivo."
+  },
+  {
+   "id": "ben_david_franzoni_kim_moussawi_2023",
+   "authors": "Itzhak Ben-David, Francesco Franzoni, Byungwook Kim, Rabih Moussawi",
+   "year": 2023,
+   "title": "Competition for Attention in the ETF Space",
+   "venue": "Review of Financial Studies 36(3):987-1042",
+   "url": "https://www.sfi.ch/en/publications/competition-for-attention-in-the-etf-space",
+   "topic": "factor_etfs",
+   "finding_es": "Los ETFs especializados o temáticos, lanzados cuando sus acciones ya están sobrevaluadas y con comisiones altas, pierden alrededor de 30% ajustado por riesgo en sus primeros cinco años; la causa no son las comisiones sino la sobrevaluación al lanzamiento.",
+   "key_figure": "-30% ajustado por riesgo en los primeros 5 años",
+   "key_figure_quote": "Strikingly, over their first 5 years, specialized ETFs lose about 30% (risk-adjusted).",
+   "related_strategy_ids": [
+    "factor_fund_long_only",
+    "active_funds",
+    "frequent_trading"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Refuerza la advertencia sobre productos minoristas que se venden con historia reciente brillante."
+  },
+  {
+   "id": "van_vliet_baltussen_dom_vidojevic_2025",
+   "authors": "Bart van Vliet, Guido Baltussen, M. Sipke Dom, Milan Vidojevic",
+   "year": 2025,
+   "title": "Momentum Factor Investing: Evidence and Evolution",
+   "venue": "working paper (SSRN 5561720, 2025)",
+   "url": "https://www.interactivebrokers.com/campus/ibkr-quant-news/momentum-factor-investing-evidence-and-evolution/",
+   "topic": "factor_etfs",
+   "finding_es": "Con datos de hasta 150 años y decenas de países encuentran que el momentum es robusto a muchas decisiones de diseño y a preocupaciones de minería de datos; sigue expuesto a desplomes, que las versiones con gestión de riesgo (escalado por volatilidad) mitigan.",
+   "key_figure": "Hasta 150 años de datos",
+   "key_figure_quote": "Our empirical analyses demonstrate robust empirical support for the momentum factor over domestic and global stock markets spanning up to 150 years of data and a wide variety of design choices, establishing momentum’s resilience against data mining and arbitrage concerns.",
+   "related_strategy_ids": [
+    "momentum",
+    "value_momentum_combo",
+    "vol_managed_market"
+   ],
+   "reliability": "WP",
+   "how_it_changes_the_evidence_es": "Refuerza la prima bruta de momentum y la utilidad de gestionar su riesgo; no aborda costos de implementación (autores de Robeco, gestora con productos de momentum).",
+   "notes": "Abstract leído en la reproducción de Alpha Architect en IBKR Campus; SSRN bloqueado desde este entorno. Una publicación en JPM se menciona en fuentes secundarias, no verificada."
+  },
+  {
+   "id": "hanauer_kalsbach_2023",
+   "authors": "Matthias X. Hanauer, Tobias Kalsbach",
+   "year": 2023,
+   "title": "Machine learning and the cross-section of emerging market stock returns",
+   "venue": "Emerging Markets Review (vol. 55, 2023 según fuentes secundarias)",
+   "url": "https://www.fa.mgt.tum.de/fm/news/article/matthias-hanauer-and-tobias-kalsbach-awarded-runner-up-of-the-cfa-germany-investment-research-award-2024/",
+   "topic": "emerging_mexico",
+   "finding_es": "En mercados emergentes, los modelos no lineales (árboles y redes) dan rendimientos fuera de muestra superiores a los lineales; la predictibilidad es mayor en acciones con más límites al arbitraje, y aun así reportan rendimientos netos significativos con costos, restricciones a ventas en corto y solo acciones grandes.",
+   "related_strategy_ids": [
+    "ml_cross_section",
+    "mexico_factors"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Matiza a favor del ML en emergentes neto de costos, aunque el primer autor trabaja en Robeco y la prueba es agregada (no específica de México).",
+   "notes": "Abstract leído en la página de la TUM; volumen/año (55, 2023) tomados de resúmenes de búsqueda, no de la página del editor."
+  },
+  {
+   "id": "berggrun_cardona_lizarzaburu_2023",
+   "authors": "Luis Berggrun, Emilio Cardona, Edmundo Lizarzaburu",
+   "year": 2023,
+   "title": "Industry momentum in Latin America",
+   "venue": "Journal of Business Research 158",
+   "url": "https://ideas.repec.org/a/eee/jbrese/v158y2023ics0148296323000693.html",
+   "topic": "emerging_mexico",
+   "finding_es": "En América Latina las industrias ganadoras recientes no superan a las perdedoras: la diferencia suele ser indistinguible de cero, incluso con rendimientos idiosincráticos, y tampoco hay momentum dentro de cada industria.",
+   "related_strategy_ids": [
+    "momentum",
+    "mexico_factors"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Matiza mexico_factors: el momentum individual que encuentran Diaz-Ruiz et al. en la BMV no se extiende al momentum de industrias en la región."
+  },
+  {
+   "id": "ziobrowski_2004",
+   "authors": "Alan J. Ziobrowski, Ping Cheng, James W. Boyd, Brigitte J. Ziobrowski",
+   "year": 2004,
+   "title": "Abnormal Returns from the Common Stock Investments of the U.S. Senate",
+   "venue": "Journal of Financial and Quantitative Analysis 39(4), 661-676",
+   "url": "https://ideas.repec.org/a/cup/jfinqa/v39y2004i04p661-676_00.html",
+   "topic": "alt_signals",
+   "finding_es": "Entre 1993 y 1998, una cartera que imita las compras de los senadores supera al mercado y una que imita sus ventas queda por debajo; la diferencia es de casi un punto porcentual al mes.",
+   "key_figure": "+85 pb mensuales (compras) y −12 pb mensuales (ventas)",
+   "key_figure_quote": "We document that a portfolio that mimics the purchases of U.S. Senators beats the market by 85 basis points per month, while a portfolio that mimics the sales of Senators lags the market by 12 basis points per month.",
+   "related_strategy_ids": [
+    "congress_copy"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Es la cifra de origen del mito de los congresistas que le ganan al mercado; es anterior a la STOCK Act y se mide desde la fecha de la operación, no desde que el público puede verla."
+  },
+  {
+   "id": "ziobrowski_2011",
+   "authors": "Alan J. Ziobrowski, James W. Boyd, Ping Cheng, Brigitte J. Ziobrowski",
+   "year": 2011,
+   "title": "Abnormal Returns From the Common Stock Investments of Members of the U.S. House of Representatives",
+   "venue": "Business and Politics 13(1)",
+   "url": "https://www.cambridge.org/core/journals/business-and-politics/article/abnormal-returns-from-the-common-stock-investments-of-members-of-the-us-house-of-representatives/BC6C6A524BBE96738BB94D37EF0FD1A5",
+   "topic": "alt_signals",
+   "finding_es": "Con los mismos métodos, más de 16,000 operaciones de unos 300 diputados (1985-2001) muestran rendimientos anormales positivos en las compras, pero bastante menores que los de los senadores.",
+   "key_figure": "+55 pb mensuales (aprox. 6% anual)",
+   "key_figure_quote": "A portfolio that mimics the purchases of House Members beats the market by 55 basis points per month (approximately 6% annually).",
+   "related_strategy_ids": [
+    "congress_copy"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Confirma el efecto en la Cámara pero más chico; sigue siendo evidencia previa a 2012 y medida desde la operación."
+  },
+  {
+   "id": "eggers_hainmueller_2013",
+   "authors": "Andrew C. Eggers, Jens Hainmueller",
+   "year": 2013,
+   "title": "Capitol Losses: The Mediocre Performance of Congressional Stock Portfolios",
+   "venue": "Journal of Politics 75(2), 535-551",
+   "url": "https://eprints.lse.ac.uk/46513",
+   "topic": "alt_signals",
+   "finding_es": "Reinterpretan los estudios de 1985-2001 y analizan 2004-2008: en ninguno de los dos periodos encuentran ventaja informativa; con las carteras completas, el congresista promedio habría ganado más en un fondo indexado.",
+   "key_figure": "El congresista promedio habría ganado más en un fondo indexado pasivo (2004-2008)",
+   "key_figure_quote": "Second, we conduct the first analysis of members’ portfolio holdings, showing that between 2004 and 2008 the average member of Congress would have earned higher returns in a passive index fund.",
+   "related_strategy_ids": [
+    "congress_copy"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Contradice directamente a Ziobrowski et al. y convierte la tesis en disputada aun antes de la STOCK Act."
+  },
+  {
+   "id": "karadas_2019",
+   "authors": "Serkan Karadas",
+   "year": 2019,
+   "title": "Trading on Private Information: Evidence from Members of Congress",
+   "venue": "The Financial Review 54(1), 85-131",
+   "url": "https://ideas.repec.org/a/bla/finrev/v54y2019i1p85-131.html",
+   "topic": "alt_signals",
+   "finding_es": "En 2004-2010 las carteras compra-menos-venta de republicanos poderosos tienen los mayores rendimientos anormales, sobre todo en los menos experimentados; esos rendimientos positivos desaparecen tras la STOCK Act de 2012.",
+   "key_figure": "Más de 35% anual con tenencia de una semana (republicanos poderosos, 2004-2010)",
+   "key_figure_quote": "I examine the stock trades of members of Congress and find that over 2004–2010 the buy‐minus‐sell portfolios of powerful Republicans have the highest abnormal returns, exceeding 35% on an annual basis under a one‐week holding period.",
+   "related_strategy_ids": [
+    "congress_copy"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "La cifra es enorme pero exige operar en largo y corto en la semana de la operación (imposible para quien espera la divulgación) y el propio autor la ve desaparecer tras 2012."
+  },
+  {
+   "id": "belmont_2022",
+   "authors": "William Belmont, Bruce Sacerdote, Ranjan Sehgal, Ian Van Hoek",
+   "year": 2022,
+   "title": "Do senators and house members beat the stock market? Evidence from the STOCK Act",
+   "venue": "Journal of Public Economics 207 (versión previa: NBER w26975, 2020, \"Relief Rally\")",
+   "url": "https://ideas.repec.org/a/eee/pubeco/v207y2022ics0047272722000044.html",
+   "topic": "alt_signals",
+   "finding_es": "Con todas las operaciones de senadores y diputados de 2012 a 2020 no hay desempeño superior, ni en agregado ni en los senadores acusados de usar información privilegiada; incluso en los percentiles 95 y 99 los resultados son consistentes con elegir al azar.",
+   "key_figure": "Compras de diputados: −26 pb a seis meses; ventas: −11 pb",
+   "key_figure_quote": "Over a six-month horizon, stocks bought by House Members underperform on average by 26 basis points, while stocks sold underperform by 11 basis points.",
+   "related_strategy_ids": [
+    "congress_copy"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Es la evidencia arbitrada más directa para el periodo que puede copiarse hoy: tras la STOCK Act copiar compras no muestra ventaja ni siquiera antes de costos."
+  },
+  {
+   "id": "wei_zhou_2025",
+   "authors": "Shang-Jin Wei, Yifan Zhou",
+   "year": 2025,
+   "title": "\"Captain Gains\" on Capitol Hill",
+   "venue": "NBER Working Paper 34524",
+   "url": "https://www.nber.org/papers/w34524",
+   "topic": "alt_signals",
+   "finding_es": "Los legisladores que llegan a puestos de liderazgo rinden igual que pares comparables antes del ascenso y mucho mejor después, por influencia política (ventas antes de acciones regulatorias, compras de empresas con más contratos de gobierno) y por acceso corporativo.",
+   "key_figure": "+47 puntos porcentuales anuales frente a pares, tras el ascenso",
+   "key_figure_quote": "Using transaction-level data on US congressional stock trades, we find that lawmakers who later ascend to leadership positions perform similarly to matched peers beforehand but outperform them by 47 percentage points annually after ascension.",
+   "related_strategy_ids": [
+    "congress_copy"
+   ],
+   "reliability": "WP",
+   "how_it_changes_the_evidence_es": "Sugiere que la información existe pero se concentra en unos 20 líderes; la ventaja es relativa a otros congresistas y no está medida desde la fecha de divulgación ni neta de costos."
+  },
+  {
+   "id": "lakonishok_lee_2001",
+   "authors": "Josef Lakonishok, Inmoo Lee",
+   "year": 2001,
+   "title": "Are Insider Trades Informative?",
+   "venue": "Review of Financial Studies 14(1), 79-111",
+   "url": "https://ideas.repec.org/a/oup/rfinst/v14y2001i1p79-111.html",
+   "topic": "alt_signals",
+   "finding_es": "Con todas las empresas de NYSE, AMEX y Nasdaq (1975-1995) el mercado apenas se mueve cuando los insiders operan o reportan; sus compras predicen rendimientos de corte transversal, sobre todo en empresas pequeñas, y sus ventas no.",
+   "key_figure": "La predictibilidad se debe a empresas pequeñas y a las compras",
+   "key_figure_quote": "The result, however, is driven by insider's ability to predict returns in smaller firms.",
+   "related_strategy_ids": [
+    "insider_purchases"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Aclara dónde vive la señal: compras y empresas pequeñas, justo donde los costos de operar son mayores."
+  },
+  {
+   "id": "jeng_metrick_zeckhauser_2003",
+   "authors": "Leslie A. Jeng, Andrew Metrick, Richard Zeckhauser",
+   "year": 2003,
+   "title": "Estimating the Returns to Insider Trading: A Performance-Evaluation Perspective",
+   "venue": "Review of Economics and Statistics 85(2), 453-471 (versión previa: NBER w6913)",
+   "url": "https://ideas.repec.org/a/tpr/restat/v85y2003i2p453-471.html",
+   "topic": "alt_signals",
+   "finding_es": "Con carteras de calendario, las compras de los insiders ganan rendimientos anormales y las ventas no. En la versión NBER, una sexta parte del rendimiento llega en los primeros cinco días y un tercio en el primer mes.",
+   "key_figure": "Más de 6% anual en compras; ventas sin rendimiento anormal significativo",
+   "key_figure_quote": "We find that insider purchases earn abnormal returns of more than 6% per year, and insider sales do not earn significant abnormal returns.",
+   "related_strategy_ids": [
+    "insider_purchases"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Mide el rendimiento del propio insider desde el día siguiente a su operación; quien copia tras la divulgación pierde la parte que llega en los primeros días."
+  },
+  {
+   "id": "cohen_malloy_pomorski_2012",
+   "authors": "Lauren Cohen, Christopher Malloy, Lukasz Pomorski",
+   "year": 2012,
+   "title": "Decoding Inside Information",
+   "venue": "Journal of Finance 67(3), 1009-1043 (versión previa: NBER w16454)",
+   "url": "https://ideas.repec.org/a/bla/jfinan/v67y2012i3p1009-1043.html",
+   "topic": "alt_signals",
+   "finding_es": "Separan las operaciones rutinarias (más de la mitad del total, sin información) de las oportunistas, que concentran todo el poder predictivo; los más informados son insiders locales no ejecutivos de empresas mal gobernadas.",
+   "key_figure": "82 pb mensuales ponderados por valor (oportunistas) contra casi cero (rutinarias)",
+   "key_figure_quote": "A portfolio strategy that focuses solely on the remaining “opportunistic” traders yields value‐weighted abnormal returns of 82 basis points per month, while abnormal returns associated with routine traders are essentially zero.",
+   "related_strategy_ids": [
+    "insider_purchases"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Da la regla práctica para filtrar la señal; también muestra que los oportunistas reciben más acciones de la SEC y operan menos tras olas de sanciones, lo que anticipa que el efecto puede menguar."
+  },
+  {
+   "id": "lin_howe_1990",
+   "authors": "Ji-Chai Lin, John S. Howe",
+   "year": 1990,
+   "title": "Insider Trading in the OTC Market",
+   "venue": "Journal of Finance 45(4), 1273-1284",
+   "url": "https://ideas.repec.org/a/bla/jfinan/v45y1990i4p1273-84.html",
+   "topic": "alt_signals",
+   "finding_es": "Los insiders de empresas OTC/NASDAQ muestran capacidad de anticipar, pero los costos de transacción, sobre todo el diferencial de compra-venta, eliminan el rendimiento anormal de operar activamente; por implicación, también el de quien los imita.",
+   "key_figure": "Los diferenciales de compra-venta eliminan el rendimiento anormal",
+   "key_figure_quote": "Although the evidence suggests timing and forecasting ability on the part of insiders, high transaction costs (especially bid-ask spreads) appear to eliminate the potential for positive abnormal returns from active trading.",
+   "related_strategy_ids": [
+    "insider_purchases"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Evidencia temprana de que en acciones pequeñas la señal no sobrevive a costos para un imitador."
+  },
+  {
+   "id": "bettis_vickrey_vickrey_1997",
+   "authors": "Carr Bettis, Don Vickrey, Donn W. Vickrey",
+   "year": 1997,
+   "title": "Mimickers of Corporate Insiders Who Make Large-Volume Trades",
+   "venue": "Financial Analysts Journal 53(5), 57-66",
+   "url": "https://ideas.repec.org/a/taf/ufajxx/v53y1997i5p57-66.html",
+   "topic": "alt_signals",
+   "finding_es": "A diferencia de estudios previos, encuentran que los externos pueden obtener rendimientos anormales significativos imitando las operaciones de gran volumen de los insiders después de que se reportan.",
+   "related_strategy_ids": [
+    "insider_purchases"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Es el principal apoyo a que copiar tras la divulgación funcione, limitado a operaciones grandes; el resumen no reporta cifras netas de costos."
+  },
+  {
+   "id": "gangopadhyay_yook_2021",
+   "authors": "Partha Gangopadhyay, Ken Yook",
+   "year": 2021,
+   "title": "Profits to opportunistic insider trading before and after the Dodd-Frank act of 2010",
+   "venue": "Journal of Financial Regulation and Compliance 30",
+   "url": "https://ideas.repec.org/a/eme/jfrcpp/jfrc-02-2021-0018.html",
+   "topic": "alt_signals",
+   "finding_es": "Con la clasificación de Cohen, Malloy y Pomorski, las compras oportunistas eran muy rentables antes de Dodd-Frank y significativamente menos después.",
+   "key_figure": "Ganancias de compras oportunistas significativamente menores tras 2010",
+   "key_figure_quote": "Profits after opportunistic purchases were significantly lower after the DFA.",
+   "related_strategy_ids": [
+    "insider_purchases"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Evidencia de deterioro posterior a 2010 del mejor filtro publicado; revista de menor perfil."
+  },
+  {
+   "id": "zhao_2026",
+   "authors": "Hangyi Zhao",
+   "year": 2026,
+   "title": "Insider Purchases Far Below the 52-Week High: Decomposing the Disclosure Reaction in Microcap Equities",
+   "venue": "arXiv 2602.06198",
+   "url": "https://arxiv.org/abs/2602.06198",
+   "topic": "alt_signals",
+   "finding_es": "En compras de insiders de empresas de 30 a 500 millones de dólares (2018-2024), la reacción al Formulario 4 es grande el primer día, sobre todo lejos del máximo de 52 semanas, pero dura dos o tres sesiones y una cartera que salta el primer día no obtiene alfa significativa.",
+   "key_figure": "Reacción de 2 a 3 sesiones; sin alfa significativa si se salta el primer día",
+   "key_figure_quote": "The reaction runs for two to three sessions; the 29-day drift is imprecise (two-way t = 1.70) and a calendar-time portfolio that skips the first day earns no significant alpha.",
+   "related_strategy_ids": [
+    "insider_purchases"
+   ],
+   "reliability": "WP",
+   "how_it_changes_the_evidence_es": "Evidencia reciente de que, tras la divulgación, casi todo el efecto se cobra de inmediato; quien llega un día tarde no captura alfa significativa. Autor único, sin arbitraje."
+  },
+  {
+   "id": "chen_parsley_yang_2015",
+   "authors": "Hui Chen, David Parsley, Ya-Wen Yang",
+   "year": 2015,
+   "title": "Corporate Lobbying and Firm Performance",
+   "venue": "Journal of Business Finance & Accounting 42(3-4), 444-481",
+   "url": "https://ideas.repec.org/a/bla/jbfnac/v42y2015i3-4p444-481.html",
+   "topic": "alt_signals",
+   "finding_es": "Con datos de la Lobbying Disclosure Act de 1995, el cabildeo se relaciona positivamente con el desempeño contable y de mercado; las carteras de empresas con mayor intensidad de cabildeo superan a sus referencias en los tres años siguientes.",
+   "key_figure": "Las carteras con mayor intensidad de cabildeo superan su referencia durante tres años",
+   "key_figure_quote": "We find that portfolios of firms with the highest lobbying intensities significantly outperform their benchmarks in the three years following portfolio formation.",
+   "related_strategy_ids": [
+    "congress_copy"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "Da contexto al cabildeo como característica de la empresa; es una señal lenta de corte transversal y no prueba que copiar a políticos funcione. Publicado en JBFA, no en JFQA."
+  },
+  {
+   "id": "palkar_larson_larson_2012",
+   "authors": "Darshana D. Palkar, Stephen J. Larson, Robert B. Larson",
+   "year": 2012,
+   "title": "The valuation effects of military contract awards surrounding 11th September",
+   "venue": "Applied Financial Economics 22(2), 147-164",
+   "url": "https://ideas.repec.org/a/taf/apfiec/v22y2012i2p147-164.html",
+   "topic": "alt_signals",
+   "finding_es": "Los ganadores de contratos militares tienen rendimientos anormales positivos el día del anuncio antes y después del 11 de septiembre de 2001; a largo plazo, los contratos posteriores al 11-S parecen haber estado subfinanciados.",
+   "key_figure": "Rendimiento anormal positivo el día del anuncio del contrato",
+   "key_figure_quote": "Consistent with previous studies, we find positive abnormal returns on the announcement day for both pre and post 11 September 2001 contracts.",
+   "related_strategy_ids": [
+    "congress_copy"
+   ],
+   "reliability": "journal",
+   "how_it_changes_the_evidence_es": "El anuncio de un contrato de gobierno mueve el precio el mismo día; para quien lo ve en una base de datos días después, el efecto ya ocurrió."
+  }
+ ],
+ "methods": [
+  {
+   "id": "psr",
+   "name": "Probabilistic Sharpe Ratio (PSR)",
+   "citing_paper": "Bailey y López de Prado (2012), 'The Sharpe Ratio Efficient Frontier', Journal of Risk; actualizado en López de Prado, Lipton y Zoonekynd (JPM 2026)",
+   "url": "https://www.davidhbailey.com/dhbpapers/sharpe-frontier.pdf",
+   "formula": "SR = media/desv (misma frecuencia que los datos, NO anualizado). PSR(SR*) = Φ( (SR − SR*)·√(n−1) / √(1 − γ3·SR + ((γ4 − 1)/4)·SR²) ), con γ3 = asimetría y γ4 = curtosis NO en exceso (normal = 3).",
+   "algorithm": "1) Calcular media, desviación estándar muestral, asimetría y curtosis de los rendimientos en exceso. 2) SR = media/desv. 3) Convertir el umbral SR* a la misma frecuencia (anual/√f). 4) Aplicar la fórmula con Φ = CDF normal estándar (en JS: implementar erf, p. ej. Abramowitz-Stegun 7.1.26, o el algoritmo de Hart/West).",
+   "test_vector": "Del código del paper: media=2, desv=√12, γ3=−0.72, γ4=5.78, SR*=1/√12, n=59.895 → PSR ≈ 0.95 (recalculado aquí: 0.9500).",
+   "notes": "Supone rendimientos IID (no corrige autocorrelación). La versión 2026 de López de Prado et al. añade corrección por autocorrelación, pero no se leyó su fórmula exacta."
+  },
+  {
+   "id": "min_trl",
+   "name": "Minimum Track Record Length (MinTRL)",
+   "citing_paper": "Bailey y López de Prado (2012), Journal of Risk",
+   "url": "https://www.davidhbailey.com/dhbpapers/sharpe-frontier.pdf",
+   "formula": "MinTRL = 1 + (1 − γ3·SR + ((γ4 − 1)/4)·SR²) · ( Z_α / (SR − SR*) )², en número de observaciones; Z_α = Φ⁻¹(confianza), p. ej. 1.645 para 95%. Solo definido si SR > SR*.",
+   "algorithm": "Mismos insumos que PSR. Dividir el resultado entre el número de periodos por año para expresarlo en años.",
+   "test_vector": "Rendimientos normales (γ3=0, γ4=3), SR anual 2 vs. umbral 1, 95%: diario (f=250) → 2.73 años; semanal (52) → 2.83 años; mensual (12) → 3.24 años (cifras del paper, reproducidas aquí). Con el vector del PSR → 59.895 observaciones.",
+   "notes": "El paper advierte que los momentos deben estimarse con series suficientemente largas (TCL)."
+  },
+  {
+   "id": "dsr",
+   "name": "Deflated Sharpe Ratio (DSR) y número efectivo de pruebas",
+   "citing_paper": "Bailey y López de Prado (2014), 'The Deflated Sharpe Ratio', Journal of Portfolio Management",
+   "url": "https://www.davidhbailey.com/dhbpapers/deflated-sharpe.pdf",
+   "formula": "SR0 = √V[{SR_n}] · ( (1 − γ)·Φ⁻¹(1 − 1/N) + γ·Φ⁻¹(1 − 1/(N·e)) ), con γ ≈ 0.5772156649 (Euler-Mascheroni), V = varianza de los Sharpe (no anualizados) de todas las pruebas, N = número de pruebas independientes. DSR = PSR(SR*=SR0). Si las M pruebas están correlacionadas con correlación promedio ρ̄: N̂ = ρ̄ + (1 − ρ̄)·M (interpolación del Apéndice A.3: N̂→1 si ρ̄→1 y N̂→M si ρ̄→0).",
+   "algorithm": "1) Guardar el Sharpe de TODAS las variantes probadas. 2) Calcular V y N (o N̂). 3) SR0 = Sharpe máximo esperado por azar. 4) DSR = PSR con umbral SR0 usando T, asimetría y curtosis de la estrategia elegida. DSR < 0.95 → no es un descubrimiento al 95%.",
+   "test_vector": "Autoconsistencia (insumos elegidos aquí, no leídos del paper): N=100, V anual=0.5 (→0.5/250 diario), SR anual 2.5 en T=1250 días, γ3=−3, γ4=10 → SR0 ≈ 0.1132 (diario), DSR ≈ 0.900. El código del Apéndice usa maxZ=(1−emc)·Φ⁻¹(1−1/N)+emc·Φ⁻¹(1−1/(N·e)).",
+   "notes": "El texto del ejemplo numérico del PDF no se pudo extraer limpiamente; la fórmula se confirmó con el código Python del apéndice del paper."
+  },
+  {
+   "id": "pbo_cscv",
+   "name": "Probabilidad de sobreajuste del backtest (PBO) vía CSCV",
+   "citing_paper": "Bailey, Borwein, López de Prado y Zhu (2017), 'The Probability of Backtest Overfitting', Journal of Computational Finance",
+   "url": "https://scholarworks.wmich.edu/math_pubs/42",
+   "formula": "Para cada combinación c: n* = argmax del desempeño IS; ω̄_c = rango OOS de n* / (N + 1); λ_c = ln(ω̄_c / (1 − ω̄_c)). PBO = proporción de combinaciones con λ_c ≤ 0 (la mejor estrategia IS queda en o por debajo de la mediana OOS).",
+   "algorithm": "1) Matriz M de T×N (T periodos, N configuraciones probadas, rendimientos alineados). 2) Partir las filas en S bloques contiguos iguales (S par, p. ej. 8 o 16). 3) Para cada una de las C(S, S/2) combinaciones: IS = unión de S/2 bloques, OOS = los demás. 4) Calcular el Sharpe de cada configuración en IS y en OOS. 5) Tomar n* (mejor IS), su rango en OOS (1 = peor, N = mejor), ω̄ y λ. 6) PBO = #(λ ≤ 0)/C. Opcional: regresión SR_OOS vs SR_IS de n* (degradación) y Prob[SR_OOS(n*) < 0]. S=16 → 12,870 combinaciones (viable en el navegador).",
+   "test_vector": "Prueba nula sugerida: N columnas de ruido IID → PBO ≈ 0.5. El paper reporta PBO de 74% para un ejemplo sobreajustado y 4% para una estrategia real (figuras 2-3).",
+   "notes": "Fuente del algoritmo: versión PDF https://www.davidhbailey.com/dhbpapers/backtest-prob.pdf (pasos a-g, sección 2)."
+  },
+  {
+   "id": "lo_sharpe_se_annualization",
+   "name": "Error estándar del Sharpe y anualización con autocorrelación (Lo)",
+   "citing_paper": "Lo (2002), 'The Statistics of Sharpe Ratios', Financial Analysts Journal 58(4)",
+   "url": "https://traders.studentorg.berkeley.edu/papers/The-Statistics-of-Sharpe-Ratios.pdf",
+   "formula": "IID: SE(SR) ≈ √((1 + SR²/2)/T). Anualización: SR(q) = η(q)·SR con η(q) = q / √( q + 2·Σ_{k=1}^{q−1} (q − k)·ρ_k ), ρ_k = autocorrelación de orden k; con ρ_k = 0, η = √q.",
+   "algorithm": "1) Estimar ρ_1..ρ_{q−1} de los rendimientos mensuales. 2) Calcular η(12). 3) Comparar con √12 para mostrar cuánto infla la autocorrelación el Sharpe anual. 4) IC 95% ≈ SR ± 1.96·SE.",
+   "test_vector": "q=12: IID → 3.46; AR(1) con ρ=0.2 → 2.88 (cifras del paper).",
+   "notes": "Lo reporta que el Sharpe anual de un hedge fund puede estar sobrestimado hasta 65% por autocorrelación."
+  },
+  {
+   "id": "haircut_sharpe",
+   "name": "Haircut del Sharpe por pruebas múltiples (Bonferroni, Holm, BHY)",
+   "citing_paper": "Harvey y Liu (2015), 'Backtesting', Journal of Portfolio Management",
+   "url": "https://people.duke.edu/~charvey/Research/Published_Papers/P120_Backtesting.PDF",
+   "formula": "t = SR_anual·√(T_meses/12); p = 2·(1 − Φ(|t|)). Ordenar p(1) ≤ … ≤ p(M). Bonferroni: min(M·p(i), 1). Holm: p(i)^H = min(max_{j≤i} (M − j + 1)·p(j), 1). BHY: p(M)^BHY = p(M); p(i)^BHY = min(p(i+1)^BHY, M·c(M)/i · p(i)) para i ≤ M−1, con c(M) = Σ_{j=1}^{M} 1/j. Sharpe ajustado: t* = Φ⁻¹(1 − p*/2), HSR = t*/√(T/12); haircut = (SR − HSR)/SR.",
+   "algorithm": "Dado el número de estrategias probadas M (o un supuesto) y los p-valores, calcular p ajustado con los tres métodos y convertirlo de vuelta a Sharpe. Mostrar que el haircut es no lineal: los Sharpe altos se castigan poco y los marginales mucho.",
+   "test_vector": "Ejemplo del paper, M=6, p = (0.005, 0.009, 0.0128, 0.0135, 0.045, 0.06): Bonferroni → (0.03, 0.054, 0.0768, 0.081, 0.270, 0.36); Holm p(2) = 0.045, p(3) = 0.0512; BHY con c(6) = 2.45 → p(6) = 0.06, p(5) = 0.06, p(4) = 0.0496 (y p(1..3) = 0.0496 recalculado aquí).",
+   "notes": "El programa de los autores además ajusta por correlación entre estrategias y autocorrelación (ejemplo: SR 1.0 en 120 meses, 100 pruebas, ρ 0.4 → BHY 0.438, haircut 52%); esa versión no es replicable solo con estas fórmulas."
+  },
+  {
+   "id": "fdr_easy_bound",
+   "name": "Cota simple de la tasa de falsos descubrimientos (Easy Bound)",
+   "citing_paper": "Chen (2025), 'Most claimed statistical findings in cross-sectional return predictability are likely true', arXiv 2206.15365",
+   "url": "https://arxiv.org/abs/2206.15365",
+   "formula": "FDR_{|t|>2} = Pr(|t|>2 | nula)·Pr(nula) / Pr(|t|>2) ≤ 5% / Pr(|t|>2), donde Pr(|t|>2) se estima con la fracción de señales probadas que tienen |t| > 2.",
+   "algorithm": "Si el usuario probó K variantes y una fracción s tiene |t|>2: FDR máx = min(1, 0.05/s). Si s ≈ 5%, la cota es 100% (nada distingue sus hallazgos del azar).",
+   "test_vector": "s = 20% → FDR ≤ 25% (ejemplo del paper).",
+   "notes": "Solo vale si las variantes probadas son todas las que se intentaron (no solo las que se reportan)."
+  },
+  {
+   "id": "oos_retention_prior",
+   "name": "Descuento fuera de muestra por publicación/minería",
+   "citing_paper": "Chen, Lopez-Lira y Zimmermann (2025), arXiv 2212.10317 (≈50% persiste); McLean y Pontiff 2016 (ya en la base)",
+   "url": "https://arxiv.org/abs/2212.10317",
+   "formula": "Rendimiento esperado OOS ≈ retención × rendimiento IS, con retención ≈ 0.5 (minería o revisión por pares) — consistente con 0.42 de McLean y Pontiff.",
+   "algorithm": "Aplicar como prior por defecto antes de costos; restar después costos de transacción y de préstamo (Muravyev et al. 2025).",
+   "test_vector": null,
+   "notes": "Regla gruesa; no sustituye a DSR/PBO."
+  }
+ ],
+ "kb_source_updates": [
+  {
+   "kb_label": "Jensen, Kelly y Pedersen, NBER w28432 [WP]",
+   "suggested": "Jensen, Kelly y Pedersen, Journal of Finance 78(5):2465-2518 (2023)",
+   "url": "https://ideas.repec.org/a/bla/jfinan/v78y2023i5p2465-2518.html",
+   "note": "Versión publicada; el abstract confirma 93 países y 13 temas. Permite quitar la marca [WP]."
+  },
+  {
+   "kb_label": "Lopez-Lira y Tang, arXiv 2304.07619",
+   "suggested": "Citar la versión de oct-2025 (abstract nuevo)",
+   "url": "https://arxiv.org/abs/2304.07619",
+   "note": "El abstract actual usa solo titulares posteriores al corte y reporta decaimiento por adopción; ver lopez_lira_tang_2025_update."
+  }
+ ],
+ "dropped_unverified": [
+  "Cartea, Jin y Shi, 'The Limited Virtue of Complexity in a Noisy World' (solo citado en fuentes secundarias; no se encontró página verificable)",
+  "Arian, Norouzi y Seco, 'Backtest overfitting in the machine learning era' (Knowledge-Based Systems 2024): no se localizó",
+  "Zuluaga-Rendón y Agudelo, 'Nonparametric identification of factors for the cross-section of Latin American stock returns' (Global Finance Journal 68, 2025): solo referencia bibliográfica, sin abstract accesible",
+  "No se encontraron papers 2023-2026 específicos de México (factores o calendario) verificables; lo más cercano ya está en la base (Berggrun et al. RIBAF 2024, Villarreal-Samaniego et al. 2022)"
+ ],
+ "etfs": [
+  {
+   "symbol": "NANC",
+   "name": "Unusual Whales Subversive Democratic Trading ETF (listado en Cboe como Subversive Congressional Democrats Trading ETF)",
+   "what_it_copies": "Acciones compradas o vendidas por miembros demócratas del Congreso de EE. UU. y sus cónyuges, según las declaraciones de la STOCK Act.",
+   "inception": "2023-02-07",
+   "source_url": "https://www.cboe.com/us/equities/listings/listed_products/symbols/NANC/",
+   "short_es": "Copia a congresistas demócratas"
+  },
+  {
+   "symbol": "GOP",
+   "name": "Unusual Whales Subversive Republican Trading ETF (cambió su ticker a GOP en marzo de 2025)",
+   "what_it_copies": "Acciones compradas o vendidas por miembros republicanos del Congreso de EE. UU. y sus cónyuges, según las declaraciones de la STOCK Act.",
+   "inception": "2023-02-07",
+   "source_url": "https://www.cboe.com/us/equities/listings/listed_products/symbols/GOP/",
+   "short_es": "Copia a congresistas republicanos",
+   "former_symbol": "KRUZ"
+  }
+ ]
+}
