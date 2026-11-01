@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fincept Lite Terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&display=swap">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand">FINCEPT<small>LITE</small></div>
+    <div class="cmd">
+      <input id="cmd" autocomplete="off" spellcheck="false" placeholder="AAPL · BUY 10 MSFT · NEWS · AI ¿cómo va el IBEX? · HELP   ( / para enfocar )">
+      <div class="suggest" id="suggest"></div>
+    </div>
+    <div class="badges" id="badges"></div>
+    <div class="clock" id="clock"></div>
+    <div class="user" id="user" title="Perfil (F12)"></div>
+  </header>
+  <nav class="tabs" id="tabs"></nav>
+  <div class="tape"><div class="tape-inner" id="tape">Cargando cotizaciones…</div></div>
+  <main id="screen"></main>
+  <footer class="status">
+    <span><span class="dot" id="wsdot"></span><span id="wsstate">DESCONECTADO</span></span>
+    <span id="topics">0 tópicos</span>
+    <span id="lastmsg">—</span>
+    <span class="sp"></span>
+    <span>F1–F12 pantallas · / comando · ESC cerrar</span>
+    <span id="ver"></span>
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+<script src="/static/chart.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
