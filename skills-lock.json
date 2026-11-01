@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "skills": {
+    "backtesting-frameworks": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/quantitative-trading/skills/backtesting-frameworks/SKILL.md",
+      "computedHash": "c186baf4119dafbf2e457abef8c6aebc10177074c4be4b8118edbbb3c396f869"
+    },
+    "economic-calendar-fetcher": {
+      "source": "tradermonty/claude-trading-skills",
+      "sourceType": "github",
+      "skillPath": "skills/economic-calendar-fetcher/SKILL.md",
+      "computedHash": "4108dfe3ea5f6e1832170962ab863ffe2d66003329a79115ebd51d8f152c9898"
+    },
+    "equity-research": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/partner-built/lseg/skills/equity-research/SKILL.md",
+      "computedHash": "dc02cfb86e237e6c82db8bce7ed34bbd7cea6e6736d49b2c72b6615ac9518e6f"
+    },
+    "fastapi": {
+      "source": "fastapi/fastapi",
+      "sourceType": "github",
+      "skillPath": "fastapi/.agents/skills/fastapi/SKILL.md",
+      "computedHash": "2f0ff30756b435168276e1a7eb78c07856118575ea174535de7ed86dc88c9be4"
+    },
+    "macro-rates-monitor": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/partner-built/lseg/skills/macro-rates-monitor/SKILL.md",
+      "computedHash": "143cb50a4d243291d850f29dcf1425bd078b2207c06da7ba13ffd73b8731f7cb"
+    },
+    "mcp-builder": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/mcp-builder/SKILL.md",
+      "computedHash": "863dfe94bc38b62389884e78fee7f0a9c31bd74a6032f602eb84a66f4b8315c9"
+    },
+    "option-vol-analysis": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/partner-built/lseg/skills/option-vol-analysis/SKILL.md",
+      "computedHash": "2189582b63f63a38b62876b993cc2beaf73bbf9701d60720084fef3001dcbd1c"
+    },
+    "yfinance-data": {
+      "source": "himself65/finance-skills",
+      "sourceType": "github",
+      "skillPath": "plugins/market-analysis/skills/yfinance-data/SKILL.md",
+      "computedHash": "799f4feaeb776fc7a865ad78083c7a04f0fdd4ec81d01c0c184d29746d34d2b5"
+    }
+  }
+}
