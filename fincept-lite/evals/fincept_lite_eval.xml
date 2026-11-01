@@ -1,0 +1,50 @@
+<!--
+  Fincept Lite MCP evaluation (mcp-builder skill, phase 4).
+  10 read-only questions with stable answers: historical DBnomics observations
+  (final data, no longer revised), deterministic Black-Scholes maths and the
+  server's own tool policy. Live quotes are deliberately avoided (answers change).
+  Answers were verified by calling the server's tools on 2026-11-01.
+  Run instructions: see "Evaluación del servidor MCP" in fincept-lite/README.md.
+-->
+<evaluation>
+  <qa_pair>
+    <question>Using the macro data tools, find the monthly series of the US effective federal funds rate. What was its value for July 2019? Answer with the number only.</question>
+    <answer>2.4</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>What was the seasonally adjusted US unemployment rate (BLS) in the month it peaked during 2020? Answer with the number only.</question>
+    <answer>14.8</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>In which month did euro area annual HICP inflation (all items, Eurostat) reach its highest value since 2010? Answer in YYYY-MM format.</question>
+    <answer>2022-10</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>On what date did the ECB deposit facility rate first become positive after its negative-rate era? Answer in YYYY-MM-DD format.</question>
+    <answer>2022-09-14</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Take the seasonally adjusted US unemployment rate for September 2019 and subtract the value for October 2009. What is the result in percentage points? Answer with the number only.</question>
+    <answer>-6.5</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Find the month in which the US unemployment rate peaked during 2020. What was the monthly US effective federal funds rate in that same month? Answer with the number only.</question>
+    <answer>0.05</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Price a 1-year (365-day) European call option with spot 100, strike 100, a 5% risk-free rate, 20% volatility and no dividends using Black-Scholes. What is its value rounded to 2 decimals?</question>
+    <answer>10.45</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>A 90-day European put with strike 105 on a stock trading at 100 costs 7.50. With a 3% risk-free rate, what is its Black-Scholes implied volatility in percent, rounded to 1 decimal? Answer with the number only.</question>
+    <answer>25.3</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>What is the Black-Scholes delta of a European put with spot 50, strike 55, 182 days to expiry, a 2% risk-free rate and 30% volatility, rounded to 2 decimals?</question>
+    <answer>-0.62</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Which tool exposed by this MCP server requires the user's approval in the terminal for every call made by an external agent? Answer with the exact tool name.</question>
+    <answer>pt_place_order</answer>
+  </qa_pair>
+</evaluation>

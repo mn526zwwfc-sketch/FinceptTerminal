@@ -78,7 +78,16 @@ async def dataset_series(provider: str, dataset: str, query: str = "", limit: in
     ]
 
 
-async def observations(series_id: str, limit: int = 120) -> dict:
+def in_range(period: str, start: str | None, end: str | None) -> bool:
+    """Compara periodos DBnomics por prefijo: '2019-07' cubre '2019-07-31'; '2020' cubre '2020-Q2'."""
+    if start and period[: len(start)] < start:
+        return False
+    if end and period[: len(end)] > end:
+        return False
+    return True
+
+
+async def observations(series_id: str, limit: int = 120, start: str | None = None, end: str | None = None) -> dict:
     if not SERIES_ID.match(series_id):
         raise MacroError("series_id must look like PROVIDER/DATASET/SERIES")
     data = await _get(f"/series/{series_id}", {"observations": 1, "format": "json"})
@@ -88,9 +97,11 @@ async def observations(series_id: str, limit: int = 120) -> dict:
     d = docs[0]
     pts = [{"period": p, "value": v} for p, v in zip(d.get("period", []), d.get("value", []))
            if isinstance(v, (int, float))]
+    window = [x for x in pts if in_range(x["period"], start, end)] if (start or end) else pts
     return {
         "id": series_id, "name": d.get("series_name"), "dataset": d.get("dataset_name"),
-        "frequency": d.get("@frequency"), "last_period": pts[-1]["period"] if pts else None,
-        "last_value": pts[-1]["value"] if pts else None, "observations": pts[-limit:],
+        "frequency": d.get("@frequency"), "first_available": pts[0]["period"] if pts else None,
+        "last_period": pts[-1]["period"] if pts else None, "last_value": pts[-1]["value"] if pts else None,
+        "matched": len(window), "returned": min(limit, len(window)), "observations": window[-limit:],
         "source": "DBnomics",
     }

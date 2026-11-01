@@ -93,7 +93,7 @@ Está en `src/mcp/server/McpHttpServer*.cpp` y expone las ~900 tools internas a 
 | PaperTrading + OrderMatcher | ✅ market/limit/stop, P&L, sin cortos | `server/paper.py` |
 | Backtesting (motor de Fincept) | ✅ sin look-ahead (ejecución en la siguiente apertura), comisión + slippage, benchmark alineado, Monte Carlo, validación hold-out y walk-forward | `server/backtest.py` |
 | McpProvider (catálogo de tools) | ✅ 25 tools + 8 meta-tools | `server/tools.py` |
-| McpHttpServer (todo lo de §1.3) | ✅ incluida la aprobación por llamada | `server/mcp_server.py` |
+| McpHttpServer (todo lo de §1.3) | ✅ incluida la aprobación por llamada; revisado con la skill mcp-builder: anotaciones completas, `structuredContent`, `response_format` json/markdown, paginación, errores accionables, límite de 120 llamadas/min | `server/mcp_server.py` |
 | AI Chat + ToolDispatcher | ✅ Claude con *tool use*, o un agente offline determinista | `server/ai_chat.py` |
 | UI Qt (tema Obsidian, barra de comandos, F1–F12, ticker, paneles) | ✅ web, sin dependencias | `web/` |
 
@@ -142,8 +142,22 @@ Barra de comandos (`/` o `Ctrl+K`): `AAPL` · `SAN.MC GO` · `BUY 10 NVDA` · `S
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest -q      # 45 tests: auth, /v1, mercado, paper, DataHub, MCP, backtesting sin sesgos, analítica, chat
+.venv/bin/python -m pytest -q      # 53 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting sin sesgos, analítica, chat
 ```
+
+### Evaluación del servidor MCP
+
+`evals/fincept_lite_eval.xml` contiene 10 preguntas de solo lectura con respuesta estable (series históricas de DBnomics, cálculos Black-Scholes y la política de las tools), verificadas contra el servidor. Se ejecutan con el arnés de la skill `mcp-builder`, que necesita una clave de Anthropic y el SDK de MCP **1.x** (el script importa `streamablehttp_client`, que ya no existe en `mcp` 2.x):
+
+```bash
+python3 -m venv /tmp/evalenv && /tmp/evalenv/bin/pip install "mcp<2" anthropic
+FINCEPT_DATA_MODE=live ./run.sh &          # las preguntas usan DBnomics en vivo
+ANTHROPIC_API_KEY=sk-ant-… /tmp/evalenv/bin/python ../.claude/skills/mcp-builder/scripts/evaluation.py \
+  -t http -u http://127.0.0.1:41800/mcp -H "Authorization: Bearer fmcp_…" -m claude-opus-5-5 \
+  evals/fincept_lite_eval.xml
+```
+
+El token sale de la pestaña F11. Pasa `-m` explícitamente: el script trae por defecto un modelo antiguo.
 
 ## 7. Límites y diferencias
 

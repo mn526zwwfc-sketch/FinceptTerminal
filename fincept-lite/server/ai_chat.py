@@ -201,7 +201,7 @@ async def run_offline(ctx: ToolContext, sid: str, text: str) -> tuple[str, list[
         items = await use("get_equity_news", {"symbol": syms[0], "limit": 6}) if syms else \
             await use("get_top_news", {"limit": 8})
         lines.append(f"**Noticias{' de ' + syms[0] if syms else ''}**")
-        for n in items or []:
+        for n in (items or {}).get("items", []):
             tag = {"positive": "▲", "negative": "▼"}.get(n["sentiment"], "•")
             lines.append(f"{tag} {n['title']} — _{n['source']}_")
     elif has("riesgo", "risk", "var", "volatil", "sharpe", "drawdown") and syms:

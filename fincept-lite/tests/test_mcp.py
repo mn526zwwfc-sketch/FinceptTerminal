@@ -90,7 +90,7 @@ def test_read_tool_and_discovery(mcp):
     _, via = mcp["call"]("tool_invoke", {"tool": "get_quote", "arguments": {"symbol": "MSFT"}})
     assert via["symbol"] == "MSFT"
     res, err = mcp["call"]("get_quote", {"symbol": "AAPL", "extra": 1})
-    assert res["isError"] and "unknown argument" in err
+    assert res["isError"] and "Unknown argument 'extra'" in err and "symbol" in err
 
 
 def test_destructive_tools_need_permission_and_approval(client, mcp):

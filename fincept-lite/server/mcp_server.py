@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import secrets
 import shutil
 import sys
@@ -42,7 +43,8 @@ from .auth import require_auth
 from .config import ROOT, VERSION, settings
 from .datahub import hub
 from .db import get_db
-from .tools import REGISTRY, ToolContext, ToolError, call_tool, search_tools
+from .formatting import to_markdown
+from .tools import REGISTRY, ToolContext, ToolDef, ToolError, call_tool, search_tools
 
 router = APIRouter()
 
@@ -53,30 +55,60 @@ ESSENTIAL_READS = ["get_quote", "get_quotes", "get_history", "lookup_symbol", "g
                    "bs_option_price", "pt_get_account", "pt_get_orders", "get_watchlists"]
 APPROVAL_TIMEOUT_S = 90
 
+def _p(typ: str, desc: str, **kw) -> dict:
+    return {"type": typ, "description": desc, **kw}
+
+
+_RO = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
+JOB_ID = _p("string", "Id returned in a {job_id, status:'running'} receipt.", maxLength=40)
 META_TOOLS: dict[str, dict] = {
-    "tool_list": {"description": "Search the whole tool catalogue (BM25). Returns names + one-line descriptions.",
-                  "inputSchema": {"type": "object", "properties": {"query": {"type": "string"},
-                                                                    "limit": {"type": "integer"}}}},
-    "tool_describe": {"description": "Full input schema of one tool.",
-                      "inputSchema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
-    "tool_invoke": {"description": "Call any tool found through tool_list. Same policy as calling it directly.",
-                    "inputSchema": {"type": "object", "properties": {"tool": {"type": "string"},
-                                                                      "arguments": {"type": "object"}},
-                                    "required": ["tool"]}},
-    "job_status": {"description": "Status of a long-running job; waits up to wait_ms (max 30000) for completion.",
-                   "inputSchema": {"type": "object", "properties": {"job_id": {"type": "string"},
-                                                                     "wait_ms": {"type": "integer"}},
-                                   "required": ["job_id"]}},
-    "job_result": {"description": "Result of a finished job.",
-                   "inputSchema": {"type": "object", "properties": {"job_id": {"type": "string"}}, "required": ["job_id"]}},
-    "job_cancel": {"description": "Cancel a running job.",
-                   "inputSchema": {"type": "object", "properties": {"job_id": {"type": "string"}}, "required": ["job_id"]}},
-    "job_list": {"description": "Your recent jobs.", "inputSchema": {"type": "object", "properties": {}}},
-    "result_fetch": {"description": "Page through a result that exceeded the response budget.",
-                     "inputSchema": {"type": "object", "properties": {"result_id": {"type": "string"},
-                                                                       "offset": {"type": "integer"},
-                                                                       "limit": {"type": "integer"}},
-                                     "required": ["result_id"]}},
+    "tool_list": {"title": "Search tool catalogue",
+                  "description": "Search the whole tool catalogue (BM25) by what you need, e.g. 'option pricing' "
+                                 "or 'unemployment'. Returns names, one-line descriptions and whether they change "
+                                 "state. Then call tool_describe or tool_invoke.",
+                  "inputSchema": {"type": "object", "additionalProperties": False, "properties": {
+                      "query": _p("string", "What you need, in plain words.", maxLength=120),
+                      "limit": _p("integer", "Max tools to return (default 15).", minimum=1, maximum=50)}},
+                  "annotations": _RO},
+    "tool_describe": {"title": "Describe a tool", "description": "Full input schema, annotations and policy of one "
+                                                                "tool found with tool_list.",
+                      "inputSchema": {"type": "object", "additionalProperties": False, "required": ["name"],
+                                      "properties": {"name": _p("string", "Tool name, e.g. 'get_history'.")}},
+                      "annotations": _RO},
+    "tool_invoke": {"title": "Invoke any tool",
+                    "description": "Call any built-in tool found through tool_list (useful when it is not in your "
+                                   "tool list). Same policy as calling it directly: state-changing tools may be "
+                                   "refused or need the user's approval.",
+                    "inputSchema": {"type": "object", "additionalProperties": False, "required": ["tool"],
+                                    "properties": {"tool": _p("string", "Tool name."),
+                                                   "arguments": _p("object", "Arguments for that tool.")}},
+                    "annotations": {"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False,
+                                    "openWorldHint": True}},
+    "job_status": {"title": "Job status", "description": "Status of a long-running job (running, completed, failed, "
+                                                       "cancelled). Waits up to wait_ms for it to finish.",
+                   "inputSchema": {"type": "object", "additionalProperties": False, "required": ["job_id"],
+                                   "properties": {"job_id": JOB_ID, "wait_ms": _p(
+                                       "integer", "Max milliseconds to wait (0-30000).", minimum=0, maximum=30000)}},
+                   "annotations": {**_RO, "idempotentHint": False}},
+    "job_result": {"title": "Job result", "description": "Result of a completed job (same format as the tool).",
+                   "inputSchema": {"type": "object", "additionalProperties": False, "required": ["job_id"],
+                                   "properties": {"job_id": JOB_ID}}, "annotations": _RO},
+    "job_cancel": {"title": "Cancel job", "description": "Cancel a running job.",
+                   "inputSchema": {"type": "object", "additionalProperties": False, "required": ["job_id"],
+                                   "properties": {"job_id": JOB_ID}},
+                   "annotations": {"readOnlyHint": False, "destructiveHint": True, "idempotentHint": True,
+                                   "openWorldHint": False}},
+    "job_list": {"title": "List jobs", "description": "Your 20 most recent jobs and their status.",
+                 "inputSchema": {"type": "object", "additionalProperties": False, "properties": {}},
+                 "annotations": {**_RO, "idempotentHint": False}},
+    "result_fetch": {"title": "Fetch truncated result",
+                     "description": "Page through a result that exceeded the response budget (its first part came "
+                                    "back with truncated=true and a result_id).",
+                     "inputSchema": {"type": "object", "additionalProperties": False, "required": ["result_id"],
+                                     "properties": {"result_id": _p("string", "result_id from the truncation note."),
+                                                    "offset": _p("integer", "Character offset.", minimum=0),
+                                                    "limit": _p("integer", "Characters to return.", minimum=1)}},
+                     "annotations": _RO},
 }
 
 
@@ -86,6 +118,7 @@ class Job:
     user_id: int
     tool: str
     task: asyncio.Task
+    fmt: str = "json"
     started: float = field(default_factory=time.time)
     finished: float | None = None
 
@@ -96,6 +129,7 @@ class UserMcpState:
     activity: deque = field(default_factory=lambda: deque(maxlen=200))
     clients: dict = field(default_factory=dict)  # user-agent -> clientInfo.name
     approvals: dict = field(default_factory=dict)  # approval_id -> Future
+    calls: deque = field(default_factory=deque)  # timestamps para el rate limit
 
 
 JOBS: dict[str, Job] = {}
@@ -115,9 +149,34 @@ def rpc_error(id_: Any, code: int, message: str) -> dict:
     return {"jsonrpc": "2.0", "id": id_, "error": {"code": code, "message": message}}
 
 
+log = logging.getLogger("fincept.mcp")
+RATE_LIMIT_CALLS, RATE_LIMIT_WINDOW = 120, 60.0
+RESPONSE_FORMAT = {"type": "string", "enum": ["json", "markdown"], "default": "json",
+                   "description": "'json' (default) for structured data, 'markdown' for a compact readable summary."}
+
+
+def structured(value: Any) -> dict:
+    """structuredContent debe ser un objeto JSON: las listas se envuelven en {items, count}."""
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, list):
+        return {"items": value, "count": len(value)}
+    return {"value": value}
+
+
 def text_result(payload: Any, is_error: bool = False) -> dict:
     text = payload if isinstance(payload, str) else json.dumps(payload, ensure_ascii=False, default=str)
-    return {"content": [{"type": "text", "text": text}], "isError": is_error}
+    out = {"content": [{"type": "text", "text": text}], "isError": is_error}
+    if not isinstance(payload, str) and not is_error:
+        out["structuredContent"] = structured(json.loads(text))
+    return out
+
+
+def public_schema(t: ToolDef) -> dict:
+    """Esquema anunciado: el de la tool + response_format (lo gestiona el servidor, no la tool)."""
+    sch = t.schema()
+    props = {**sch["inputSchema"].get("properties", {}), "response_format": RESPONSE_FORMAT}
+    return {**sch, "inputSchema": {**sch["inputSchema"], "properties": props}}
 
 
 def instructions() -> str:
@@ -213,11 +272,15 @@ async def request_approval(uid: int, client: str, tool: str, args: dict) -> tupl
 
 # ── empaquetado de resultados ───────────────────────────────────────────────
 
-def package(uid: int, value: Any) -> dict:
-    text = json.dumps(value, ensure_ascii=False, default=str)
+def package(uid: int, value: Any, fmt: str = "json", title: str = "") -> dict:
+    as_json = json.dumps(value, ensure_ascii=False, default=str)
+    text = to_markdown(json.loads(as_json), title) if fmt == "markdown" else as_json
     raw = text.encode()
     if len(raw) <= settings.mcp_result_budget:
-        return text_result(text)
+        out = {"content": [{"type": "text", "text": text}], "isError": False}
+        if len(as_json.encode()) <= settings.mcp_result_budget:  # structuredContent no se salta el presupuesto
+            out["structuredContent"] = structured(json.loads(as_json))
+        return out
     rid = uuid.uuid4().hex[:16]
     RESULTS[rid] = (uid, text, time.time())
     head = raw[: settings.mcp_result_budget].decode(errors="ignore")
@@ -233,6 +296,19 @@ async def run_tool(user: dict, client: str, name: str, args: dict, allow_defer: 
     t = REGISTRY.get(name)
     if t is None:
         raise KeyError(name)
+    args = dict(args)
+    fmt = args.pop("response_format", "json")
+    if fmt not in ("json", "markdown"):
+        return text_result("Error: response_format must be 'json' or 'markdown'.", True)
+    st = state(uid)
+    while st.calls and st.calls[0] < started - RATE_LIMIT_WINDOW:
+        st.calls.popleft()
+    if len(st.calls) >= RATE_LIMIT_CALLS:
+        wait = int(st.calls[0] + RATE_LIMIT_WINDOW - started) + 1
+        await record(uid, client, name, False, True, started, "rate limited")
+        return text_result(f"Error: rate limit of {RATE_LIMIT_CALLS} tool calls per minute reached. Retry in {wait} s, "
+                           "or batch work (get_quotes takes up to 25 tickers).", True)
+    st.calls.append(started)
     fresh = get_db().one("SELECT mcp_allow_actions FROM users WHERE id=?", (uid,))
     if t.destructive and not (fresh and fresh["mcp_allow_actions"]):
         msg = (f"Refused: '{name}' changes state and external agents are not allowed to take actions. "
@@ -250,7 +326,7 @@ async def run_tool(user: dict, client: str, name: str, args: dict, allow_defer: 
         value = await asyncio.wait_for(asyncio.shield(task), settings.mcp_grace_seconds if allow_defer else None)
     except asyncio.TimeoutError:
         jid = "job_" + uuid.uuid4().hex[:12]
-        job = Job(jid, uid, name, task)
+        job = Job(jid, uid, name, task, fmt)
         JOBS[jid] = job
 
         def _done(_t: asyncio.Task, job=job) -> None:
@@ -263,11 +339,14 @@ async def run_tool(user: dict, client: str, name: str, args: dict, allow_defer: 
     except ToolError as e:
         await record(uid, client, name, False, False, started, str(e))
         return text_result(f"Error: {e}", True)
-    except Exception as e:  # el error de una tool nunca tumba el servidor
-        await record(uid, client, name, False, False, started, e.__class__.__name__)
-        return text_result(f"Error: {e.__class__.__name__}: {e}"[:8000], True)
+    except Exception:  # el error de una tool nunca tumba el servidor ni filtra detalles internos
+        err_id = uuid.uuid4().hex[:8]
+        log.exception("tool %s failed (error id %s)", name, err_id)
+        await record(uid, client, name, False, False, started, f"internal error {err_id}")
+        return text_result(f"Error: internal error while running {name} (id {err_id}). It was logged on the "
+                           "server; retry later or use another tool.", True)
     await record(uid, client, name, True, False, started, "ok")
-    return package(uid, value)
+    return package(uid, value, fmt, t.title)
 
 
 def _job_view(job: Job) -> dict:
@@ -276,7 +355,8 @@ def _job_view(job: Job) -> dict:
     out = {"job_id": job.id, "tool": job.tool, "status": status, "elapsed_ms": int(((job.finished or time.time())
                                                                                    - job.started) * 1000)}
     if status == "failed":
-        out["error"] = str(t.exception())
+        exc = t.exception()
+        out["error"] = str(exc) if isinstance(exc, ToolError) else "internal error (logged on the server)"
     return out
 
 
@@ -289,8 +369,9 @@ async def call_meta(user: dict, client: str, name: str, args: dict) -> dict:
     if name == "tool_describe":
         t = REGISTRY.get(str(args.get("name", "")))
         if not t:
-            return text_result(f"Error: unknown tool {args.get('name')!r}", True)
-        return text_result({**t.schema(), "changes_state": t.destructive, "needs_approval": t.needs_approval})
+            return text_result(f"Error: unknown tool {args.get('name')!r}. Search with tool_list(query=...).", True)
+        return text_result({**public_schema(t), "changes_state": t.destructive, "needs_approval": t.needs_approval,
+                            "long_running": t.long_running})
     if name == "tool_invoke":
         target = str(args.get("tool", ""))
         if target in META_TOOLS or target not in REGISTRY:
@@ -313,7 +394,7 @@ async def call_meta(user: dict, client: str, name: str, args: dict) -> dict:
             return text_result({**view, "hint": "not finished yet; call job_status with wait_ms"})
         if view["status"] != "completed":
             return text_result(view, True)
-        return package(uid, job.task.result())
+        return package(uid, job.task.result(), job.fmt, REGISTRY[job.tool].title)
     if name == "job_list":
         return text_result([_job_view(j) for j in JOBS.values() if j.user_id == uid][-20:])
     if name == "result_fetch":
@@ -334,14 +415,13 @@ def advertised_tools(uid: int) -> list[dict]:
     out = []
     for n in names:
         if n in META_TOOLS:
-            out.append({"name": n, **META_TOOLS[n], "annotations": {"readOnlyHint": True}})
+            m = META_TOOLS[n]
+            out.append({"name": n, **m, "annotations": {"title": m["title"], **m["annotations"]}})
         elif n in REGISTRY:
             t = REGISTRY[n]
             if st.toolset == "essentials" and t.destructive:
                 continue
-            out.append({**t.schema(), "annotations": {"title": n.replace("_", " ").title(),
-                                                       "readOnlyHint": not t.destructive,
-                                                       "destructiveHint": t.destructive}})
+            out.append(public_schema(t))
     return out
 
 
@@ -387,7 +467,7 @@ async def handle_message(msg: Any, user: dict, ua: str) -> dict | None:
                 else:
                     result = await run_tool(user, client, name, args)
             except KeyError:
-                return rpc_error(mid, -32602, f"Unknown tool: {name}")
+                return rpc_error(mid, -32602, f"Unknown tool: {name}. Use tool_list to search the catalogue.")
         elif method in {"resources/list"}:
             result = {"resources": []}
         elif method == "resources/templates/list":

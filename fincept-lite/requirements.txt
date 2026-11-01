@@ -4,3 +4,4 @@ httpx>=0.27
 email-validator>=2.1
 anthropic>=2.0
 pytest>=8.0
+mcp>=2.0  # solo tests: cliente oficial MCP para la prueba de interoperabilidad
