@@ -91,6 +91,7 @@ Está en `src/mcp/server/McpHttpServer*.cpp` y expone las ~900 tools internas a 
 | NewsService (RSS, dedupe, sentimiento) | ✅ Yahoo Finance + MarketWatch | `server/news.py` |
 | Macro (conector DBnomics) | ✅ Fed, BCE, paro, IPC, PIB y búsqueda | `server/macro.py` |
 | PaperTrading + OrderMatcher | ✅ market/limit/stop, P&L, sin cortos | `server/paper.py` |
+| Backtesting (motor de Fincept) | ✅ sin look-ahead (ejecución en la siguiente apertura), comisión + slippage, benchmark alineado, Monte Carlo, validación hold-out y walk-forward | `server/backtest.py` |
 | McpProvider (catálogo de tools) | ✅ 25 tools + 8 meta-tools | `server/tools.py` |
 | McpHttpServer (todo lo de §1.3) | ✅ incluida la aprobación por llamada | `server/mcp_server.py` |
 | AI Chat + ToolDispatcher | ✅ Claude con *tool use*, o un agente offline determinista | `server/ai_chat.py` |
@@ -134,14 +135,14 @@ Desde ahí también se activan las acciones (órdenes, watchlists), se cambia el
 
 ## 5. Pantallas y comandos
 
-`F1` Dashboard · `F2` Mercados · `F3` Noticias · `F4` Cartera paper · `F5` Backtest (SMA + optimización en grid) · `F6` Watchlists · `F7` QuantLib (Black-Scholes, VaR) · `F8` Macro · `F9` Ficha del activo · `F10` Chat IA · `F11` MCP · `F12` Perfil e inspector del DataHub.
+`F1` Dashboard · `F2` Mercados · `F3` Noticias · `F4` Cartera paper · `F5` Backtest (SMA sin look-ahead, costes, Monte Carlo, hold-out y walk-forward) · `F6` Watchlists · `F7` QuantLib (Black-Scholes, VaR) · `F8` Macro · `F9` Ficha del activo · `F10` Chat IA · `F11` MCP · `F12` Perfil e inspector del DataHub.
 
 Barra de comandos (`/` o `Ctrl+K`): `AAPL` · `SAN.MC GO` · `BUY 10 NVDA` · `SELL 5 MSFT @ 420` · `BUY 1 TSLA STOP 300` · `AI ¿cómo va el IBEX?` · `NEWS` · `HELP`.
 
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest -q      # 37 tests: auth, /v1, mercado, paper, DataHub, MCP, analítica, chat
+.venv/bin/python -m pytest -q      # 45 tests: auth, /v1, mercado, paper, DataHub, MCP, backtesting sin sesgos, analítica, chat
 ```
 
 ## 7. Límites y diferencias

@@ -6,10 +6,12 @@ api.fincept.in (search, price, info, snapshot, history, news, batch/prices).
 
 from __future__ import annotations
 
+import asyncio
+
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
-from . import analytics, macro, news, paper
+from . import analytics, backtest, macro, news, paper
 from .auth import fail, ok, require_auth
 from .datahub import hub, topic_allowed
 from .market.providers import market, normalize_symbol
@@ -164,19 +166,46 @@ class BacktestIn(BaseModel):
     fast: int = Field(20, ge=2, le=200)
     slow: int = Field(50, ge=3, le=400)
     initial_cash: float = Field(10_000, gt=0)
+    commission_bps: float = Field(5.0, ge=0, le=500)
+    slippage_bps: float = Field(5.0, ge=0, le=500)
 
 
 @router.post("/backtest/sma")
-async def backtest(b: BacktestIn, user: dict = Depends(require_auth)):
+async def backtest_sma(b: BacktestIn, user: dict = Depends(require_auth)):
     s = _sym(b.symbol)
     if not s:
         return fail("Invalid symbol")
     h = await market.history(s, b.period, "1d")
     try:
-        return ok({"symbol": s, "source": h["source"],
-                   **analytics.backtest_sma_cross(h["candles"], b.fast, b.slow, b.initial_cash)})
+        r = await asyncio.to_thread(backtest.backtest_sma_cross, h["candles"], b.fast, b.slow, b.initial_cash,
+                                    backtest.CostModel(b.commission_bps, b.slippage_bps))
     except ValueError as e:
         return fail(str(e))
+    return ok({"symbol": s, "source": h["source"], **r})
+
+
+class WalkForwardIn(BaseModel):
+    symbol: str
+    period: str = "10y"
+    train_bars: int = Field(504, ge=100, le=2520)
+    test_bars: int = Field(126, ge=20, le=1260)
+    anchored: bool = False
+    commission_bps: float = Field(5.0, ge=0, le=500)
+    slippage_bps: float = Field(5.0, ge=0, le=500)
+
+
+@router.post("/backtest/walk-forward")
+async def backtest_walk_forward(b: WalkForwardIn, user: dict = Depends(require_auth)):
+    s = _sym(b.symbol)
+    if not s:
+        return fail("Invalid symbol")
+    h = await market.history(s, b.period, "1d")
+    try:
+        r = await asyncio.to_thread(backtest.walk_forward_sma, h["candles"], b.train_bars, b.test_bars, b.anchored,
+                                    None, None, 10_000.0, backtest.CostModel(b.commission_bps, b.slippage_bps))
+    except ValueError as e:
+        return fail(str(e))
+    return ok({"symbol": s, "source": h["source"], **r})
 
 
 # ── /paper ──────────────────────────────────────────────────────────────────

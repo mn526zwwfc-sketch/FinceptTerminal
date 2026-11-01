@@ -2,9 +2,9 @@
 
 El servidor real expone 590 rutas /quantlib/* (pricing, riesgo, curvas, ML...).
 Aquí implementamos en Python puro las piezas más usadas para que la réplica
-sea autocontenida: Black-Scholes (precio, griegas, volatilidad implícita),
-métricas de riesgo (volatilidad, Sharpe, drawdown, VaR) y un backtest de cruce
-de medias.
+sea autocontenida: Black-Scholes (precio, griegas, volatilidad implícita) y
+métricas de riesgo (volatilidad, Sharpe, drawdown, VaR). El backtesting vive en
+backtest.py.
 """
 
 from __future__ import annotations
@@ -117,61 +117,4 @@ def risk_metrics(closes: list[float], periods_per_year: int = 252, confidence: f
         "confidence": confidence,
         "best_day": max(rets),
         "worst_day": min(rets),
-    }
-
-
-def sma(values: list[float], n: int) -> list[float | None]:
-    out: list[float | None] = []
-    s = 0.0
-    for i, v in enumerate(values):
-        s += v
-        if i >= n:
-            s -= values[i - n]
-        out.append(s / n if i >= n - 1 else None)
-    return out
-
-
-def backtest_sma_cross(candles: list[dict], fast: int = 20, slow: int = 50, initial_cash: float = 10_000.0,
-                       fee_bps: float = 5.0) -> dict:
-    """Largo cuando SMA rápida > SMA lenta; fuera en caso contrario. Ejecuta al cierre."""
-    if fast >= slow:
-        raise ValueError("fast must be < slow")
-    closes = [c["c"] for c in candles]
-    if len(closes) < slow + 5:
-        raise ValueError(f"need at least {slow + 5} candles, got {len(closes)}")
-    f, s = sma(closes, fast), sma(closes, slow)
-    cash, units, trades, equity = initial_cash, 0.0, [], []
-    fee = fee_bps / 10_000
-    for i, c in enumerate(closes):
-        if f[i] is not None and s[i] is not None:
-            want_long = f[i] > s[i]
-            if want_long and units == 0:
-                units = cash * (1 - fee) / c
-                cash = 0.0
-                trades.append({"t": candles[i]["t"], "side": "buy", "price": c})
-            elif not want_long and units > 0:
-                cash = units * c * (1 - fee)
-                units = 0.0
-                trades.append({"t": candles[i]["t"], "side": "sell", "price": c})
-        equity.append({"t": candles[i]["t"], "equity": cash + units * c})
-    curve = [e["equity"] for e in equity]
-    wins, closed = 0, 0
-    for i in range(1, len(trades), 2):
-        closed += 1
-        wins += trades[i]["price"] > trades[i - 1]["price"]
-    bh = initial_cash * closes[-1] / closes[slow - 1]
-    m = risk_metrics(curve[slow - 1:])
-    return {
-        "strategy": f"SMA({fast}/{slow}) crossover",
-        "initial_cash": initial_cash,
-        "final_equity": curve[-1],
-        "total_return": curve[-1] / initial_cash - 1,
-        "buy_and_hold_return": bh / initial_cash - 1,
-        "trades": len(trades),
-        "win_rate": wins / closed if closed else None,
-        "sharpe": m["sharpe"],
-        "max_drawdown": m["max_drawdown"],
-        "annualized_volatility": m["annualized_volatility"],
-        "equity_curve": equity[::max(1, len(equity) // 400)],
-        "trade_log": trades[-50:],
     }

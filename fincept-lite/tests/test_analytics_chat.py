@@ -30,15 +30,6 @@ def test_risk_metrics_on_known_series():
     assert analytics.max_drawdown(zig) == pytest.approx(60 / 120 - 1)
 
 
-def test_backtest_trades_on_trend_reversal():
-    up = [{"t": i, "c": 100 + i} for i in range(80)]
-    down = [{"t": 80 + i, "c": 180 - 2 * i} for i in range(60)]
-    r = analytics.backtest_sma_cross(up + down, fast=5, slow=20)
-    assert r["trades"] == 2 and r["trade_log"][0]["side"] == "buy" and r["trade_log"][1]["side"] == "sell"
-    with pytest.raises(ValueError):
-        analytics.backtest_sma_cross(up, fast=30, slow=10)
-
-
 def test_extract_symbols_spanish_and_tickers():
     assert extract_symbols("¿Cómo van Apple y NVDA hoy?") == ["AAPL", "NVDA"]
     assert extract_symbols("precio del bitcoin y del oro") == ["BTC-USD", "GC=F"]

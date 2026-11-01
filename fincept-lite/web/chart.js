@@ -57,7 +57,11 @@
     setLine(points, opts = {}) {
       this.type = "line"; this.opts = { ...opts, volume: false };
       this.rows = points.map((p) => ({ t: p.t, o: p.v, h: p.v, l: p.v, c: p.v, v: 0 }));
-      this.smas = []; this.draw();
+      // Serie de comparación opcional (p. ej. buy & hold): misma longitud, línea gris discontinua.
+      this.smas = points.some((p) => p.b != null)
+        ? [{ n: opts.compareLabel || "B&H", vals: points.map((p) => p.b ?? null), color: css("--text-2"), dashed: true, label: opts.compareLabel || "B&H" }]
+        : [];
+      this.draw();
     }
     layout() {
       const dpr = window.devicePixelRatio || 1;
@@ -92,7 +96,8 @@
       ctx.clearRect(0, 0, L.w, L.h);
       ctx.font = "10px " + css("--mono");
       if (!rows.length) { ctx.fillStyle = css("--text-3"); ctx.fillText("Sin datos", 10, 20); return; }
-      const lo = Math.min(...rows.map((r) => r.l)), hi = Math.max(...rows.map((r) => r.h));
+      const extra = (this.smas || []).filter((s) => s.dashed).flatMap((s) => s.vals.filter((v) => v != null));
+      const lo = Math.min(...rows.map((r) => r.l), ...extra), hi = Math.max(...rows.map((r) => r.h), ...extra);
       const padv = (hi - lo) * 0.06 || Math.abs(hi) * 0.01 || 1;
       const min = lo - padv, max = hi + padv;
       const plotW = L.w - L.pad.l - L.pad.r, cw = plotW / rows.length;
@@ -146,7 +151,7 @@
       for (const s of this.smas || []) {
         ctx.beginPath(); let started = false;
         s.vals.forEach((v, i) => { if (v == null) return; started ? ctx.lineTo(x(i), y(v)) : ctx.moveTo(x(i), y(v)); started = true; });
-        ctx.strokeStyle = s.color; ctx.stroke();
+        ctx.strokeStyle = s.color; if (s.dashed) ctx.setLineDash([4, 3]); ctx.stroke(); ctx.setLineDash([]);
       }
       // último precio
       const last = rows[rows.length - 1].c, ly = y(last);
@@ -165,7 +170,7 @@
       ctx.fillText(legend, L.pad.l + 2, 12);
       let lx = L.pad.l + 8 + ctx.measureText(legend).width;
       for (const s of this.smas || []) {
-        ctx.fillStyle = s.color; const t = `SMA${s.n} ${fmtPx(s.vals[i])}`;
+        ctx.fillStyle = s.color; const t = `${s.label || "SMA" + s.n} ${fmtPx(s.vals[i])}`;
         ctx.fillText(t, lx + 10, 12); lx += ctx.measureText(t).width + 10;
       }
       if (this.hover >= 0) {

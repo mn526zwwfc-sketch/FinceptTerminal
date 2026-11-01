@@ -17,7 +17,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any, Awaitable, Callable
 
-from . import analytics, macro, news, paper
+from . import analytics, backtest, macro, news, paper
 from .datahub import hub, topic_allowed
 from .db import get_db
 from .market.providers import market, normalize_symbol
@@ -212,39 +212,55 @@ async def _risk(ctx, a):
     return {"symbol": h["symbol"], "period": h["period"], "source": h["source"], **m}
 
 
-@tool("run_backtest", "Backtest an SMA crossover strategy on daily data (long/flat).", "analytics",
-      obj({"symbol": S, "period": S, "fast": I, "slow": I, "initial_cash": N}, ["symbol"]))
+COSTS = {"commission_bps": N, "slippage_bps": N}
+
+
+def _costs(a: dict) -> backtest.CostModel:
+    try:
+        return backtest.CostModel(float(a.get("commission_bps", 5)), float(a.get("slippage_bps", 5)))
+    except ValueError as e:
+        raise ToolError(str(e)) from e
+
+
+@tool("run_backtest", "Backtest an SMA crossover (long/flat) on daily data with next-bar-open execution, commission "
+      "+ slippage, aligned buy-and-hold benchmark, trade stats and Monte Carlo drawdown/return ranges.", "analytics",
+      obj({"symbol": S, "period": S, "fast": I, "slow": I, "initial_cash": N, **COSTS}, ["symbol"]))
 async def _bt(ctx, a):
     h = await market.history(_sym(a), a.get("period", "2y"), "1d")
     try:
-        r = analytics.backtest_sma_cross(h["candles"], int(a.get("fast", 20)), int(a.get("slow", 50)),
-                                         float(a.get("initial_cash", 10_000)))
+        r = await asyncio.to_thread(backtest.backtest_sma_cross, h["candles"], int(a.get("fast", 20)),
+                                    int(a.get("slow", 50)), float(a.get("initial_cash", 10_000)), _costs(a))
     except ValueError as e:
         raise ToolError(str(e)) from e
     return {"symbol": h["symbol"], "source": h["source"], **r}
 
 
-@tool("optimize_sma_cross", "Grid-search SMA crossover parameters over 5y of daily data (slow: may return a job_id).",
-      "analytics", obj({"symbol": S}, ["symbol"]), long_running=True)
+@tool("optimize_sma_cross", "Optimize SMA crossover parameters on the first 70% of 5y daily data and report the top "
+      "10 on the untouched last 30% (hold-out). Judge by the oos_* columns. Slow: may return a job_id.",
+      "analytics", obj({"symbol": S, **COSTS}, ["symbol"]), long_running=True)
 async def _opt(ctx, a):
     h = await market.history(_sym(a), "5y", "1d")
+    try:
+        r = await asyncio.to_thread(backtest.optimize_holdout, h["candles"], 0.3, None, None, _costs(a))
+    except ValueError as e:
+        raise ToolError(str(e)) from e
+    return {"symbol": h["symbol"], "source": h["source"], **r}
 
-    def grid():
-        rows = []
-        for f in range(5, 55, 5):
-            for s in range(30, 210, 10):
-                if f < s:
-                    try:
-                        r = analytics.backtest_sma_cross(h["candles"], f, s)
-                        rows.append({"fast": f, "slow": s, "total_return": r["total_return"], "sharpe": r["sharpe"],
-                                     "max_drawdown": r["max_drawdown"], "trades": r["trades"]})
-                    except ValueError:
-                        pass
-        rows.sort(key=lambda x: x["sharpe"], reverse=True)
-        return rows
 
-    rows = await asyncio.to_thread(grid)
-    return {"symbol": h["symbol"], "source": h["source"], "tested": len(rows), "top10": rows[:10]}
+@tool("walk_forward_sma", "Walk-forward analysis of the SMA crossover: re-optimize on each past window (default 2y) "
+      "and trade the next window (default 6m) out-of-sample; returns stitched OOS equity vs buy-and-hold, per-split "
+      "parameters, walk-forward efficiency and parameter stability. Slow: may return a job_id.", "analytics",
+      obj({"symbol": S, "period": S, "train_bars": I, "test_bars": I, "anchored": {"type": "boolean"}, **COSTS},
+          ["symbol"]), long_running=True)
+async def _wf(ctx, a):
+    h = await market.history(_sym(a), a.get("period", "10y"), "1d")
+    try:
+        r = await asyncio.to_thread(backtest.walk_forward_sma, h["candles"], int(a.get("train_bars", 504)),
+                                    int(a.get("test_bars", 126)), bool(a.get("anchored", False)), None, None,
+                                    10_000.0, _costs(a))
+    except ValueError as e:
+        raise ToolError(str(e)) from e
+    return {"symbol": h["symbol"], "source": h["source"], **r}
 
 
 # ── Paper trading ───────────────────────────────────────────────────────────

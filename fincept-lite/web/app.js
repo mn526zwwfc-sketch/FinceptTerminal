@@ -111,12 +111,17 @@ function updTopics() { $("#topics").textContent = `${Hub.subs.size} tópicos`; }
 // ── contexto de pantalla (todo lo que se registra se limpia al salir) ──────
 function makeCtx() {
   const cleanups = [];
+  let disposed = false;
+  // Un render asíncrono puede terminar después de cambiar de pantalla: lo que registre
+  // entonces se limpia en el acto en lugar de quedar suscrito para siempre.
+  const keep = (fn) => { if (disposed) { try { fn(); } catch { /* */ } } else cleanups.push(fn); };
   return {
-    sub(topic, cb) { cleanups.push(Hub.sub(topic, cb)); },
-    every(fn, ms) { const id = setInterval(fn, ms); cleanups.push(() => clearInterval(id)); },
-    on(el, ev, fn) { el.addEventListener(ev, fn); cleanups.push(() => el.removeEventListener(ev, fn)); },
-    add(fn) { cleanups.push(fn); },
-    dispose() { cleanups.splice(0).forEach((f) => { try { f(); } catch { /* */ } }); },
+    get disposed() { return disposed; },
+    sub(topic, cb) { keep(Hub.sub(topic, cb)); },
+    every(fn, ms) { const id = setInterval(fn, ms); keep(() => clearInterval(id)); },
+    on(el, ev, fn) { el.addEventListener(ev, fn); keep(() => el.removeEventListener(ev, fn)); },
+    add(fn) { keep(fn); },
+    dispose() { disposed = true; cleanups.splice(0).forEach((f) => { try { f(); } catch { /* */ } }); },
   };
 }
 
@@ -319,37 +324,60 @@ const SCREENS = {
   } },
 
   backtest: { key: "F5", label: "BACKTEST", render(el, ctx) {
-    el.innerHTML = `<div class="grid g2">${panel("Estrategia · cruce de medias (SMA)", `<div class="form">
-      <label>Símbolo</label><input class="f" id="b-sym" value="${esc(S.focus)}"><label>Periodo</label><select class="f" id="b-per"><option>1y</option><option selected>2y</option><option>5y</option><option>10y</option></select>
-      <label>SMA rápida</label><input class="f" id="b-f" type="number" value="20"><label>SMA lenta</label><input class="f" id="b-s" type="number" value="50">
-      <label>Capital</label><input class="f" id="b-c" type="number" value="10000"><span></span>
-      <div class="row"><button class="btn primary" id="b-run">EJECUTAR</button><button class="btn" id="b-opt">OPTIMIZAR (GRID)</button></div></div>
+    const kpi = (rows) => rows.map(([l, v, c]) => `<div class="kpi"><div class="l">${l}</div><div class="v ${c || ""}">${v}</div></div>`).join("");
+    const opt = (v, cur) => `<option ${v === cur ? "selected" : ""}>${v}</option>`;
+    el.innerHTML = `<div class="grid g2">${panel("Estrategia · cruce de medias (SMA) · largo / fuera", `<div class="form">
+      <label>Símbolo</label><input class="f" id="b-sym" value="${esc(S.focus)}"><label>Periodo</label><select class="f" id="b-per">${["1y", "2y", "5y", "10y"].map((p) => opt(p, "5y")).join("")}</select>
+      <label>SMA rápida / lenta</label><div class="row"><input class="f" id="b-f" type="number" value="20" style="width:80px"><input class="f" id="b-s" type="number" value="50" style="width:80px"></div>
+      <label>Capital</label><input class="f" id="b-c" type="number" value="10000">
+      <label>Comisión / slippage (pb por lado)</label><div class="row"><input class="f" id="b-com" type="number" value="5" step="any" style="width:80px"><input class="f" id="b-slp" type="number" value="5" step="any" style="width:80px"></div>
+      <span></span><button class="btn primary" id="b-run">EJECUTAR BACKTEST</button></div>
       <div id="b-kpis" class="kpis" style="margin-top:10px"></div>`)}
-      ${panel("Curva de equity", '<div class="chartbox" style="height:300px"><canvas class="chart"></canvas></div>')}
-      ${panel("Operaciones", '<div class="empty">Ejecuta un backtest</div>')}${panel("Optimización · top 10 por Sharpe", '<div class="empty">Grid fast 5–50 × slow 30–200 sobre 5 años (tool optimize_sma_cross)</div>')}</div>`;
-    const chart = new FChart($("canvas", el));
-    const [, , trEl, opEl] = $$(".panel .body", el);
+      ${panel('Curva de equity · <span class="muted">estrategia vs buy &amp; hold (gris)</span>', '<div class="chartbox" style="height:300px"><canvas class="chart" id="b-chart"></canvas></div>')}
+      ${panel("Robustez · Monte Carlo (bootstrap, 1 año)", '<div class="empty">—</div>')}
+      ${panel("Operaciones", '<div class="empty">Ejecuta un backtest</div>')}
+      ${panel("Validación fuera de muestra", `<div class="row"><button class="btn" id="b-ho">HOLD-OUT 70/30 (5 años)</button><button class="btn" id="b-wf">WALK-FORWARD (10 años)</button><span class="dim">Re-optimiza solo con datos pasados y mide en datos no vistos.</span></div><div id="b-val" style="margin-top:8px"><div class="empty">El rendimiento optimizado sobre todo el histórico está sesgado al alza: usa estas pruebas para ver qué sobrevive fuera de muestra.</div></div><div class="chartbox" style="height:240px;display:none" id="b-wfbox"><canvas class="chart" id="b-wfchart"></canvas></div>`, "", "span2")}
+      ${panel("Supuestos del motor", '<div id="b-ass" class="help"></div>', "", "span2")}</div>`;
+    const chart = new FChart($("#b-chart")), wfChart = new FChart($("#b-wfchart"));
+    const [, , mcEl, trEl] = $$(".panel .body", el);
+    const costs = () => ({ commission_bps: +$("#b-com").value, slippage_bps: +$("#b-slp").value });
     const run = async () => {
-      const body = { symbol: $("#b-sym").value, period: $("#b-per").value, fast: +$("#b-f").value, slow: +$("#b-s").value, initial_cash: +$("#b-c").value };
+      const body = { symbol: $("#b-sym").value, period: $("#b-per").value, fast: +$("#b-f").value, slow: +$("#b-s").value, initial_cash: +$("#b-c").value, ...costs() };
       $("#b-run").disabled = true;
       const r = await api("/backtest/sma", { method: "POST", body });
       $("#b-run").disabled = false;
       if (!r.success) return toast(r.message, "err");
-      const d = r.data;
-      $("#b-kpis").innerHTML = [["Rentabilidad", fmtFrac(d.total_return), cls(d.total_return)], ["Buy & hold", fmtFrac(d.buy_and_hold_return), cls(d.buy_and_hold_return)], ["Sharpe", fmtN(d.sharpe), ""], ["Máx. drawdown", fmtFrac(d.max_drawdown), "neg"], ["Operaciones", d.trades, ""], ["Win rate", d.win_rate == null ? "—" : fmtFrac(d.win_rate).replace("+", ""), ""]].map(([l, v, c]) => `<div class="kpi"><div class="l">${l}</div><div class="v ${c}">${v}</div></div>`).join("");
-      chart.setLine(d.equity_curve.map((p) => ({ t: p.t, v: p.equity })), { label: `${d.strategy} · ${d.symbol}${d.source === "sim" ? " · SIM" : ""}` });
-      trEl.classList.add("flush");
-      trEl.innerHTML = `<table><thead><tr><th>Fecha</th><th>Lado</th><th class="num">Precio</th></tr></thead><tbody>${d.trade_log.slice().reverse().map((t) => `<tr><td>${new Date(t.t * 1000).toLocaleDateString("es-ES")}</td><td class="${t.side === "buy" ? "pos" : "neg"}">${t.side.toUpperCase()}</td><td class="num">${fmtPx(t.price)}</td></tr>`).join("")}</tbody></table>`;
+      const d = r.data, pf = d.profit_factor;
+      $("#b-kpis").innerHTML = kpi([["Rentabilidad", fmtFrac(d.total_return), cls(d.total_return)], ["Buy & hold", fmtFrac(d.buy_and_hold_return), cls(d.buy_and_hold_return)], ["Exceso vs B&H", fmtFrac(d.excess_return), cls(d.excess_return)], ["CAGR", fmtFrac(d.cagr), cls(d.cagr)], ["Sharpe", fmtN(d.sharpe)], ["Sortino", fmtN(d.sortino)], ["Máx. drawdown", fmtFrac(d.max_drawdown), "neg"], ["Calmar", fmtN(d.calmar)], ["Exposición", fmtFrac(d.exposure).replace("+", "")], ["Costes pagados", fmtN(d.costs_paid)], ["Operaciones cerradas", d.round_trips], ["Win rate", d.win_rate == null ? "—" : fmtFrac(d.win_rate).replace("+", "")], ["Profit factor", pf == null ? "—" : fmtN(pf)], ["Trade medio", d.avg_trade == null ? "—" : fmtFrac(d.avg_trade), cls(d.avg_trade)]]);
+      chart.setLine(d.equity_curve.map((p) => ({ t: p.t, v: p.equity, b: p.benchmark })), { label: `${d.strategy} · ${d.symbol}${d.source === "sim" ? " · SIM" : ""}` });
+      const mc = d.monte_carlo;
+      mcEl.innerHTML = mc ? `<div class="kpis">${kpi([["Rentab. 1a · p5", fmtFrac(mc.return_p5), cls(mc.return_p5)], ["Rentab. 1a · mediana", fmtFrac(mc.return_p50), cls(mc.return_p50)], ["Rentab. 1a · p95", fmtFrac(mc.return_p95), cls(mc.return_p95)], ["Prob. de pérdida 1a", fmtFrac(mc.prob_loss).replace("+", ""), "warn"], ["Máx. DD mediano", fmtFrac(mc.max_drawdown_p50), "neg"], ["Máx. DD peor 5%", fmtFrac(mc.max_drawdown_p5), "neg"]])}</div><div class="dim" style="margin-top:6px">${mc.simulations} simulaciones remuestreando los retornos diarios de la estrategia (semilla ${mc.seed}). Ignora la autocorrelación: es una banda orientativa, no una predicción.</div>` : '<div class="empty">—</div>';
+      trEl.classList.add("flush"); trEl.style.maxHeight = "330px";
+      trEl.innerHTML = d.trade_log.length ? `<table><thead><tr><th>Fecha</th><th>Lado</th><th class="num">Precio (con slippage)</th><th class="num">P&L operación</th></tr></thead><tbody>${d.trade_log.slice().reverse().map((t) => `<tr><td>${new Date(t.t * 1000).toLocaleDateString("es-ES")}</td><td class="${t.side === "buy" ? "pos" : "neg"}">${t.side.toUpperCase()}</td><td class="num">${fmtPx(t.price)}</td><td class="num ${cls(t.pnl_pct)}">${t.pnl_pct == null ? "" : fmtFrac(t.pnl_pct)}</td></tr>`).join("")}</tbody></table>` : '<div class="empty">Sin operaciones en el periodo</div>';
+      $("#b-ass").innerHTML = d.assumptions.map((x) => `<div>• ${esc(x)}</div>`).join("");
     };
+    const valEl = $("#b-val");
     ctx.on($("#b-run"), "click", run);
-    ctx.on($("#b-opt"), "click", async () => {
-      opEl.innerHTML = '<div class="empty">Calculando ~170 backtests…</div>';
-      const r = await tool("optimize_sma_cross", { symbol: $("#b-sym").value });
-      if (!r.success) { opEl.innerHTML = `<div class="empty">${esc(r.message)}</div>`; return; }
-      opEl.classList.add("flush");
-      opEl.innerHTML = `<table><thead><tr><th class="num">Rápida</th><th class="num">Lenta</th><th class="num">Rentab.</th><th class="num">Sharpe</th><th class="num">Máx DD</th><th class="num">Ops</th></tr></thead><tbody>${r.data.top10.map((x) => `<tr class="click" data-f="${x.fast}" data-s="${x.slow}"><td class="num">${x.fast}</td><td class="num">${x.slow}</td><td class="num ${cls(x.total_return)}">${fmtFrac(x.total_return)}</td><td class="num">${fmtN(x.sharpe)}</td><td class="num neg">${fmtFrac(x.max_drawdown)}</td><td class="num">${x.trades}</td></tr>`).join("")}</tbody></table>`;
+    ctx.on($("#b-ho"), "click", async () => {
+      valEl.innerHTML = '<div class="empty">Optimizando en el 70% inicial y evaluando en el 30% reservado…</div>'; $("#b-wfbox").style.display = "none";
+      const r = await tool("optimize_sma_cross", { symbol: $("#b-sym").value, ...costs() });
+      if (!r.success) { valEl.innerHTML = `<div class="empty">${esc(r.message)}</div>`; return; }
+      const d = r.data, day = (t) => new Date(t * 1000).toLocaleDateString("es-ES");
+      valEl.innerHTML = `<div class="help">In-sample ${day(d.in_sample.from)}–${day(d.in_sample.to)} · hold-out ${day(d.hold_out.from)}–${day(d.hold_out.to)} (B&H en hold-out ${fmtFrac(d.hold_out.buy_and_hold_return)}) · ${d.tested} combinaciones. <span class="warn">${esc(d.warning)}</span></div>
+        <table><thead><tr><th class="num">Rápida</th><th class="num">Lenta</th><th class="num">Sharpe IS</th><th class="num">Rentab. IS</th><th class="num">Sharpe OOS</th><th class="num">Rentab. OOS</th><th class="num">Máx DD OOS</th></tr></thead><tbody>${d.top10.map((x) => `<tr class="click" data-f="${x.fast}" data-s="${x.slow}"><td class="num">${x.fast}</td><td class="num">${x.slow}</td><td class="num dim">${fmtN(x.sharpe)}</td><td class="num dim">${fmtFrac(x.total_return)}</td><td class="num ${cls(x.oos_sharpe)}">${fmtN(x.oos_sharpe)}</td><td class="num ${cls(x.oos_return)}">${fmtFrac(x.oos_return)}</td><td class="num neg">${fmtFrac(x.oos_max_drawdown)}</td></tr>`).join("")}</tbody></table>`;
     });
-    ctx.on(opEl, "click", (e) => { const tr = e.target.closest("tr[data-f]"); if (tr) { $("#b-f").value = tr.dataset.f; $("#b-s").value = tr.dataset.s; $("#b-per").value = "5y"; run(); } });
+    ctx.on($("#b-wf"), "click", async () => {
+      valEl.innerHTML = '<div class="empty">Walk-forward: re-optimizando cada 6 meses con los 2 años previos…</div>';
+      const r = await api("/backtest/walk-forward", { method: "POST", body: { symbol: $("#b-sym").value, ...costs() } });
+      if (!r.success) { valEl.innerHTML = `<div class="empty">${esc(r.message)}</div>`; return; }
+      const d = r.data, day = (t) => new Date(t * 1000).toLocaleDateString("es-ES");
+      valEl.innerHTML = `<div class="kpis" style="margin-bottom:8px">${kpi([["Rentab. OOS encadenada", fmtFrac(d.oos.total_return), cls(d.oos.total_return)], ["Buy & hold mismo tramo", fmtFrac(d.benchmark.total_return), cls(d.benchmark.total_return)], ["Exceso", fmtFrac(d.excess_return), cls(d.excess_return)], ["Sharpe OOS", fmtN(d.oos.sharpe)], ["Máx. DD OOS", fmtFrac(d.oos.max_drawdown), "neg"], ["Eficiencia WF", d.wf_efficiency == null ? "—" : fmtN(d.wf_efficiency), d.wf_efficiency != null && d.wf_efficiency < 0.5 ? "warn" : ""], ["Estabilidad parámetros", fmtFrac(d.param_stability).replace("+", "")]])}</div>
+        <table><thead><tr><th>Entrenamiento</th><th>Prueba (OOS)</th><th class="num">Parámetros</th><th class="num">Sharpe IS</th><th class="num">Rentab. OOS</th><th class="num">B&H</th><th class="num">Ops</th></tr></thead><tbody>${d.splits.map((x) => `<tr><td class="dim">${day(x.train_from)} → ${day(x.train_to)}</td><td>${day(x.test_from)} → ${day(x.test_to)}</td><td class="num">${x.fast}/${x.slow}</td><td class="num dim">${fmtN(x.is_sharpe)}</td><td class="num ${cls(x.oos_return)}">${fmtFrac(x.oos_return)}</td><td class="num ${cls(x.benchmark_return)}">${fmtFrac(x.benchmark_return)}</td><td class="num">${x.oos_trades}</td></tr>`).join("")}</tbody></table>
+        <div class="dim" style="margin-top:6px">Eficiencia WF = Sharpe OOS / Sharpe IS medio (por debajo de ~0,5 suele indicar sobreajuste). Estabilidad = 1 si siempre se eligieron los mismos parámetros.</div>`;
+      $("#b-wfbox").style.display = "";
+      wfChart.setLine(d.equity_curve.map((p) => ({ t: p.t, v: p.equity, b: p.benchmark })), { label: `Walk-forward OOS · ${d.symbol}${d.source === "sim" ? " · SIM" : ""}` });
+    });
+    ctx.on(valEl, "click", (e) => { const tr = e.target.closest("tr[data-f]"); if (tr) { $("#b-f").value = tr.dataset.f; $("#b-s").value = tr.dataset.s; run(); } });
     run();
   } },
 
@@ -589,11 +617,14 @@ let curCtx = null;
 async function go(name, arg) {
   const scr = SCREENS[name]; if (!scr || !S.user) return;
   if (curCtx) curCtx.dispose();
-  curCtx = makeCtx();
+  const ctx = (curCtx = makeCtx());
   S.screen = name;
   $$("#tabs button").forEach((b) => b.classList.toggle("active", b.dataset.s === name));
   const el = $("#screen"); el.scrollTop = 0; el.innerHTML = "";
-  try { await scr.render(el, curCtx, arg); } catch (err) { console.error(err); el.innerHTML = `<div class="empty">Error: ${esc(err.message)}</div>`; }
+  try { await scr.render(el, ctx, arg); } catch (err) {
+    if (ctx.disposed) return; // la pantalla ya no está visible: su error no debe pisar la nueva
+    console.error(err); el.innerHTML = `<div class="empty">Error: ${esc(err.message)}</div>`;
+  }
 }
 function buildTabs() {
   $("#tabs").innerHTML = Object.entries(SCREENS).map(([k, s]) => `<button data-s="${k}"><kbd>${s.key}</kbd>${s.label}</button>`).join("");
