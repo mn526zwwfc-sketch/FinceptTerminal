@@ -191,11 +191,14 @@ async def _llm_memo(rep: dict) -> str | None:
 
 # ── entrenamiento ───────────────────────────────────────────────────────────
 
-async def _train(uid: int, hist: dict | None = None, sources: dict | None = None, trigger: str = "manual") -> dict:
+async def _train(uid: int, hist: dict | None = None, sources: dict | None = None, trigger: str = "manual",
+                 cost_bps: float | None = None) -> dict:
+    if cost_bps is None:  # en modo real se entrena con la comisión real de IBKR para el capital configurado
+        cost_bps = max(T.COST_BPS, L.live_cost_bps(L.config(uid))) if L.mode(uid) == "live" else T.COST_BPS
     await _emit(uid, "training", "running", "El equipo de investigación entrena sus estrategias (60/20/20 + DSR)")
     if hist is None:
         hist, sources = await _fetch_histories()
-    result = await asyncio.to_thread(T.train_all, hist, sources)
+    result = await asyncio.to_thread(T.train_all, hist, sources, cost_bps)
     result["trigger"] = trigger
     T.save(uid, result)
     s = result["summary"]
@@ -284,7 +287,9 @@ async def _run_cycle(uid: int, execute: bool, trigger: str) -> dict:
 
     # 5a. entrenamiento: si no hay libro de estrategias o tiene más de 30 días, los agentes entrenan antes
     training = T.latest(uid)
-    if training is None or training["stale"]:
+    need_cost = max(T.COST_BPS, L.live_cost_bps(L.config(uid))) if mode == "live" else T.COST_BPS
+    if (training is None or training["stale"]
+            or training["protocol"]["cost_bps"] < need_cost - 1e-6):  # entrenado a un coste menor que el real
         training = await _train(uid, hist, hist_src, trigger="auto")
     book = training["book"] if training else {}
 

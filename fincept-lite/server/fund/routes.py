@@ -127,6 +127,7 @@ class LiveConfigIn(BaseModel):
     max_order: float = Field(gt=0)
     daily_loss_pct: float = Field(gt=0, le=0.2)
     account: str = Field(min_length=4, max_length=20)
+    commission_plan: str = Field(default="fixed", pattern="^(fixed|tiered)$")
 
 
 class LiveModeIn(BaseModel):

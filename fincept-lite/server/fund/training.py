@@ -175,14 +175,14 @@ def positions(fam: Family, closes: np.ndarray, fit_end: int, params: dict, vt: b
 
 # ── evaluación sin anticipación ─────────────────────────────────────────────
 
-def strategy_returns(candles: list[dict], pos: np.ndarray) -> np.ndarray:
+def strategy_returns(candles: list[dict], pos: np.ndarray, cost_bps: float = COST_BPS) -> np.ndarray:
     """Rendimiento de la sesión j = posición decidida al cierre j-1 × (apertura j+1 / apertura j − 1) − costes."""
     o = np.array([c.get("o") or c["c"] for c in candles], dtype=float)
     oo = np.append(o[1:] / o[:-1] - 1, 0.0)  # apertura→apertura; la última sesión no tiene siguiente
     p = np.nan_to_num(pos, nan=0.0)
     held = np.insert(p[:-1], 0, 0.0)
     turnover = np.abs(np.diff(np.insert(held, 0, 0.0)))
-    return held * oo - turnover * COST_BPS / 1e4
+    return held * oo - turnover * cost_bps / 1e4
 
 
 def metrics(r: np.ndarray) -> dict:
@@ -199,7 +199,7 @@ def _segments(n: int) -> tuple[int, int, int]:
     return WARMUP, int(n * TRAIN_FRAC), int(n * (TRAIN_FRAC + VALID_FRAC))
 
 
-def train_asset(candles: list[dict]) -> dict:
+def train_asset(candles: list[dict], cost_bps: float = COST_BPS) -> dict:
     """Entrena el libro de estrategias de un activo. Ver el docstring del módulo."""
     n = len(candles)
     if n < MIN_BARS:
@@ -213,7 +213,7 @@ def train_asset(candles: list[dict]) -> dict:
                 pos, fitted = positions(fam, closes, t1, params, vt)
                 if pos is None:
                     continue
-                r = strategy_returns(candles, pos)
+                r = strategy_returns(candles, pos, cost_bps)
                 trials.append({"family": fam.key, "params": params, "vt": vt, "fitted": fitted, "pos": pos,
                                "train": r[a:t1], "valid": r[t1:t2], "test": r[t2:]})
     if not trials:
@@ -237,7 +237,7 @@ def train_asset(candles: list[dict]) -> dict:
     total = sum(f["valid_sharpe"] for f in members)
     for f in members:
         f["weight"] = f["valid_sharpe"] / total
-    bh = metrics(strategy_returns(candles, np.ones(n))[t2:])
+    bh = metrics(strategy_returns(candles, np.ones(n), cost_bps)[t2:])
     out = {"trained": True, "bars": n, "trials": len(trials), "segments": {"train": [a, t1], "valid": [t1, t2],
                                                                             "test": [t2, n]},
            "families": [{k: v for k, v in f.items() if not k.startswith("_")} for f in families],
@@ -247,7 +247,7 @@ def train_asset(candles: list[dict]) -> dict:
                 "verdict": "sin ventaja: ninguna familia gana en validación; el comité usa solo las señales"}
         return out
     ens_pos = sum(f["weight"] * np.nan_to_num(f["_trial"]["pos"], nan=0.0) for f in members)
-    ens_r = strategy_returns(candles, ens_pos)
+    ens_r = strategy_returns(candles, ens_pos, cost_bps)
     test = metrics(ens_r[t2:])
     oos_ok, dsr_ok = test["sharpe"] > 0, any(f["dsr_ok"] for f in members)
     out |= {"members": [{k: f[k] for k in ("family", "label", "config", "params", "vt", "fitted", "weight",
@@ -355,11 +355,13 @@ def _desk_doctrine(book: dict) -> dict:
     return out
 
 
-def train_all(hist: dict[str, list[dict]], sources: dict[str, str] | None = None) -> dict:
+def train_all(hist: dict[str, list[dict]], sources: dict[str, str] | None = None,
+              cost_bps: float = COST_BPS) -> dict:
     """`sources[s]` = proveedor de los datos ('yahoo' real, 'sim' simulado): el modo real solo usa
     estrategias entrenadas con datos reales."""
     t0, sources = time.time(), sources or {}
-    book = {s: train_asset(c) | {"desk": A.BY_SYMBOL[s].desk, "data_source": sources.get(s, "desconocida")}
+    book = {s: train_asset(c, cost_bps) | {"desk": A.BY_SYMBOL[s].desk, "data_source": sources.get(s, "desconocida"),
+                                           "cost_bps": cost_bps}
             for s, c in hist.items() if s in A.BY_SYMBOL}
     trained = {s: b for s, b in book.items() if b.get("trained")}
     kb = {e["id"]: e for e in knowledge_base()}
@@ -368,7 +370,7 @@ def train_all(hist: dict[str, list[dict]], sources: dict[str, str] | None = None
     return {
         "created": time.time(), "seconds": round(time.time() - t0, 2),
         "protocol": {"train": TRAIN_FRAC, "valid": VALID_FRAC, "test": round(1 - TRAIN_FRAC - VALID_FRAC, 2),
-                     "cost_bps": COST_BPS, "execution": "apertura siguiente", "max_members": MAX_MEMBERS,
+                     "cost_bps": cost_bps, "execution": "apertura siguiente", "max_members": MAX_MEMBERS,
                      "families": [{"family": f.key, "label": f.label, "style": f.style, "refs": list(f.refs),
                                    "functions": list(f.functions), "configs": len(f.grid) * 2} for f in FAMILIES],
                      "vol_target_refs": list(VT_REFS)},

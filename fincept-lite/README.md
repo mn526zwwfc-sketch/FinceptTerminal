@@ -144,7 +144,14 @@ Protecciones del código, que no dependen del modelo:
 - **Registro propio del fondo.** El fondo lleva la cuenta de lo que compró y vendió, así que **nunca vende posiciones de tu cuenta que no sean suyas**. Las acciones que ya están en venta se descuentan de lo disponible, y las compras aún sin ejecutar comprometen capital. Antes de vender comprueba también lo que muestra IBKR.
 - **Conciliación con IBKR.** Antes de cada aprobación se concilia con IBKR. Si el gateway no responde, no se aprueba nada. Si IBKR deja de listar una orden (aun después de volver a pedírselo), queda «sin conciliar» y no se compra hasta que la resuelvas con lo que ves en tu cuenta (botón RESOLVER). Al resolverla se envía antes la cancelación a IBKR, por si la orden siguiera viva. Es normal que las órdenes DAY no ejecutadas aparezcan así al día siguiente.
 - **Límites y modo solo desde la terminal.** Cambiar los límites o activar el modo real exige una sesión iniciada, igual que aprobar. Parar el fondo se puede siempre.
-- **Comisiones.** El registro del fondo no descuenta las comisiones de IBKR (en torno a 1 USD por orden), así que su caja está ligeramente sobrestimada.
+- **Comisiones reales.** Configuras tu plan de IBKR Pro: **Fixed**, con 0,005 USD por acción, mínimo 1 USD y tope del 1 % del valor, o **Tiered**, con 0,0035 USD por acción, mínimo 0,35 USD y tope del 1 %, sin contar las tasas de bolsa. Cada orden propuesta muestra su comisión estimada, y el registro del fondo la descuenta de la caja al ejecutarse. Comprueba las tarifas en tu cuenta: pueden cambiar.
+- **Estrategias validadas al coste real.** En modo real, los agentes entrenan con el coste por operación que corresponde a tu capital: la comisión de una posición típica más 5 pb de deslizamiento. Si el libro se entrenó a un coste menor (los 10 pb del modo paper), el comité reentrena solo. Una compra se bloquea si su coste supera aquel con que se validó la estrategia.
+
+**Cuentas pequeñas.** Medido el 10/11/2026 con datos reales y 200 USD de capital, el comité no propone ninguna orden, por dos motivos:
+1. **No llega a una acción.** Los pesos objetivo (2–10 %) son de 4–20 USD por activo, menos que una acción de casi cualquier ETF (UUP 29 USD, EEM 61, VGK 90, SPY 748).
+2. **El coste se come la ventaja.** Con órdenes tan pequeñas, la comisión es en torno al 1 % por lado (1,05 % con el deslizamiento). A ese coste solo una estrategia quedó validada (SPY) y ninguna superó a comprar y mantener en la prueba final.
+
+Cada descarte aparece en el acta con su motivo.
 - **Comprobación al aprobar.** Se revisa otra vez que el precio no se haya movido más de un 1 %, que la propuesta tenga menos de 15 minutos, que el fondo no esté parado y que no se haya superado la pérdida diaria.
 - **Pérdida diaria.** Si se alcanza, el fondo se para solo y cancela en IBKR lo enviado. Los límites no se pueden cambiar con el modo real activo: cambiar el capital a mitad de día falsearía la pérdida diaria.
 - **Moneda.** Capital y límites en USD, porque el universo operable son ETF de EE. UU.
@@ -254,7 +261,7 @@ Barra de comandos (`/` o `Ctrl+K`): `AAPL` · `SAN.MC GO` · `BUY 10 NVDA` · `S
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest -q      # 188 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
+.venv/bin/python -m pytest -q      # 194 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
 ```
 
 ### Evaluación del servidor MCP

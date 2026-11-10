@@ -31,6 +31,10 @@ from . import agents as A
 from .ibkr import IBKRClient, IBKRError
 
 LIVE_SOURCE = "yahoo"  # proveedor de datos reales; "sim" nunca sirve para dinero real
+SLIPPAGE_BPS = 5.0
+# Comisiones de IBKR Pro para acciones/ETF de EE. UU. (USD). Compruébalas en tu cuenta: pueden cambiar.
+COMMISSION_PLANS = {"fixed": {"per_share": 0.005, "min": 1.00, "max_pct": 0.01},
+                    "tiered": {"per_share": 0.0035, "min": 0.35, "max_pct": 0.01}}  # tiered sin tasas de bolsa
 LIMIT_BAND = 0.005
 MAX_DRIFT = 0.01
 FRESH_SECONDS = 15 * 60
@@ -64,12 +68,37 @@ def mode(uid: int) -> str:
     return _row(uid)["mode"]
 
 
+def commission(cfg: dict, qty: float, price: float) -> float:
+    """Comisión estimada de una orden en USD según el plan de IBKR configurado."""
+    p = COMMISSION_PLANS[cfg.get("commission_plan", "fixed")]
+    value = qty * price
+    return min(max(p["per_share"] * qty, p["min"]), p["max_pct"] * value) if value > 0 else 0.0
+
+
+def order_cost_bps(cfg: dict, qty: float, price: float) -> float:
+    """Coste por lado de una orden en puntos básicos: comisión + deslizamiento."""
+    value = qty * price
+    return (commission(cfg, qty, price) / value * 1e4 if value else 0.0) + SLIPPAGE_BPS
+
+
+def live_cost_bps(cfg: dict) -> float:
+    """Coste por lado con que hay que entrenar para este capital: el de una posición típica (un cuarto del
+    capital o el máximo por orden, lo menor) en un ETF de unos 50 USD."""
+    if not cfg:
+        return 0.0
+    value = max(1.0, min(cfg["max_order"], cfg["capital"] / 4))
+    return order_cost_bps(cfg, max(1.0, value / 50.0), value / max(1.0, value / 50.0))
+
+
 def validate_config(cfg: dict) -> dict:
     try:
         capital, max_order = float(cfg["capital"]), float(cfg["max_order"])
         loss, account = float(cfg["daily_loss_pct"]), str(cfg["account"]).strip().upper()
+        plan_ = str(cfg.get("commission_plan") or "fixed").lower()
     except (KeyError, TypeError, ValueError) as e:
         raise LiveError("Faltan datos: capital, max_order, daily_loss_pct y account.") from e
+    if plan_ not in COMMISSION_PLANS:
+        raise LiveError("Plan de comisiones desconocido: 'fixed' o 'tiered'.")
     if not 0 < capital <= 10_000_000:
         raise LiveError("El capital debe estar entre 0 y 10.000.000.")
     if not 0 < max_order <= capital:
@@ -78,7 +107,8 @@ def validate_config(cfg: dict) -> dict:
         raise LiveError("La pérdida diaria máxima debe estar entre 0 y 20 % (0.02 = 2 %).")
     if not re.fullmatch(r"[A-Z0-9]{4,20}", account):
         raise LiveError("Cuenta de IBKR no válida (p. ej. U1234567 o DU1234567 para la cuenta de prueba de IBKR).")
-    return {"capital": capital, "max_order": max_order, "daily_loss_pct": loss, "account": account}
+    return {"capital": capital, "max_order": max_order, "daily_loss_pct": loss, "account": account,
+            "commission_plan": plan_}
 
 
 def set_config(uid: int, cfg: dict) -> dict:
@@ -143,11 +173,15 @@ def ledger(uid: int, prices: dict[str, float]) -> dict:
     cfg = config(uid)
     qty: dict[str, float] = {}
     cash = float(cfg.get("capital") or 0.0)
+    fees = 0.0
     for o in get_db().all("SELECT symbol, side, filled_qty, avg_price FROM fund_live_orders "
                           "WHERE user_id=? AND filled_qty > 0", (uid,)):
         sign = 1 if o["side"] == "buy" else -1
         qty[o["symbol"]] = qty.get(o["symbol"], 0.0) + sign * o["filled_qty"]
         cash -= sign * o["filled_qty"] * (o["avg_price"] or 0.0)
+        fee = commission(cfg, o["filled_qty"], o["avg_price"] or 0.0) if cfg else 0.0
+        cash -= fee  # comisión estimada (la real puede diferir unos céntimos)
+        fees += fee
     reserved, selling = 0.0, {}
     marks = ",".join("?" * len(IN_FLIGHT))
     for o in get_db().all(f"SELECT symbol, side, qty, filled_qty, limit_price FROM fund_live_orders "
@@ -162,7 +196,7 @@ def ledger(uid: int, prices: dict[str, float]) -> dict:
     equity = cash + sum(q * prices.get(s, 0.0) for s, q in positions.items())
     unreconciled = get_db().one("SELECT COUNT(*) AS n FROM fund_live_orders WHERE user_id=? AND status='unreconciled'",
                                 (uid,))["n"]
-    return {"capital": cfg.get("capital"), "currency": "USD", "cash": cash, "reserved": reserved,
+    return {"capital": cfg.get("capital"), "currency": "USD", "cash": cash, "reserved": reserved, "fees": fees,
             "positions": positions, "available_to_sell": available, "selling": selling, "equity": equity,
             "unreconciled": unreconciled}
 
@@ -201,8 +235,9 @@ def daily_check(uid: int, equity: float) -> dict:
             "breached": bool(limit) and loss >= limit}
 
 
-def live_gate(symbol: str, view: dict | None, book_entry: dict | None) -> str | None:
-    """Motivo por el que NO se puede comprar este activo con dinero real (None = se puede)."""
+def live_gate(symbol: str, view: dict | None, book_entry: dict | None, cost_bps: float | None = None) -> str | None:
+    """Motivo por el que NO se puede comprar este activo con dinero real (None = se puede).
+    `cost_bps`: coste real por lado de la orden; la estrategia tiene que haberse validado al menos a ese coste."""
     if symbol in NOT_IN_IBKR:
         return "cripto no se opera en IBKR en esta versión"
     if not book_entry or not book_entry.get("trained"):
@@ -213,6 +248,10 @@ def live_gate(symbol: str, view: dict | None, book_entry: dict | None) -> str | 
         return "estrategia no validada (prueba final + Deflated Sharpe)"
     if view and not view["strategy"].get("trained"):
         return "el comité no usó la estrategia entrenada"
+    trained_at = float(book_entry.get("cost_bps") or 10.0)
+    if cost_bps is not None and cost_bps > trained_at + 1e-6:
+        return (f"la comisión de esta orden ({cost_bps:.0f} pb por lado) supera el coste con que se validó la "
+                f"estrategia ({trained_at:.0f} pb): reentrena al coste real o sube el tamaño de la orden")
     return None
 
 
@@ -251,6 +290,11 @@ def plan(uid: int, run_id: int, target: dict[str, float], views: dict, prices: d
                 continue
             limit = px * (1 + LIMIT_BAND)
             qty = int(min(o["qty"], cfg["max_order"] // limit, max(cash, 0.0) // limit))
+            if qty >= 1:
+                why = live_gate(s, None, book.get(s), order_cost_bps(cfg, qty, limit))
+                if why:
+                    checks.append({"check": f"real {s}", "status": "blocked", "detail": why})
+                    continue
         else:
             limit = px * (1 - LIMIT_BAND)
             qty = int(min(o["qty"], led["available_to_sell"].get(s, 0.0)))  # descuenta lo que ya está en venta
@@ -260,13 +304,22 @@ def plan(uid: int, run_id: int, target: dict[str, float], views: dict, prices: d
             continue
         if side == "buy":
             cash -= qty * limit
+        fee = commission(cfg, qty, limit)
         cur = get_db().execute(
             "INSERT INTO fund_live_orders(user_id, run_id, symbol, side, qty, limit_price, ref_price, notional, "
-            "status, created, updated, detail) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            "status, created, updated, detail, commission) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (uid, run_id, s, side, qty, round(limit, 2), px, qty * limit, "pending", time.time(), time.time(),
-             json.dumps([{"at": time.time(), "action": "propuesta", "result": f"ciclo #{run_id}"}])))
+             json.dumps([{"at": time.time(), "action": "propuesta", "result": f"ciclo #{run_id}"}]), fee))
         out.append({"id": cur.lastrowid, "symbol": s, "side": side, "qty": qty, "limit_price": round(limit, 2),
-                    "notional": qty * limit})
+                    "notional": qty * limit, "commission": fee, "cost_pct": fee / (qty * limit)})
+    seen = {c["check"].split(" ", 1)[-1] for c in checks} | {o["symbol"] for o in out}
+    for s, w in target.items():  # explica también lo que plan_orders descarta sin decir nada
+        px = prices.get(s)
+        if s not in seen and s in NOT_IN_IBKR:
+            checks.append({"check": f"real {s}", "status": "blocked", "detail": "cripto no se opera en IBKR en esta versión"})
+        elif s not in seen and px and w * led["equity"] < px:
+            checks.append({"check": f"real {s}", "status": "info",
+                           "detail": f"objetivo {w * led['equity']:.0f} USD no llega a 1 acción ({px:.2f} USD)"})
     return out, checks
 
 
@@ -337,7 +390,7 @@ async def approve(uid: int, order_id: int, confirm: str, run_finished: float, ha
     if o["side"] == "buy":
         if led["unreconciled"]:
             block("hay órdenes sin conciliar con IBKR: resuélvelas antes de comprar")
-        why = live_gate(o["symbol"], None, book.get(o["symbol"]))
+        why = live_gate(o["symbol"], None, book.get(o["symbol"]), order_cost_bps(cfg, o["qty"], o["limit_price"]))
         if why:
             block(why)
         if o["notional"] > cfg["max_order"] + 1e-6:
@@ -491,6 +544,8 @@ async def status(uid: int, with_gateway: bool = True) -> dict:
     held = ledger(uid, {})["positions"]
     prices = {s: q["price"] for s, q in (await market.quotes(list(held))).items()} if held else {}
     return {"mode": row["mode"], "config": row["config"], "data_mode": settings.data_mode,
+            "cost_bps": live_cost_bps(row["config"]) if row["config"] else None,
+            "commission_plans": COMMISSION_PLANS,
             "gateway": await gateway_status(uid) if with_gateway else None,
             "ledger": ledger(uid, prices), "orders": orders(uid, 50),
             "tradable": sorted(a.symbol for a in A.UNIVERSE if a.symbol not in NOT_IN_IBKR),

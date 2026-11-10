@@ -88,9 +88,9 @@ def _live_user(uid, monkeypatch, capital=10_000.0, max_order=1_000.0, real_data=
         get_db().execute("UPDATE fund_live SET mode='live' WHERE user_id=?", (uid,))
 
 
-GOOD_BOOK = {"SPY": {"trained": True, "validated": True, "data_source": "yahoo"},
-             "TLT": {"trained": True, "validated": True, "data_source": "sim"},
-             "GLD": {"trained": True, "validated": False, "data_source": "yahoo"}}
+GOOD_BOOK = {"SPY": {"trained": True, "validated": True, "data_source": "yahoo", "cost_bps": 105},
+             "TLT": {"trained": True, "validated": True, "data_source": "sim", "cost_bps": 105},
+             "GLD": {"trained": True, "validated": False, "data_source": "yahoo", "cost_bps": 105}}
 VIEWS = {s: {"strategy": {"trained": True}} for s in GOOD_BOOK}
 
 
@@ -239,7 +239,7 @@ def test_fills_update_the_ledger_and_sells_never_exceed_free_fund_shares(user, g
     gw.fill("1000")
     assert run(live.refresh(uid)) == {"ok": True, "changed": 1}
     led = live.ledger(uid, real_prices)
-    assert led["positions"] == {"SPY": 2} and led["cash"] == pytest.approx(10_000 - 2 * 502.5)
+    assert led["positions"] == {"SPY": 2} and led["cash"] == pytest.approx(10_000 - 2 * 502.5 - 1.0)  # comisión 1 USD
     gw.positions = {CONIDS["SPY"]: 52}  # 50 son tuyas: el fondo solo puede vender las 2 que compró
     sell = live.plan(uid, 2, {}, VIEWS, real_prices, {"SPY": "yahoo"}, GOOD_BOOK, None, engine.POLICY)[0][0]
     assert (sell["side"], sell["qty"]) == ("sell", 2)
@@ -376,3 +376,59 @@ def test_live_cycle_proposes_only_and_never_trades_paper(client, user, gw, monke
     assert st["data_mode"] == "sim"
     off = client.put("/fund/live/mode", headers=h, json={"mode": "paper"}).json()
     assert off["success"] and off["data"]["mode"] == "paper"
+
+
+# ── comisiones de IBKR y coste real ─────────────────────────────────────────
+
+def test_ibkr_commission_formulas():
+    fixed, tiered = {"commission_plan": "fixed"}, {"commission_plan": "tiered"}
+    assert live.commission(fixed, 1, 29.0) == pytest.approx(0.29)  # tope del 1 % del valor
+    assert live.commission(fixed, 2, 100.0) == pytest.approx(1.0)  # mínimo 1 USD
+    assert live.commission(fixed, 300, 50.0) == pytest.approx(1.5)  # 0,005 USD por acción
+    assert live.commission(tiered, 2, 100.0) == pytest.approx(0.35)
+    assert live.order_cost_bps(fixed, 1, 29.0) == pytest.approx(105)  # 1 % + 5 pb de deslizamiento
+    small = {"capital": 200, "max_order": 200, "commission_plan": "fixed"}
+    big = {"capital": 100_000, "max_order": 5_000, "commission_plan": "fixed"}
+    assert live.live_cost_bps(small) == pytest.approx(105) and live.live_cost_bps(big) < 15
+
+
+def test_orders_too_expensive_for_the_validated_cost_are_blocked(user, gw, monkeypatch, real_prices):
+    uid = user["id"]
+    _live_user(uid, monkeypatch)
+    cheap_book = {"SPY": dict(GOOD_BOOK["SPY"], cost_bps=10)}  # validada a 10 pb; la orden real cuesta ~25 pb
+    orders, checks = live.plan(uid, 1, {"SPY": 0.3}, VIEWS, real_prices, {"SPY": "yahoo"}, cheap_book, None,
+                               engine.POLICY)
+    assert orders == [] and "supera el coste con que se validó" in checks[-1]["detail"]
+
+
+def test_targets_below_one_share_are_explained(user, gw, monkeypatch, real_prices):
+    uid = user["id"]
+    _live_user(uid, monkeypatch, capital=200, max_order=200)
+    orders, checks = live.plan(uid, 1, {"SPY": 0.08}, VIEWS, real_prices, {"SPY": "yahoo"}, GOOD_BOOK, None,
+                               engine.POLICY)
+    assert orders == [] and "no llega a 1 acción" in checks[-1]["detail"]
+
+
+def test_proposed_orders_carry_their_commission(user, gw, monkeypatch, real_prices):
+    o = _pending(user["id"], real_prices, monkeypatch)
+    assert o["commission"] == pytest.approx(1.0) and o["cost_pct"] == pytest.approx(1.0 / 502.5)
+
+
+def test_live_mode_retrains_at_the_real_cost(client, user, gw, monkeypatch):
+    h = user["headers"]
+    _live_user(user["id"], monkeypatch, capital=200, max_order=200, real_data=False)
+    client.post("/fund/train", headers=h)  # entrenamiento previo a coste de paper (10 pb)... ya en modo real
+    t = client.get("/fund/training", headers=h).json()["data"]
+    assert t["protocol"]["cost_bps"] == pytest.approx(105)
+    assert all(b.get("cost_bps") == pytest.approx(105) for b in t["book"].values())
+
+
+def test_cycle_retrains_a_book_validated_at_paper_cost(client, user, gw, monkeypatch):
+    h = user["headers"]
+    first = client.post("/fund/train", headers=h).json()["data"]  # en paper: 10 pb
+    assert first["protocol"]["cost_bps"] == pytest.approx(10)
+    _live_user(user["id"], monkeypatch, capital=200, max_order=200, real_data=False)
+    rep = client.post("/fund/cycle", headers=h, json={}).json()["data"]["report"]
+    t = client.get("/fund/training", headers=h).json()["data"]
+    assert t["id"] > first["id"] and t["trigger"] == "auto" and t["protocol"]["cost_bps"] == pytest.approx(105)
+    assert rep["training"]["id"] == t["id"]
