@@ -139,7 +139,7 @@ class ApproveIn(BaseModel):
 
 @router.get("/live")
 async def live_status(user: dict = Depends(require_auth)):
-    await live.refresh(user["id"])
+    await live.refresh(user["id"])  # también en paper: lo ya enviado a IBKR sigue su curso
     return ok(await live.status(user["id"]))
 
 
@@ -176,9 +176,40 @@ async def live_approve(order_id: int, body: ApproveIn, request: Request, user: d
     try:
         run = engine.get_run(user["id"], o["run_id"])
         book = (T.latest(user["id"]) or {}).get("book", {})
+        latest = engine.last_run(user["id"], with_report=False)
         return ok(await live.approve(user["id"], order_id, body.confirm, run["finished"],
-                                     engine.get_state(user["id"])["halted"], book))
+                                     engine.get_state(user["id"])["halted"], book, latest["id"] if latest else None))
     except (live.LiveError, engine.FundError) as e:
+        return fail(str(e))
+
+
+@router.post("/live/orders/{order_id}/confirm-warnings")
+async def live_confirm_warnings(order_id: int, request: Request, user: dict = Depends(require_auth)):
+    """Segundo clic: confirmar los avisos que IBKR muestra antes de aceptar la orden."""
+    _human_session(request)
+    o = next((x for x in live.orders(user["id"], 500) if x["id"] == order_id), None)
+    if not o:
+        return fail("Orden no encontrada.")
+    try:
+        run = engine.get_run(user["id"], o["run_id"])
+        return ok(await live.confirm_warnings(user["id"], order_id, run["finished"],
+                                              engine.get_state(user["id"])["halted"]))
+    except (live.LiveError, engine.FundError) as e:
+        return fail(str(e))
+
+
+class ReconcileIn(BaseModel):
+    filled_qty: float = Field(ge=0)
+    avg_price: float | None = Field(default=None, gt=0)
+
+
+@router.post("/live/orders/{order_id}/reconcile")
+async def live_reconcile(order_id: int, body: ReconcileIn, request: Request, user: dict = Depends(require_auth)):
+    """Resolver a mano una orden que IBKR dejó de listar, con lo que muestra tu cuenta de IBKR."""
+    _human_session(request)
+    try:
+        return ok(live.reconcile(user["id"], order_id, body.filled_qty, body.avg_price))
+    except live.LiveError as e:
         return fail(str(e))
 
 

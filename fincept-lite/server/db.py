@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS fund_live (
 CREATE TABLE IF NOT EXISTS fund_live_orders (
     id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, run_id INTEGER, symbol TEXT, side TEXT, qty REAL,
     limit_price REAL, ref_price REAL, notional REAL, status TEXT, broker_order_id TEXT, filled_qty REAL DEFAULT 0,
-    avg_price REAL, detail TEXT DEFAULT '[]', created REAL, updated REAL
+    avg_price REAL, detail TEXT DEFAULT '[]', created REAL, updated REAL, reply_id TEXT, warnings TEXT
 );
 CREATE TABLE IF NOT EXISTS chat_messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -112,6 +112,7 @@ class Database:
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA journal_mode=WAL")
         self.conn.executescript(SCHEMA)
+        self._migrate()
 
     def execute(self, sql: str, params: Iterable[Any] = ()) -> sqlite3.Cursor:
         with self._lock:
@@ -121,6 +122,13 @@ class Database:
         with self._lock:
             row = self.conn.execute(sql, tuple(params)).fetchone()
             return dict(row) if row else None
+
+    def _migrate(self) -> None:
+        """Columnas añadidas después de crear una tabla (las bases ya existentes no las tienen)."""
+        for table, col, decl in [("fund_live_orders", "reply_id", "TEXT"), ("fund_live_orders", "warnings", "TEXT")]:
+            cols = {r[1] for r in self.conn.execute(f"PRAGMA table_info({table})")}
+            if col not in cols:
+                self.conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {decl}")
 
     def all(self, sql: str, params: Iterable[Any] = ()) -> list[dict]:
         with self._lock:

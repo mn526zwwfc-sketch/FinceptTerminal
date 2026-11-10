@@ -23,7 +23,6 @@ import httpx
 from ..config import settings
 
 LOOPBACK = {"127.0.0.1", "localhost", "::1"}
-MAX_REPLIES = 5  # avisos de IBKR que se confirman para una orden ya aprobada por la persona
 
 
 class IBKRError(Exception):
@@ -81,26 +80,25 @@ class IBKRClient:
         return {int(r["conid"]): {"qty": float(r.get("position") or 0), "price": r.get("mktPrice")}
                 for r in rows if isinstance(rows, list) and r.get("conid")}
 
+    def _order_or_question(self, res) -> dict:
+        item = res[0] if isinstance(res, list) and res else res
+        if not isinstance(item, dict):
+            raise IBKRError(f"Respuesta inesperada de IBKR: {str(res)[:200]}")
+        if item.get("order_id"):
+            return {"order_id": str(item["order_id"]), "status": item.get("order_status", "Submitted")}
+        if item.get("id") and item.get("message"):  # IBKR pide confirmar avisos: decide la persona, no el código
+            return {"reply_id": str(item["id"]), "messages": [str(m) for m in item["message"]]}
+        raise IBKRError(f"IBKR rechazó la orden: {item.get('error') or str(item)[:200]}")
+
     async def place_limit(self, account: str, conid: int, side: str, qty: int, limit: float, coid: str) -> dict:
-        """Envía UNA orden limitada DAY. Confirma los avisos de IBKR (la persona ya aprobó esta orden exacta)
-        y devuelve los avisos para la auditoría."""
+        """Envía UNA orden limitada DAY. Devuelve {order_id, status} o, si IBKR pide confirmar avisos,
+        {reply_id, messages}: la orden no existe hasta que la persona los confirme con `reply`."""
         body = {"orders": [{"conid": conid, "orderType": "LMT", "price": round(limit, 2), "side": side.upper(),
                             "quantity": int(qty), "tif": "DAY", "cOID": coid}]}
-        res = await self._req("POST", f"/iserver/account/{account}/orders", json=body)
-        warnings: list[str] = []
-        for _ in range(MAX_REPLIES):
-            item = res[0] if isinstance(res, list) and res else res
-            if not isinstance(item, dict):
-                raise IBKRError(f"Respuesta inesperada de IBKR: {str(res)[:200]}")
-            if item.get("order_id"):
-                return {"order_id": str(item["order_id"]), "status": item.get("order_status", "Submitted"),
-                        "warnings": warnings}
-            if item.get("id") and item.get("message"):
-                warnings += [str(m) for m in item["message"]]
-                res = await self._req("POST", f"/iserver/reply/{item['id']}", json={"confirmed": True})
-                continue
-            raise IBKRError(f"IBKR rechazó la orden: {item.get('error') or str(item)[:200]}")
-        raise IBKRError("IBKR pidió demasiadas confirmaciones; la orden no se envió.")
+        return self._order_or_question(await self._req("POST", f"/iserver/account/{account}/orders", json=body))
+
+    async def reply(self, reply_id: str) -> dict:
+        return self._order_or_question(await self._req("POST", f"/iserver/reply/{reply_id}", json={"confirmed": True}))
 
     async def orders(self) -> dict[str, dict]:
         res = await self._req("GET", "/iserver/account/orders")

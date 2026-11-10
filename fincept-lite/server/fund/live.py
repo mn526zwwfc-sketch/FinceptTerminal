@@ -35,7 +35,7 @@ LIMIT_BAND = 0.005
 MAX_DRIFT = 0.01
 FRESH_SECONDS = 15 * 60
 NOT_IN_IBKR = {a.symbol for a in A.UNIVERSE if a.desk == "crypto"}
-OPEN = ("pending", "submitted", "partially_filled")
+IN_FLIGHT = ("submitted", "partially_filled", "needs_confirmation", "unreconciled")  # cuentan como comprometidas
 
 client_factory = IBKRClient  # los tests lo sustituyen por un gateway simulado
 
@@ -83,6 +83,8 @@ def validate_config(cfg: dict) -> dict:
 
 def set_config(uid: int, cfg: dict) -> dict:
     clean = validate_config(cfg)
+    if mode(uid) == "live":  # cambiar el capital a mitad de día falsearía la pérdida diaria
+        raise LiveError("Vuelve a modo paper para cambiar el capital o los límites.")
     _row(uid)
     get_db().execute("UPDATE fund_live SET config=?, updated=? WHERE user_id=?", (json.dumps(clean), time.time(), uid))
     return clean
@@ -146,13 +148,23 @@ def ledger(uid: int, prices: dict[str, float]) -> dict:
         sign = 1 if o["side"] == "buy" else -1
         qty[o["symbol"]] = qty.get(o["symbol"], 0.0) + sign * o["filled_qty"]
         cash -= sign * o["filled_qty"] * (o["avg_price"] or 0.0)
-    reserved = sum(o["qty"] * o["limit_price"] for o in get_db().all(
-        "SELECT qty, limit_price FROM fund_live_orders WHERE user_id=? AND side='buy' AND status IN "
-        "('submitted','partially_filled')", (uid,)))
+    reserved, selling = 0.0, {}
+    marks = ",".join("?" * len(IN_FLIGHT))
+    for o in get_db().all(f"SELECT symbol, side, qty, filled_qty, limit_price FROM fund_live_orders "
+                          f"WHERE user_id=? AND status IN ({marks})", (uid, *IN_FLIGHT)):
+        left = max(0.0, o["qty"] - (o["filled_qty"] or 0.0))
+        if o["side"] == "buy":
+            reserved += left * o["limit_price"]  # capital comprometido en compras aún no ejecutadas
+        else:
+            selling[o["symbol"]] = selling.get(o["symbol"], 0.0) + left  # acciones ya en venta
     positions = {s: q for s, q in qty.items() if q > 1e-9}
+    available = {s: q - selling.get(s, 0.0) for s, q in positions.items() if q - selling.get(s, 0.0) > 1e-9}
     equity = cash + sum(q * prices.get(s, 0.0) for s, q in positions.items())
-    return {"capital": cfg.get("capital"), "cash": cash, "reserved": reserved, "positions": positions,
-            "equity": equity}
+    unreconciled = get_db().one("SELECT COUNT(*) AS n FROM fund_live_orders WHERE user_id=? AND status='unreconciled'",
+                                (uid,))["n"]
+    return {"capital": cfg.get("capital"), "currency": "USD", "cash": cash, "reserved": reserved,
+            "positions": positions, "available_to_sell": available, "selling": selling, "equity": equity,
+            "unreconciled": unreconciled}
 
 
 def _log(row_id: int, action: str, result: str, **extra) -> None:
@@ -206,10 +218,19 @@ def live_gate(symbol: str, view: dict | None, book_entry: dict | None) -> str | 
 
 def plan(uid: int, run_id: int, target: dict[str, float], views: dict, prices: dict[str, float],
          sources: dict[str, str], book: dict, liquidity: dict | None, policy,
-         allow_buys: bool = True) -> tuple[list[dict], list[dict]]:
-    """Convierte los pesos objetivo en órdenes reales pendientes de aprobación."""
+         allow_buys: bool = True, reconciled: bool = True) -> tuple[list[dict], list[dict]]:
+    """Convierte los pesos objetivo en órdenes reales pendientes de aprobación.
+
+    Lo pendiente de ciclos anteriores caduca: solo se puede aprobar la propuesta más reciente (si no,
+    dos ciclos seguidos permitirían aprobar dos veces la misma compra o vender dos veces las mismas acciones)."""
+    for st in ("pending", "needs_confirmation"):
+        _audit_bulk(uid, st, "expired", f"sustituida por el ciclo #{run_id}")
     cfg, checks = config(uid), []
     led = ledger(uid, prices)
+    if not reconciled or led["unreconciled"]:
+        allow_buys = False
+        checks.append({"check": "conciliación IBKR", "status": "blocked",
+                       "detail": "hay órdenes sin conciliar con IBKR: resuélvelas antes de comprar"})
     raw, plan_checks = A.plan_orders(target, led["positions"], prices, led["equity"], policy, liquidity)
     checks += plan_checks
     cash = led["cash"] - led["reserved"]
@@ -220,7 +241,8 @@ def plan(uid: int, run_id: int, target: dict[str, float], views: dict, prices: d
             checks.append({"check": f"real {s}", "status": "blocked", "detail": "precio no real (fuente simulada)"})
             continue
         if side == "buy" and not allow_buys:
-            checks.append({"check": f"real {s}", "status": "blocked", "detail": "cortacircuitos: solo ventas"})
+            checks.append({"check": f"real {s}", "status": "blocked",
+                           "detail": "compras bloqueadas (cortacircuitos u órdenes sin conciliar): solo ventas"})
             continue
         if side == "buy":
             why = live_gate(s, views.get(s), book.get(s))
@@ -231,7 +253,7 @@ def plan(uid: int, run_id: int, target: dict[str, float], views: dict, prices: d
             qty = int(min(o["qty"], cfg["max_order"] // limit, max(cash, 0.0) // limit))
         else:
             limit = px * (1 - LIMIT_BAND)
-            qty = int(min(o["qty"], led["positions"].get(s, 0.0)))
+            qty = int(min(o["qty"], led["available_to_sell"].get(s, 0.0)))  # descuenta lo que ya está en venta
         if qty < 1:
             checks.append({"check": f"real {s}", "status": "info",
                            "detail": "menos de 1 acción tras límites de capital y de importe por orden"})
@@ -254,10 +276,29 @@ def confirm_text(o: dict) -> str:
 
 # ── aprobación orden a orden ────────────────────────────────────────────────
 
-async def approve(uid: int, order_id: int, confirm: str, run_finished: float, halted: bool, book: dict) -> dict:
+def _get(uid: int, order_id: int) -> dict:
     o = get_db().one("SELECT * FROM fund_live_orders WHERE id=? AND user_id=?", (order_id, uid))
     if not o:
         raise LiveError("Orden no encontrada.")
+    return o
+
+
+async def _sent(order_id: int, res: dict) -> dict:
+    """Guarda lo que devolvió IBKR: orden creada o avisos que la persona debe confirmar."""
+    if res.get("reply_id"):
+        get_db().execute("UPDATE fund_live_orders SET reply_id=?, warnings=? WHERE id=?",
+                         (res["reply_id"], json.dumps(res["messages"], ensure_ascii=False), order_id))
+        _set_status(order_id, "needs_confirmation", "IBKR pide confirmar avisos", " | ".join(res["messages"])[:2000])
+    else:
+        get_db().execute("UPDATE fund_live_orders SET reply_id=NULL, warnings=NULL WHERE id=?", (order_id,))
+        _set_status(order_id, "submitted", "envío", f"IBKR orden {res['order_id']} ({res['status']})",
+                    broker_order_id=res["order_id"])
+    return get_db().one("SELECT * FROM fund_live_orders WHERE id=?", (order_id,))
+
+
+async def approve(uid: int, order_id: int, confirm: str, run_finished: float, halted: bool, book: dict,
+                  latest_run_id: int | None) -> dict:
+    o = _get(uid, order_id)
     if o["status"] != "pending":
         raise LiveError(f"La orden está '{o['status']}', no se puede aprobar.")
     if confirm != confirm_text(o):
@@ -273,10 +314,15 @@ async def approve(uid: int, order_id: int, confirm: str, run_finished: float, ha
         block("el fondo no está en modo real")
     if settings.data_mode != "live":
         block("el servidor usa datos simulados")
+    if o["run_id"] != latest_run_id:
+        block("hay una propuesta más reciente: aprueba las órdenes del último comité")
     if time.time() - run_finished > FRESH_SECONDS:
         block("la propuesta tiene más de 15 minutos: convoca un comité nuevo")
     if halted and o["side"] == "buy":
         block("fondo parado: solo se permiten ventas")
+    rec = await refresh(uid)  # el registro del fondo tiene que estar al día antes de decidir
+    if not rec["ok"]:
+        block("no se pudo conciliar con IBKR: " + rec.get("error", ""))
     q = await market.quote(o["symbol"])
     if q.get("source") != LIVE_SOURCE:
         block("el precio actual no viene de una fuente real")
@@ -289,6 +335,8 @@ async def approve(uid: int, order_id: int, confirm: str, run_finished: float, ha
     if daily_check(uid, led["equity"])["breached"] and o["side"] == "buy":
         block("pérdida diaria máxima alcanzada")
     if o["side"] == "buy":
+        if led["unreconciled"]:
+            block("hay órdenes sin conciliar con IBKR: resuélvelas antes de comprar")
         why = live_gate(o["symbol"], None, book.get(o["symbol"]))
         if why:
             block(why)
@@ -296,8 +344,8 @@ async def approve(uid: int, order_id: int, confirm: str, run_finished: float, ha
             block("supera el máximo por orden")
         if o["notional"] > led["cash"] - led["reserved"] + 1e-6:
             block("no queda capital asignado suficiente")
-    elif o["qty"] > led["positions"].get(o["symbol"], 0) + 1e-9:
-        block("el fondo no tiene esas acciones (nunca vende posiciones ajenas al fondo)")
+    elif o["qty"] > led["available_to_sell"].get(o["symbol"], 0) + 1e-9:
+        block("el fondo no tiene esas acciones libres (nunca vende posiciones ajenas al fondo ni las ya en venta)")
 
     c = client_factory()
     try:
@@ -308,50 +356,85 @@ async def approve(uid: int, order_id: int, confirm: str, run_finished: float, ha
             block("la cuenta configurada no está en el gateway")
         conid = await c.conid(o["symbol"])
         if o["side"] == "sell":
-            held = (await c.positions(cfg["account"])).get(conid, {}).get("qty", 0)
-            if o["qty"] > held + 1e-9:
+            ibkr_qty = (await c.positions(cfg["account"])).get(conid, {}).get("qty", 0)
+            if o["qty"] > ibkr_qty + 1e-9:
                 block("IBKR muestra menos acciones de las que el fondo cree tener")
         res = await c.place_limit(cfg["account"], conid, o["side"], int(o["qty"]), o["limit_price"],
-                                  coid=f"fincept-{uid}-{order_id}")
+                                  coid=f"fincept-{uid}-{order_id}-{int(time.time())}")
     except IBKRError as e:
         _set_status(order_id, "error", "envío", str(e))
         raise LiveError(str(e)) from e
     finally:
         await c.close()
-    _set_status(order_id, "submitted", "envío", f"IBKR orden {res['order_id']} ({res['status']})",
-                broker_order_id=res["order_id"])
-    if res["warnings"]:
-        _log(order_id, "avisos de IBKR confirmados", " | ".join(res["warnings"])[:2000])
-    return get_db().one("SELECT * FROM fund_live_orders WHERE id=?", (order_id,))
+    return await _sent(order_id, res)
+
+
+async def confirm_warnings(uid: int, order_id: int, run_finished: float, halted: bool) -> dict:
+    """Segundo clic: la persona ha leído los avisos de IBKR y los confirma."""
+    o = _get(uid, order_id)
+    if o["status"] != "needs_confirmation" or not o["reply_id"]:
+        raise LiveError(f"La orden está '{o['status']}': no hay avisos que confirmar.")
+    if mode(uid) != "live" or (halted and o["side"] == "buy") or time.time() - run_finished > FRESH_SECONDS:
+        _set_status(order_id, "expired", "avisos", "modo, parada o antigüedad ya no permiten enviarla")
+        raise LiveError("La orden ya no se puede enviar: convoca un comité nuevo.")
+    c = client_factory()
+    try:
+        res = await c.reply(o["reply_id"])
+    except IBKRError as e:
+        _set_status(order_id, "error", "confirmación de avisos", str(e))
+        raise LiveError(str(e)) from e
+    finally:
+        await c.close()
+    _log(order_id, "avisos confirmados por la persona", " | ".join(json.loads(o["warnings"] or "[]"))[:2000])
+    return await _sent(order_id, res)
 
 
 def reject(uid: int, order_id: int) -> dict:
-    o = get_db().one("SELECT status FROM fund_live_orders WHERE id=? AND user_id=?", (order_id, uid))
-    if not o:
-        raise LiveError("Orden no encontrada.")
-    if o["status"] != "pending":
+    o = _get(uid, order_id)
+    if o["status"] not in ("pending", "needs_confirmation"):
         raise LiveError(f"La orden está '{o['status']}'.")
     _set_status(order_id, "rejected", "decisión", "rechazada por la persona")
     return {"id": order_id, "status": "rejected"}
 
 
-async def refresh(uid: int) -> int:
-    """Actualiza con IBKR el estado de las órdenes enviadas (ejecutadas, parciales, canceladas)."""
+def reconcile(uid: int, order_id: int, filled_qty: float, avg_price: float | None) -> dict:
+    """La persona resuelve una orden que IBKR dejó de listar, con lo que ve en su cuenta de IBKR."""
+    o = _get(uid, order_id)
+    if o["status"] != "unreconciled":
+        raise LiveError(f"La orden está '{o['status']}': no hace falta conciliarla.")
+    if not 0 <= filled_qty <= o["qty"]:
+        raise LiveError(f"La cantidad ejecutada debe estar entre 0 y {o['qty']:g}.")
+    if filled_qty and not (avg_price and avg_price > 0):
+        raise LiveError("Indica el precio medio de ejecución.")
+    status = "filled" if filled_qty == o["qty"] else "cancelled"
+    _set_status(order_id, status, "conciliación manual", f"{filled_qty:g} ejecutadas a {avg_price or 0:g}",
+                filled_qty=filled_qty, avg_price=avg_price if filled_qty else None)
+    return _get(uid, order_id)
+
+
+async def refresh(uid: int) -> dict:
+    """Concilia con IBKR las órdenes enviadas. Una orden que IBKR ya no lista pasa a 'unreconciled':
+    mientras haya alguna, no se compra (el capital podría estar ya gastado)."""
     sent = get_db().all("SELECT * FROM fund_live_orders WHERE user_id=? AND status IN ('submitted','partially_filled')",
                         (uid,))
     if not sent:
-        return 0
-    c = client_factory()
+        return {"ok": True, "changed": 0}
+    try:
+        c = client_factory()
+    except IBKRError as e:
+        return {"ok": False, "changed": 0, "error": str(e)}
     try:
         book = await c.orders()
-    except IBKRError:
-        return 0
+    except IBKRError as e:
+        return {"ok": False, "changed": 0, "error": str(e)}
     finally:
         await c.close()
     changed = 0
     for o in sent:
         b = book.get(str(o["broker_order_id"]))
         if not b:
+            _set_status(o["id"], "unreconciled", "IBKR", "IBKR ya no lista esta orden: compruébala en tu cuenta")
+            changed += 1
             continue
         status = {"Filled": "filled", "Cancelled": "cancelled", "Inactive": "cancelled"}.get(
             b["status"], "partially_filled" if b["filled"] > 0 else "submitted")
@@ -359,17 +442,22 @@ async def refresh(uid: int) -> int:
             _set_status(o["id"], status, "IBKR", f"{b['status']}: {b['filled']:g} a {b['avg_price']}",
                         filled_qty=b["filled"], avg_price=b["avg_price"])
             changed += 1
-    return changed
+    return {"ok": True, "changed": changed}
 
 
 async def cancel_open(uid: int, reason: str) -> int:
     """Parada de emergencia: caduca lo pendiente y cancela en IBKR lo enviado."""
-    _audit_bulk(uid, "pending", "expired", reason)
+    for st in ("pending", "needs_confirmation"):
+        _audit_bulk(uid, st, "expired", reason)
     sent = get_db().all("SELECT * FROM fund_live_orders WHERE user_id=? AND status IN ('submitted','partially_filled')",
                         (uid,))
     if not sent:
         return 0
-    c, n = client_factory(), 0
+    n = 0
+    try:
+        c = client_factory()
+    except IBKRError:
+        return 0
     try:
         for o in sent:
             try:

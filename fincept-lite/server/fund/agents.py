@@ -503,7 +503,9 @@ def plan_orders(target: dict[str, float], positions: dict[str, float], prices: d
             continue
         frac = BY_SYMBOL[s].desk == "crypto"
         qty = abs(diff) * equity / px
-        qty = round(qty, 4) if frac else math.floor(qty)
+        qty = round(qty, 4) if frac else math.floor(qty + 1e-9)  # 999,9999… acciones son 1.000, no 999
+        if target.get(s, 0.0) == 0 and positions.get(s, 0.0) > 0:
+            qty = positions[s]  # salir del todo: se vende la posición entera, sin restos por redondeo
         if diff < 0:
             qty = min(qty if qty else positions.get(s, 0.0), positions.get(s, 0.0))
         if qty <= 0:

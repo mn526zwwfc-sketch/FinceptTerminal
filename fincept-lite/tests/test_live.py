@@ -80,8 +80,9 @@ def real_prices(monkeypatch):
 def _live_user(uid, monkeypatch, capital=10_000.0, max_order=1_000.0, real_data=True):
     if real_data:  # solo afecta a las comprobaciones: los precios los ponen los fixtures (sin red)
         monkeypatch.setattr(settings, "data_mode", "live")
-    live.set_config(uid, {"capital": capital, "max_order": max_order, "daily_loss_pct": 0.02, "account": ACCOUNT})
-    get_db().execute("UPDATE fund_live SET mode='live' WHERE user_id=?", (uid,))
+    if live.mode(uid) != "live":
+        live.set_config(uid, {"capital": capital, "max_order": max_order, "daily_loss_pct": 0.02, "account": ACCOUNT})
+        get_db().execute("UPDATE fund_live SET mode='live' WHERE user_id=?", (uid,))
 
 
 GOOD_BOOK = {"SPY": {"trained": True, "validated": True, "data_source": "yahoo"},
@@ -147,38 +148,55 @@ def test_plan_only_buys_validated_real_data_strategies(user, gw, monkeypatch, re
 
 # ── aprobación orden a orden ────────────────────────────────────────────────
 
-def _pending(uid, real_prices, monkeypatch):
-    _live_user(uid, monkeypatch)
-    orders, _ = live.plan(uid, 1, {"SPY": 0.3}, VIEWS, real_prices, {"SPY": "yahoo"}, GOOD_BOOK, None, engine.POLICY)
+def _pending(uid, real_prices, monkeypatch, run_id=1, target=None, max_order=1_000.0):
+    _live_user(uid, monkeypatch, max_order=max_order)
+    orders, _ = live.plan(uid, run_id, target if target is not None else {"SPY": 0.3}, VIEWS, real_prices,
+                          {"SPY": "yahoo"}, GOOD_BOOK, None, engine.POLICY)
     return orders[0]
 
 
-def test_approve_requires_exact_confirmation_then_sends_limit_order(user, gw, monkeypatch, real_prices):
+def _approve(uid, o, run_id=1, finished=None, halted=False, confirm=None):
+    return run(live.approve(uid, o["id"], confirm or live.confirm_text(o), finished or time.time(), halted,
+                            GOOD_BOOK, run_id))
+
+
+def _send(uid, o, run_id=1):
+    """Aprobar + confirmar los avisos de IBKR (dos clics de la persona)."""
+    first = _approve(uid, o, run_id)
+    assert first["status"] == "needs_confirmation"
+    return run(live.confirm_warnings(uid, o["id"], time.time(), False))
+
+
+def test_approve_requires_exact_confirmation_and_a_second_click_for_ibkr_warnings(user, gw, monkeypatch, real_prices):
     uid = user["id"]
     o = _pending(uid, real_prices, monkeypatch)
     with pytest.raises(live.LiveError, match="Escribe exactamente"):
-        run(live.approve(uid, o["id"], "sí", time.time(), False, GOOD_BOOK))
+        _approve(uid, o, confirm="sí")
     assert live.orders(uid)[0]["status"] == "pending" and not gw.sent  # nada enviado
     text = live.confirm_text(o)
     assert text == "BUY 1 SPY @ 502.50"
-    done = run(live.approve(uid, o["id"], text, time.time(), False, GOOD_BOOK))
+    first = _approve(uid, o)
+    assert first["status"] == "needs_confirmation" and "Aviso de precaución" in first["warnings"]
+    assert gw.orders == {}  # IBKR no crea la orden hasta que la persona confirma los avisos
+    sent = gw.sent[0]
+    assert {k: v for k, v in sent.items() if k != "cOID"} == {"conid": CONIDS["SPY"], "orderType": "LMT",
+                                                              "price": 502.5, "side": "BUY", "quantity": 1, "tif": "DAY"}
+    assert sent["cOID"].startswith(f"fincept-{uid}-{o['id']}-")  # único aunque se reinicie la base de datos
+    done = run(live.confirm_warnings(uid, o["id"], time.time(), False))
     assert done["status"] == "submitted" and done["broker_order_id"] == "1000"
-    assert gw.sent == [{"conid": CONIDS["SPY"], "orderType": "LMT", "price": 502.5, "side": "BUY", "quantity": 1,
-                        "tif": "DAY", "cOID": f"fincept-{uid}-{o['id']}"}]
-    log = [d["action"] for d in live.orders(uid)[0]["detail"]]
-    assert "avisos de IBKR confirmados" in log  # el aviso de IBKR queda auditado
+    assert "avisos confirmados por la persona" in [d["action"] for d in live.orders(uid)[0]["detail"]]
     with pytest.raises(live.LiveError, match="submitted"):  # no se puede aprobar dos veces
-        run(live.approve(uid, o["id"], text, time.time(), False, GOOD_BOOK))
+        _approve(uid, o)
 
 
 @pytest.mark.parametrize("case,reason", [
     ("stale", "15 minutos"), ("halted", "parado"), ("drift", "se ha movido"), ("paper", "modo real"),
-    ("sim_data", "datos simulados"), ("logged_out", "sesión iniciada"),
+    ("sim_data", "datos simulados"), ("logged_out", "sesión iniciada"), ("superseded", "más reciente"),
 ])
 def test_approve_blocks_and_audits(user, gw, monkeypatch, real_prices, case, reason):
     uid = user["id"]
     o = _pending(uid, real_prices, monkeypatch)
-    finished, halted = time.time(), False
+    finished, halted, latest = time.time(), False, 1
     if case == "stale":
         finished -= 16 * 60
     elif case == "halted":
@@ -191,34 +209,87 @@ def test_approve_blocks_and_audits(user, gw, monkeypatch, real_prices, case, rea
         monkeypatch.setattr(settings, "data_mode", "sim")
     elif case == "logged_out":
         gw.authenticated = False
+    elif case == "superseded":
+        latest = 2
     with pytest.raises(live.LiveError, match=reason):
-        run(live.approve(uid, o["id"], live.confirm_text(o), finished, halted, GOOD_BOOK))
+        _approve(uid, o, run_id=latest, finished=finished, halted=halted)
     row = live.orders(uid)[0]
     assert row["status"] == "blocked" and reason in row["detail"][-1]["result"] and not gw.sent
 
 
-def test_fills_update_the_fund_ledger_and_sells_never_exceed_fund_holdings(user, gw, monkeypatch, real_prices):
+def test_a_new_cycle_expires_older_pending_orders(user, gw, monkeypatch, real_prices):
+    uid = user["id"]
+    old = _pending(uid, real_prices, monkeypatch, run_id=1)
+    new = _pending(uid, real_prices, monkeypatch, run_id=2)
+    rows = {r["id"]: r for r in live.orders(uid)}
+    assert rows[old["id"]]["status"] == "expired" and "ciclo #2" in rows[old["id"]]["detail"][-1]["result"]
+    with pytest.raises(live.LiveError, match="expired"):  # la misma compra no se puede aprobar dos veces
+        _approve(uid, old, run_id=2)
+    assert _send(uid, new, run_id=2)["status"] == "submitted"
+
+
+def test_fills_update_the_ledger_and_sells_never_exceed_free_fund_shares(user, gw, monkeypatch, real_prices):
+    uid = user["id"]
+    o = _pending(uid, real_prices, monkeypatch, target={"SPY": 0.1}, max_order=2_000)
+    assert o["qty"] == 2
+    _send(uid, o)
+    gw.fill("1000")
+    assert run(live.refresh(uid)) == {"ok": True, "changed": 1}
+    led = live.ledger(uid, real_prices)
+    assert led["positions"] == {"SPY": 2} and led["cash"] == pytest.approx(10_000 - 2 * 502.5)
+    gw.positions = {CONIDS["SPY"]: 52}  # 50 son tuyas: el fondo solo puede vender las 2 que compró
+    sell = live.plan(uid, 2, {}, VIEWS, real_prices, {"SPY": "yahoo"}, GOOD_BOOK, None, engine.POLICY)[0][0]
+    assert (sell["side"], sell["qty"]) == ("sell", 2)
+    _send(uid, sell, run_id=2)  # enviada, aún sin ejecutar
+    led = live.ledger(uid, real_prices)
+    assert led["selling"] == {"SPY": 2} and led["available_to_sell"] == {}
+    again, checks = live.plan(uid, 3, {}, VIEWS, real_prices, {"SPY": "yahoo"}, GOOD_BOOK, None, engine.POLICY)
+    assert again == []  # no vende otra vez las acciones que ya están en venta
+    get_db().execute("UPDATE fund_live_orders SET status='pending', qty=5, run_id=3 WHERE id=?", (sell["id"],))
+    bad = dict(sell, qty=5)  # manipulación: intentar vender más de lo que es del fondo
+    with pytest.raises(live.LiveError, match="nunca vende posiciones ajenas"):
+        _approve(uid, bad, run_id=3)
+
+
+def test_orders_ibkr_stops_listing_block_buys_until_resolved(user, gw, monkeypatch, real_prices):
     uid = user["id"]
     o = _pending(uid, real_prices, monkeypatch)
-    run(live.approve(uid, o["id"], live.confirm_text(o), time.time(), False, GOOD_BOOK))
-    gw.fill("1000")
-    assert run(live.refresh(uid)) == 1
-    led = live.ledger(uid, real_prices)
-    assert led["positions"] == {"SPY": 1} and led["cash"] == pytest.approx(10_000 - 502.5)
-    # la cuenta tiene 50 SPY propios, pero el fondo solo puede vender el que compró
-    gw.positions = {CONIDS["SPY"]: 51}
-    orders, _ = live.plan(uid, 2, {}, VIEWS, real_prices, {"SPY": "yahoo"}, GOOD_BOOK, None, engine.POLICY)
-    assert [(x["side"], x["qty"]) for x in orders] == [("sell", 1)]
-    get_db().execute("UPDATE fund_live_orders SET qty=5 WHERE id=?", (orders[0]["id"],))  # manipulación
-    bad = dict(orders[0], qty=5)
-    with pytest.raises(live.LiveError, match="nunca vende posiciones ajenas"):
-        run(live.approve(uid, bad["id"], live.confirm_text(bad), time.time(), False, GOOD_BOOK))
+    _send(uid, o)
+    gw.orders.clear()  # p. ej. orden DAY de una sesión anterior del gateway
+    assert run(live.refresh(uid))["changed"] == 1
+    assert live.orders(uid)[0]["status"] == "unreconciled" and live.ledger(uid, real_prices)["unreconciled"] == 1
+    orders, checks = live.plan(uid, 2, {"SPY": 0.3}, VIEWS, real_prices, {"SPY": "yahoo"}, GOOD_BOOK, None,
+                               engine.POLICY)
+    assert orders == [] and any("sin conciliar" in c["detail"] for c in checks)
+    with pytest.raises(live.LiveError, match="precio medio"):
+        live.reconcile(uid, o["id"], 1, None)
+    done = live.reconcile(uid, o["id"], 1, 501.0)  # la persona mira su cuenta de IBKR: se ejecutó
+    assert done["status"] == "filled" and live.ledger(uid, real_prices)["positions"] == {"SPY": 1}
+
+
+def test_gateway_down_blocks_approval(user, gw, monkeypatch, real_prices):
+    uid = user["id"]
+    first = _pending(uid, real_prices, monkeypatch)
+    _send(uid, first)
+    o = _pending(uid, real_prices, monkeypatch, run_id=2)
+
+    def down():
+        raise IBKRError("gateway caído")
+    monkeypatch.setattr(live, "client_factory", down)
+    with pytest.raises(live.LiveError, match="conciliar"):
+        _approve(uid, o, run_id=2)
+
+
+def test_limits_cannot_change_while_live(user, monkeypatch):
+    _live_user(user["id"], monkeypatch)
+    with pytest.raises(live.LiveError, match="paper"):
+        live.set_config(user["id"], {"capital": 1, "max_order": 1, "daily_loss_pct": 0.02, "account": ACCOUNT})
 
 
 def test_emergency_stop_cancels_sent_orders_and_expires_pending(user, gw, monkeypatch, real_prices):
     uid = user["id"]
     o = _pending(uid, real_prices, monkeypatch)
-    run(live.approve(uid, o["id"], live.confirm_text(o), time.time(), False, GOOD_BOOK))
+    _send(uid, o)
     live.plan(uid, 2, {"SPY": 0.3}, VIEWS, real_prices, {"SPY": "yahoo"}, GOOD_BOOK, None, engine.POLICY)
     assert run(live.cancel_open(uid, "parada de emergencia")) == 1
     assert ("DELETE", f"/iserver/account/{ACCOUNT}/order/1000") in gw.calls

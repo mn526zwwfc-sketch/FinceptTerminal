@@ -682,7 +682,7 @@ const SCREENS = {
     };
     const [liveEl, teamEl] = $$("#f-top .panel .body", el);
     let liveSt = null;
-    const ST_CLS = { pending: "warn", submitted: "cyan", partially_filled: "cyan", filled: "pos", blocked: "neg", error: "neg", rejected: "dim", expired: "dim", cancelled: "dim" };
+    const ST_CLS = { pending: "warn", needs_confirmation: "warn", unreconciled: "neg", submitted: "cyan", partially_filled: "cyan", filled: "pos", blocked: "neg", error: "neg", rejected: "dim", expired: "dim", cancelled: "dim" };
     const confirmText = (o) => `${o.side.toUpperCase()} ${Math.trunc(o.qty)} ${o.symbol} @ ${o.limit_price.toFixed(2)}`;
     const paintLive = (d) => {
       liveSt = d;
@@ -693,17 +693,25 @@ const SCREENS = {
       badge.style.color = isLive ? "var(--neg)" : ""; badge.style.borderColor = isLive ? "var(--neg)" : "";
       $("#f-exec").title = isLive ? "En modo real cada orden se aprueba abajo, una a una" : "";
       const gw = g.authenticated ? `<span class="pos">gateway conectado</span>${g.account_ok ? "" : ' · <span class="neg">la cuenta no aparece en el gateway</span>'}` : `<span class="neg">${esc(g.error || "gateway sin sesión")}</span>`;
-      const rows = d.orders.map((o) => `<tr><td class="dim">${o.id}</td><td class="dim">#${o.run_id}</td><td class="sym">${esc(o.symbol)}</td><td class="${o.side === "buy" ? "pos" : "neg"}">${o.side.toUpperCase()}</td><td class="num">${o.qty}</td><td class="num">${fmtPx(o.limit_price)}</td><td class="num">${fmtN(o.notional)}</td><td class="${ST_CLS[o.status] || ""}">${esc(o.status.toUpperCase())}${o.filled_qty ? ` · ${o.filled_qty} a ${fmtPx(o.avg_price)}` : ""}</td><td class="dim" style="white-space:normal;min-width:180px">${esc((o.detail[o.detail.length - 1] || {}).result || "")}</td><td>${o.status === "pending" && isLive ? `<button class="btn small buy" data-approve="${o.id}">APROBAR</button> <button class="btn small" data-reject="${o.id}">RECHAZAR</button>` : ""}</td></tr>`).join("");
+      const rows = d.orders.map((o) => `<tr><td class="dim">${o.id}</td><td class="dim">#${o.run_id}</td><td class="sym">${esc(o.symbol)}</td><td class="${o.side === "buy" ? "pos" : "neg"}">${o.side.toUpperCase()}</td><td class="num">${o.qty}</td><td class="num">${fmtPx(o.limit_price)}</td><td class="num">${fmtN(o.notional)}</td><td class="${ST_CLS[o.status] || ""}">${esc(o.status.toUpperCase())}${o.filled_qty ? ` · ${o.filled_qty} a ${fmtPx(o.avg_price)}` : ""}</td><td class="dim" style="white-space:normal;min-width:180px">${esc((o.detail[o.detail.length - 1] || {}).result || "")}</td><td>${o.status === "pending" && isLive ? `<button class="btn small buy" data-approve="${o.id}">APROBAR</button> <button class="btn small" data-reject="${o.id}">RECHAZAR</button>` : o.status === "needs_confirmation" ? `<button class="btn small buy" data-warn="${o.id}">VER Y CONFIRMAR AVISOS</button> <button class="btn small" data-reject="${o.id}">RECHAZAR</button>` : o.status === "unreconciled" ? `<button class="btn small sell" data-recon="${o.id}">RESOLVER</button>` : ""}</td></tr>`).join("");
       liveEl.innerHTML = `<div class="help" style="padding:8px">${isLive ? '<b class="neg">Dinero real.</b> El comité solo propone: cada orden la apruebas tú. Órdenes limitadas DAY, acciones enteras, solo ETF de la mesa (sin cripto). Compras solo con estrategias validadas con datos reales.' : "El fondo opera en paper. Configura tu capital y tus límites y activa el modo real cuando el gateway de IBKR esté conectado."} Datos del servidor: <b>${esc(d.data_mode)}</b> · ${gw}</div>
         <div class="row" style="padding:0 8px 8px;gap:6px;flex-wrap:wrap">
-          <label class="dim">Capital <input class="f" id="lv-cap" type="number" min="0" step="100" style="width:110px" value="${c.capital ?? ""}"></label>
-          <label class="dim">Máx. por orden <input class="f" id="lv-max" type="number" min="0" step="50" style="width:100px" value="${c.max_order ?? ""}"></label>
-          <label class="dim">Pérdida diaria máx. % <input class="f" id="lv-loss" type="number" min="0.1" max="20" step="0.1" style="width:70px" value="${c.daily_loss_pct ? (c.daily_loss_pct * 100).toFixed(1) : ""}"></label>
-          <label class="dim">Cuenta IBKR <input class="f" id="lv-acct" style="width:110px" placeholder="U1234567" value="${esc(c.account || "")}"></label>
-          <button class="btn" id="lv-save">GUARDAR LÍMITES</button>
+          <label class="dim">Capital (USD) <input class="f" id="lv-cap" ${isLive ? "disabled" : ""} type="number" min="0" step="100" style="width:110px" value="${c.capital ?? ""}"></label>
+          <label class="dim">Máx. por orden (USD) <input class="f" id="lv-max" ${isLive ? "disabled" : ""} type="number" min="0" step="50" style="width:100px" value="${c.max_order ?? ""}"></label>
+          <label class="dim">Pérdida diaria máx. % <input class="f" id="lv-loss" ${isLive ? "disabled" : ""} type="number" min="0.1" max="20" step="0.1" style="width:70px" value="${c.daily_loss_pct ? (c.daily_loss_pct * 100).toFixed(1) : ""}"></label>
+          <label class="dim">Cuenta IBKR <input class="f" id="lv-acct" ${isLive ? "disabled" : ""} style="width:110px" placeholder="U1234567" value="${esc(c.account || "")}"></label>
+          <button class="btn" id="lv-save" ${isLive ? 'disabled title="Vuelve a paper para cambiar los límites"' : ""}>GUARDAR LÍMITES</button>
           <button class="btn ${isLive ? "" : "sell"}" id="lv-mode">${isLive ? "VOLVER A PAPER" : "ACTIVAR MODO REAL"}</button></div>
-        ${c.capital ? `<div class="dim" style="padding:0 8px 8px">Fondo en IBKR: caja ${fmtN(L.cash)} (reservado ${fmtN(L.reserved)}) · patrimonio ${fmtN(L.equity)} · posiciones ${Object.entries(L.positions).map(([s, q]) => `${esc(s)} ${q}`).join(", ") || "ninguna"}</div>` : ""}
+        ${c.capital ? `<div class="dim" style="padding:0 8px 8px">Fondo en IBKR (USD): caja ${fmtN(L.cash)} (comprometido en compras ${fmtN(L.reserved)}) · patrimonio ${fmtN(L.equity)} · posiciones ${Object.entries(L.positions).map(([s, q]) => `${esc(s)} ${q}${L.selling[s] ? ` (${L.selling[s]} en venta)` : ""}`).join(", ") || "ninguna"}${L.unreconciled ? ` · <span class="neg">${L.unreconciled} orden(es) sin conciliar: compras bloqueadas hasta resolverlas</span>` : ""}</div>` : ""}
         ${rows ? `<table><thead><tr><th>#</th><th>Ciclo</th><th>Activo</th><th>Lado</th><th class="num">Cant.</th><th class="num">Límite</th><th class="num">Nominal</th><th>Estado</th><th>Último evento</th><th></th></tr></thead><tbody>${rows}</tbody></table>` : '<div class="empty">Sin órdenes reales todavía</div>'}`;
+    };
+    const confirmWarnings = async (o) => {
+      const msgs = (() => { try { return JSON.parse(o.warnings || "[]"); } catch { return []; } })();
+      const okw = await modal("IBKR PIDE CONFIRMAR AVISOS", `<div>Para la orden <b>${esc(confirmText(o))}</b>, Interactive Brokers muestra:</div>${msgs.map((m) => `<pre class="code" style="white-space:pre-wrap">${esc(m)}</pre>`).join("")}<div class="dim">La orden no existe en IBKR hasta que confirmes. Si dudas, recházala.</div>`, [["CONFIRMAR Y ENVIAR", true], ["NO ENVIAR", false]]);
+      if (!okw) return;
+      const r = await api(`/fund/live/orders/${o.id}/confirm-warnings`, { method: "POST" });
+      if (r.success && r.data.status === "needs_confirmation") { await loadLive(); return confirmWarnings(r.data); }
+      toast(r.success ? `Enviada a IBKR: orden ${r.data.broker_order_id}` : r.message, r.success ? "ok" : "err"); loadLive();
     };
     const loadLive = async () => { const r = await api("/fund/live"); if (r.success) paintLive(r.data); };
     const paintTeam = (t) => {
@@ -729,7 +737,21 @@ const SCREENS = {
         if (!(await confirmModal("APROBAR ORDEN REAL", `<div>Se enviará a Interactive Brokers (cuenta ${esc(liveSt.config.account)}):</div><pre class="code">${esc(text)}  ·  límite DAY  ·  ${fmtN(o.notional)}</pre><div class="dim">Antes de enviar se revalidan el precio (desvío máx. ${(liveSt.rules.max_drift * 100).toFixed(0)} %), la antigüedad de la propuesta, tus límites y la parada de emergencia.</div>`))) return;
         e.target.disabled = true;
         const r = await api(`/fund/live/orders/${o.id}/approve`, { method: "POST", body: { confirm: text } });
-        toast(r.success ? `Enviada a IBKR: orden ${r.data.broker_order_id}` : r.message, r.success ? "ok" : "err"); loadLive();
+        if (!r.success) { toast(r.message, "err"); return loadLive(); }
+        if (r.data.status === "needs_confirmation") { await loadLive(); return confirmWarnings(r.data); }
+        toast(`Enviada a IBKR: orden ${r.data.broker_order_id}`, "ok"); loadLive();
+      } else if (e.target.dataset.warn) {
+        const o = liveSt.orders.find((x) => x.id === +e.target.dataset.warn); if (o) confirmWarnings(o);
+      } else if (e.target.dataset.recon) {
+        const o = liveSt.orders.find((x) => x.id === +e.target.dataset.recon); if (!o) return;
+        const vals = { q: "", p: "" };
+        const grab = (ev) => { if (ev.target.id === "rc-q") vals.q = ev.target.value; if (ev.target.id === "rc-p") vals.p = ev.target.value; };
+        document.addEventListener("input", grab);
+        const okd = await modal("CONCILIAR ORDEN CON IBKR", `<div>IBKR ya no lista la orden <b>${esc(confirmText(o))}</b>. Mira en tu cuenta de IBKR qué pasó con ella y anótalo:</div><div class="row" style="gap:8px;margin:8px 0"><label class="dim">Acciones ejecutadas (0-${o.qty}) <input class="f" id="rc-q" type="number" min="0" max="${o.qty}" step="1" style="width:80px"></label><label class="dim">Precio medio (USD) <input class="f" id="rc-p" type="number" min="0" step="0.01" style="width:100px"></label></div><div class="dim">0 acciones = no se ejecutó. Mientras no la resuelvas, el fondo no compra.</div>`, [["GUARDAR", true], ["CANCELAR", false]]);
+        document.removeEventListener("input", grab);
+        if (!okd) return;
+        const r = await api(`/fund/live/orders/${o.id}/reconcile`, { method: "POST", body: { filled_qty: +vals.q || 0, avg_price: vals.p ? +vals.p : null } });
+        toast(r.success ? "Orden conciliada" : r.message, r.success ? "ok" : "err"); loadLive();
       } else if (rj) {
         const r = await api(`/fund/live/orders/${rj}/reject`, { method: "POST" });
         toast(r.success ? "Orden rechazada" : r.message, r.success ? "" : "err"); loadLive();

@@ -136,12 +136,16 @@ Para encenderlo hacen falta:
 
 Protecciones del código, que no dependen del modelo:
 - **Aprobación orden a orden.** El comité y el autopiloto solo proponen. Aprobar exige una sesión iniciada en la terminal (una API key sola recibe 403) y la confirmación exacta de la orden (`BUY 4 EWJ @ 90.48`). Ninguna tool MCP puede aprobar órdenes reales.
+- **Avisos de IBKR con segundo clic.** Si IBKR pide confirmar avisos, la orden no existe hasta que tú los lees y los confirmas; el código nunca los acepta solo.
+- **Solo la propuesta más reciente.** Un comité nuevo caduca lo pendiente del anterior, y solo se aprueban órdenes del último ciclo. Así la misma compra no se puede aprobar dos veces.
 - **Solo datos reales.** No se propone ni se envía nada con precios de fuente simulada. Si Yahoo se pausa y el precio viene del simulador, la orden se bloquea.
 - **Solo estrategias validadas con datos reales.** Una compra exige que el activo tenga una estrategia entrenada con datos reales y validada (prueba final + Deflated Sharpe). Sin periodo en sombra, por tu decisión. Cripto no se opera en IBKR en esta versión.
 - **Órdenes acotadas.** Limitadas DAY a ±0,5 % del precio de referencia, en acciones enteras, sin superar el máximo por orden ni el capital asignado.
-- **Registro propio del fondo.** El fondo lleva la cuenta de lo que compró y vendió, así que **nunca vende posiciones de tu cuenta que no sean suyas**. Antes de vender comprueba también lo que muestra IBKR.
+- **Registro propio del fondo.** El fondo lleva la cuenta de lo que compró y vendió, así que **nunca vende posiciones de tu cuenta que no sean suyas**. Las acciones que ya están en venta se descuentan de lo disponible, y las compras aún sin ejecutar comprometen capital. Antes de vender comprueba también lo que muestra IBKR.
+- **Conciliación con IBKR.** Antes de cada aprobación se concilia con IBKR. Si el gateway no responde, no se aprueba nada. Si IBKR deja de listar una orden, queda «sin conciliar» y no se compra hasta que la resuelvas con lo que ves en tu cuenta (botón RESOLVER).
 - **Comprobación al aprobar.** Se revisa otra vez que el precio no se haya movido más de un 1 %, que la propuesta tenga menos de 15 minutos, que el fondo no esté parado y que no se haya superado la pérdida diaria.
-- **Pérdida diaria.** Si se alcanza, el fondo se para solo.
+- **Pérdida diaria.** Si se alcanza, el fondo se para solo y cancela en IBKR lo enviado. Los límites no se pueden cambiar con el modo real activo: cambiar el capital a mitad de día falsearía la pérdida diaria.
+- **Moneda.** Capital y límites en USD, porque el universo operable son ETF de EE. UU.
 - **Parada de emergencia.** Caduca lo pendiente y cancela en IBKR lo ya enviado.
 - **Auditoría.** Cada intento queda registrado en `fund_live_orders`, también los bloqueados, los rechazados y los avisos de IBKR.
 
@@ -248,7 +252,7 @@ Barra de comandos (`/` o `Ctrl+K`): `AAPL` · `SAN.MC GO` · `BUY 10 NVDA` · `S
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest -q      # 181 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
+.venv/bin/python -m pytest -q      # 186 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
 ```
 
 ### Evaluación del servidor MCP

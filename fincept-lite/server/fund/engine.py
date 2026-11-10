@@ -227,7 +227,7 @@ async def _run_cycle(uid: int, execute: bool, trigger: str) -> dict:
     mode = L.mode(uid)
     if mode == "live":
         execute = False  # dinero real: cada orden la aprueba una persona, nunca el ciclo ni el autopiloto
-        await L.refresh(uid)
+        reconciled = (await L.refresh(uid))["ok"]
         positions = L.ledger(uid, {})["positions"]
     else:
         acc = await paper.account(uid)
@@ -259,7 +259,9 @@ async def _run_cycle(uid: int, execute: bool, trigger: str) -> dict:
     cb = A.circuit_breaker(equity, peak, losses, POLICY)
     daily = L.daily_check(uid, equity) if mode == "live" else None
     if daily and daily["breached"] and not st["halted"]:
-        set_halt(uid, True, f"pérdida diaria de {daily['loss']:.1%} (límite {daily['limit']:.1%})")
+        reason = f"pérdida diaria de {daily['loss']:.1%} (límite {daily['limit']:.1%})"
+        set_halt(uid, True, reason)
+        await L.cancel_open(uid, reason)  # también cancela en IBKR lo ya enviado
         st = get_state(uid)
     if st["halted"]:
         cb = {"halted": True, "reason": st["halt_reason"] or "parada manual", "drawdown": cb["drawdown"]}
@@ -361,7 +363,7 @@ async def _run_cycle(uid: int, execute: bool, trigger: str) -> dict:
         live_orders, live_checks = L.plan(uid, run_id, target, views, prices,
                                           {s: q.get("source", "?") for s, q in quotes.items()},
                                           (training or {}).get("book", {}), liquidity(hist), POLICY,
-                                          allow_buys=not cb["halted"])
+                                          allow_buys=not cb["halted"], reconciled=reconciled)
         rep["live_orders"], rep["order_checks"] = live_orders, rep["order_checks"] + live_checks
     rep["team"] = _team(rep)
     get_db().execute("UPDATE fund_runs SET report=? WHERE id=?", (json.dumps(rep, default=str), run_id))
