@@ -418,6 +418,19 @@ const SCREENS = {
       <span></span><div class="row"><button class="btn primary" id="q-go">CALCULAR</button><button class="btn" id="q-spot">SPOT DE ${esc(S.focus)}</button></div></div>
       <div id="q-out" class="kpis" style="margin-top:10px"></div>
       <div class="row" style="margin-top:10px"><label class="dim">PRIMA DE MERCADO</label><input class="f" id="q-mkt" type="number" step="any" style="width:100px"><button class="btn" id="q-iv">VOL. IMPLÍCITA</button><span id="q-ivout" class="cyan"></span></div>`)}
+      ${panel("Laboratorio quantfin · quant-finance-research", `<div class="row" style="margin-bottom:6px">
+        <select class="f" id="lab-t">
+          <option value="qf_bubble_test">Burbuja (SADF) · Phillips-Shi-Yu</option>
+          <option value="qf_pairs_ou">Pares (Ornstein-Uhlenbeck)</option>
+          <option value="qf_risk_parity">Paridad de riesgo</option>
+          <option value="qf_systemic_fragility">Fragilidad sistémica (absorption ratio)</option>
+          <option value="qf_execution_plan">Impacto y calendario de ejecución</option>
+          <option value="qf_yield_curve">Curva de tipos (Nelson-Siegel)</option>
+          <option value="qf_bond">Bono: precio, duración, convexidad</option>
+          <option value="qf_kelly_binary">Kelly (mercado de predicción)</option>
+          <option value="qf_market_making">Market making (Avellaneda-Stoikov)</option>
+        </select><input class="f" id="lab-a" style="flex:1"><button class="btn primary" id="lab-go">CALCULAR</button></div>
+        <div class="dim" id="lab-h"></div><div id="lab-out" style="margin-top:6px"></div>`, "", "span2")}
       ${panel("Riesgo de un activo", `<div class="row"><input class="f" id="r-sym" value="${esc(S.focus)}" style="width:120px"><select class="f" id="r-per"><option>6mo</option><option selected>1y</option><option>2y</option><option>5y</option></select><select class="f" id="r-cf"><option value="0.95">VaR 95%</option><option value="0.99">VaR 99%</option></select><button class="btn primary" id="r-go">ANALIZAR</button></div><div id="r-out" class="kpis" style="margin-top:10px"></div>`)}</div>`;
     let type = "call";
     const v = (id) => parseFloat($(id).value);
@@ -439,6 +452,27 @@ const SCREENS = {
       const m = r.data;
       $("#r-out").innerHTML = [["Rentab. total", fmtFrac(m.total_return), cls(m.total_return)], ["Rentab. anual", fmtFrac(m.annualized_return), cls(m.annualized_return)], ["Vol. anual", fmtFrac(m.annualized_volatility).replace("+", ""), ""], ["Sharpe", fmtN(m.sharpe), ""], ["Sortino", fmtN(m.sortino), ""], ["Máx. drawdown", fmtFrac(m.max_drawdown), "neg"], [`VaR hist. ${m.confidence * 100}%`, fmtFrac(-m.var_historical), "neg"], ["CVaR hist.", fmtFrac(-m.cvar_historical), "neg"], ["VaR paramétrico", fmtFrac(-m.var_parametric), "neg"], ["Mejor día", fmtFrac(m.best_day), "pos"], ["Peor día", fmtFrac(m.worst_day), "neg"], ["Fuente", m.source.toUpperCase(), m.source === "sim" ? "warn" : ""]].map(([l, x, c]) => `<div class="kpi"><div class="l">${l}</div><div class="v ${c}">${x}</div></div>`).join("");
     });
+    const LAB = {
+      qf_bubble_test: ['{"symbol":"' + S.focus + '"}', "Detecta un régimen explosivo mientras ocurre; no predice cuándo revienta."],
+      qf_pairs_ou: ['{"symbol_a":"SPY","symbol_b":"QQQ"}', "Spread logarítmico con cobertura OLS; señal con |z| > 2."],
+      qf_risk_parity: ['{"symbols":["SPY","TLT","GLD","EEM"]}', "Contribuciones iguales al riesgo (Maillard et al. 2010)."],
+      qf_systemic_fragility: ["{}", "Universo global del fondo; z ≥ 1 = mercado frágil (Kritzman et al. 2011)."],
+      qf_execution_plan: ['{"symbol":"' + S.focus + '","qty":10000}', "Ley de la raíz cuadrada + Almgren-Chriss."],
+      qf_yield_curve: ['{"maturities":[0.25,1,2,5,10,30],"yields":[0.045,0.043,0.041,0.040,0.042,0.046]}', "Nivel, pendiente y curvatura (Nelson y Siegel 1987)."],
+      qf_bond: ['{"coupon":0.05,"ytm":0.04,"years":10}', "Precio por 100 de nominal."],
+      qf_kelly_binary: ['{"probability":0.6,"price":0.5}', "Fracción de capital; medio Kelly es más prudente."],
+      qf_market_making: ['{"mid":100,"inventory":5,"sigma":2}', "Precio de reserva según inventario y volatilidad."],
+    };
+    const labSet = () => { const [a, h] = LAB[$("#lab-t").value]; $("#lab-a").value = a; $("#lab-h").textContent = h; };
+    const show = (v) => typeof v === "number" ? Number.isInteger(v) ? fmtN(v, 0) : (Math.abs(v) < 1e-3 && v !== 0 ? v.toExponential(3) : fmtN(v, 4)) : Array.isArray(v) ? v.map((x) => show(x)).join(", ") : v && typeof v === "object" ? Object.entries(v).map(([k, x]) => `${esc(k)} ${show(x)}`).join(" · ") : esc(String(v));
+    ctx.on($("#lab-t"), "change", labSet);
+    ctx.on($("#lab-go"), "click", async () => {
+      let args; try { args = JSON.parse($("#lab-a").value || "{}"); } catch { return toast("Argumentos JSON inválidos", "err"); }
+      $("#lab-out").innerHTML = '<div class="empty">calculando…</div>';
+      const r = await tool($("#lab-t").value, args);
+      $("#lab-out").innerHTML = r.success ? `<table><tbody>${Object.entries(r.data).map(([k, v]) => `<tr><td class="muted">${esc(k)}</td><td>${show(v)}</td></tr>`).join("")}</tbody></table>` : `<div class="neg">${esc(r.message)}</div>`;
+    });
+    labSet();
     calc(); $("#r-go").click();
   } },
 
@@ -623,6 +657,12 @@ const SCREENS = {
         <div><div class="neg" style="font-weight:700">EN CONTRA</div>${v.debate.bear.map((b) => `<div>▼ ${esc(b)}</div>`).join("") || '<div class="dim">sin argumentos</div>'}</div></div>
         <div class="dim" style="margin-top:6px">Cuant: ${st.candidates.map((c) => `${esc(c.strategy)} IS ${c.is_sharpe.toFixed(2)} / OOS ${c.oos_sharpe.toFixed(2)}`).join(" · ")}. Elegida ${esc(st.strategy)} con Deflated Sharpe ${st.deflated_sharpe.toFixed(2)} (umbral 0,50) → confianza ${st.trust}. <a href="#" data-eq="${esc(sym)}">abrir ficha ▸</a></div>`;
     };
+    api("/fund/research/library").then((r) => {
+      if (!r.success) return;
+      const box = document.createElement("div");
+      box.innerHTML = `<div class="help" style="padding:8px">Biblioteca de <b>${esc(r.data.source)}</b>: ${r.data.rows.length} papers de los videos de @vince.quant, verificados en esa investigación (ver <code>${esc(r.data.document)}</code>). Los marcados con función están implementados en <code>quantfin</code>.</div><table><thead><tr><th>Tema</th><th>Paper</th><th>Idea clave</th><th>Función</th></tr></thead><tbody>${r.data.rows.map((x) => `<tr><td class="dim">${esc(x.tema)}</td><td style="white-space:normal;min-width:200px">${esc(x.paper.replace(/\*/g, ""))}</td><td class="muted" style="white-space:normal;min-width:300px">${esc(x.idea_clave)}</td><td class="cyan">${esc((x.funcion || "").replace(/`/g, ""))}</td></tr>`).join("")}</tbody></table>`;
+      resEl.after(box);
+    });
     api("/fund/research").then((r) => {
       if (!r.success) return;
       resEl.innerHTML = `<table><thead><tr><th>Año</th><th>Autores</th><th>Trabajo</th><th>Agente</th><th>Hallazgo</th><th>Cómo se aplica</th><th class="num">Citas</th></tr></thead><tbody>${r.data.slice().sort((a, b) => b.year - a.year).map((x) => `<tr><td>${x.year}</td><td class="dim">${esc(x.authors)}</td><td style="white-space:normal;min-width:220px">${doiLink(x.doi, esc(x.title))}<div class="dim">${esc(x.venue)}${x.verified ? "" : ' · <span class="warn">no indexado en OpenAlex</span>'}</div></td><td class="cyan">${esc(x.agent)}</td><td class="muted" style="white-space:normal;min-width:260px">${esc(x.finding)}</td><td style="white-space:normal;min-width:220px">${esc(x.applied)}</td><td class="num">${x.cited_by == null ? "—" : fmtN(x.cited_by, 0)}</td></tr>`).join("")}</tbody></table>`;
@@ -646,7 +686,7 @@ const SCREENS = {
         const ev = (d.evidence || {})[key] || [];
         if (cell) cell.innerHTML = ev.map((x) => doiLink(x.doi, esc(x.short))).join(" · ");
       }
-      memoEl.innerHTML = `<div class="row" style="margin-bottom:6px"><span class="chip ${m.regime === "risk_on" ? "positive" : m.regime === "risk_off" ? "negative" : ""}">régimen ${esc(m.regime)}</span><span class="chip">tipos ${esc(m.rates_direction)}</span><span class="chip ${s.avg_sentiment > 0 ? "positive" : s.avg_sentiment < 0 ? "negative" : ""}">sentimiento ${s.avg_sentiment.toFixed(2)}</span>${s.dropped_suspicious ? `<span class="chip negative">${s.dropped_suspicious} titular(es) descartado(s) por posible inyección</span>` : ""}${cb.halted ? `<span class="chip negative">CORTACIRCUITOS: ${esc(cb.reason)}</span>` : ""}</div>
+      memoEl.innerHTML = `<div class="row" style="margin-bottom:6px"><span class="chip ${m.regime === "risk_on" ? "positive" : m.regime === "risk_off" ? "negative" : ""}">régimen ${esc(m.regime)}</span><span class="chip">tipos ${esc(m.rates_direction)}</span><span class="chip ${s.avg_sentiment > 0 ? "positive" : s.avg_sentiment < 0 ? "negative" : ""}">sentimiento ${s.avg_sentiment.toFixed(2)}</span>${s.dropped_suspicious ? `<span class="chip negative">${s.dropped_suspicious} titular(es) descartado(s) por posible inyección</span>` : ""}${cb.halted ? `<span class="chip negative">CORTACIRCUITOS: ${esc(cb.reason)}</span>` : ""}${d.quantfin && d.quantfin.fragility ? `<span class="chip ${d.quantfin.fragility.fragile ? "negative" : ""}">absorption ratio ${d.quantfin.fragility.absorption_ratio.toFixed(2)} · z ${d.quantfin.fragility.z.toFixed(1)}</span>` : ""}${d.quantfin && d.quantfin.bubbles.length ? `<span class="chip negative">burbuja (SADF): ${d.quantfin.bubbles.map(esc).join(", ")}</span>` : ""}${d.quantfin && d.quantfin.risk_budget ? `<span class="chip">${esc(d.quantfin.risk_budget)}</span>` : ""}</div>
         <div class="msg"><div class="txt">${md(d.memo_llm || d.memo)}</div></div>
         <div class="dim" style="margin-top:6px">${m.notes.map(esc).join(" · ")}${d.memo_llm ? " · acta redactada por Claude (no decide nada)" : ""}</div>`;
       const eq = d.equity, cur = (sym) => ((d.positions[sym] || 0) * (d.prices[sym] || 0)) / eq;
@@ -656,7 +696,7 @@ const SCREENS = {
       const checks = [...d.risk_checks, ...d.order_checks];
       riskEl.innerHTML = checks.map((c) => `<div><span class="${c.status === "ok" ? "pos" : c.status === "blocked" ? "neg" : "warn"}">${esc(c.status.toUpperCase())}</span> ${esc(c.check)} <span class="dim">${esc(c.detail)}</span></div>`).join("") + `<div class="dim" style="margin-top:6px">Objetivo de vol ${pct(d.policy.target_vol)} · caja mín. ${pct(d.policy.min_cash)} · rotación máx. ${pct(d.policy.max_turnover)} · parada si drawdown &gt; ${pct(d.policy.max_drawdown_halt)} o ${d.policy.max_consecutive_losses} ciclos en pérdidas</div>`;
       const rows = (d.fills.length ? d.fills.map((f) => ({ ...f, st: "EJECUTADA", c: "pos" })) : d.orders.map((o) => ({ ...o, st: r.status === "proposed" ? "PROPUESTA" : "—", c: "warn" }))).concat((d.rejected || []).map((o) => ({ ...o, st: "RECHAZADA: " + o.reason, c: "neg" })));
-      ordEl.innerHTML = rows.length ? `<table><thead><tr><th>Activo</th><th>Lado</th><th class="num">Cantidad</th><th class="num">Precio</th><th class="num">Nominal</th><th>Estado</th></tr></thead><tbody>${rows.map((o) => `<tr><td class="sym">${esc(o.symbol)}</td><td class="${o.side === "buy" ? "pos" : "neg"}">${o.side.toUpperCase()}</td><td class="num">${o.qty}</td><td class="num">${fmtPx(o.price)}</td><td class="num">${fmtN(o.qty * o.price)}</td><td class="${o.c}">${esc(o.st)}</td></tr>`).join("")}</tbody></table>` : '<div class="empty">Sin órdenes: la cartera ya está dentro de las bandas de rebalanceo</div>';
+      ordEl.innerHTML = rows.length ? `<table><thead><tr><th>Activo</th><th>Lado</th><th class="num">Cantidad</th><th class="num">Precio</th><th class="num">Nominal</th><th class="num">Impacto</th><th>Estado</th></tr></thead><tbody>${rows.map((o) => `<tr><td class="sym">${esc(o.symbol)}</td><td class="${o.side === "buy" ? "pos" : "neg"}">${o.side.toUpperCase()}</td><td class="num">${o.qty}</td><td class="num">${fmtPx(o.price)}</td><td class="num">${fmtN(o.qty * o.price)}</td><td class="num dim">${o.impact_bps == null ? "—" : o.impact_bps.toFixed(1) + " pb"}</td><td class="${o.c}">${esc(o.st)}</td></tr>`).join("")}</tbody></table>` : '<div class="empty">Sin órdenes: la cartera ya está dentro de las bandas de rebalanceo</div>';
     };
     const load = async () => { const r = await api("/fund/state"); if (!r.success) return toast(r.message, "err"); state = r.data; paintState(); if (r.data.last_run && !run) paintRun(r.data.last_run); };
     ctx.sub(`fund:${S.user.id}:status`, (e) => {

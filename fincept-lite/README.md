@@ -110,7 +110,7 @@ Un equipo de agentes que funciona como un comité de inversión sobre un univers
 | Estratega macro | Régimen (expansivo/neutro/defensivo) con regla de Sahm, Fed Funds e inflación (DBnomics) | `macro-rates-monitor` |
 | Analista de sentimiento | Tono de los titulares; descarta los que parecen inyección de instrucciones | `llm-trading-agent-security` |
 | Analistas por mesa | Tendencia, momentum, RSI, volatilidad y drawdown de cada activo | `equity-research`, `yfinance-data` |
-| Investigador cuant | Elige entre 4 estrategias con datos in-sample y la valida en el 30 % reservado; si falla, su peso se reduce a la mitad | `backtesting-frameworks` |
+| Investigador cuant | Elige entre 7 estrategias con datos in-sample y la valida en el 30 % reservado; si falla, su peso se reduce a la mitad | `backtesting-frameworks` |
 | CIO | Cartera por convicción × confianza × régimen × paridad de riesgo; con Claude redacta el acta, **sin poder cambiar nada** | `claude-api` |
 | Gestor de riesgos (veto) | Límites por activo y mesa, volatilidad objetivo 10 %, caja mínima 5 %, sin apalancamiento ni cortos, cortacircuitos (drawdown 10 % o 3 ciclos en pérdidas) | `llm-trading-agent-security` |
 | Trader | Órdenes con banda de rebalanceo, rotación máx. 30 % por ciclo, ventas primero y compras por convicción | `llm-trading-agent-security` |
@@ -124,7 +124,7 @@ Un equipo de agentes que funciona como un comité de inversión sobre un univers
 Cada regla del fondo está respaldada por literatura académica verificada en OpenAlex (`server/fund/research.py`, panel **Base de investigación** en FUND y `GET /fund/research`). Hay 23 referencias: clásicos (Jegadeesh y Titman 1993; Moskowitz, Ooi y Pedersen 2012; Bailey y López de Prado 2014…) y trabajos de 2024–2026 sobre agentes LLM (TradingAgents 2024, FinCon 2024, HedgeAgents 2025, Miyazaki et al. 2026, Huang et al. 2026). Un test comprueba que cada paper apunta a una función que existe en el código.
 
 Qué cambió en el código por esa investigación:
-- **Deflated Sharpe Ratio** (Bailey y López de Prado 2014): el cuant elige entre 5 estrategias, y eso infla el Sharpe de la ganadora. Ahora una estrategia solo queda *validada* si su DSR ≥ 0,5 **y** su Sharpe fuera de muestra es > 0; su confianza es 0,5, 0,75 o 1,0.
+- **Deflated Sharpe Ratio** (Bailey y López de Prado 2014): el cuant elige entre varias estrategias (hoy 7), y eso infla el Sharpe de la ganadora. Ahora una estrategia solo queda *validada* si su DSR ≥ 0,5 **y** su Sharpe fuera de muestra es > 0; su confianza es 0,5, 0,75 o 1,0.
 - **Momentum de series temporales a 12 meses** (Moskowitz et al. 2012; Hurst et al. 2017), como quinta estrategia del playbook.
 - **Estado de pánico** (Daniel y Moskowitz 2016): tras una caída > 20 % con la volatilidad disparada, el momentum pesa la mitad.
 - **Debate alcista/bajista por activo** (TradingAgents 2024) con **desacuerdo medido y preservado** (Huang et al. 2026: la "convergencia complaciente" empeora el Sharpe; preservar el desacuerdo lo mejora).
@@ -132,6 +132,20 @@ Qué cambió en el código por esa investigación:
 - **El LLM no decide ni entra en los backtests** (Glasserman y Lin 2023: sesgo de anticipación en señales de LLM; Greshake et al. 2023: inyección indirecta de instrucciones).
 
 La regla de Sahm (2019) es un informe de política del Hamilton Project y no está indexada en OpenAlex: va marcada como no verificada.
+
+### Librería `quantfin` (quant-finance-research, Agustín Ortega)
+
+`quantfin/` es la librería de la investigación *quant-finance-research* (39 funciones en `mercados.py` y `avanzados.py`, solo numpy y scipy), copiada sin cambios junto con sus 21 tests (`tests/test_quantfin.py`). El documento de investigación, el índice de 43 papers y la demo están en `docs/quantfin/`.
+
+Dónde la usa el fondo:
+- **Burbujas** (Phillips, Shi y Yu 2015): `sadf` sobre el último año de cada activo; si supera 1,5 el peso máximo del activo baja a la mitad y entra como argumento bajista en el debate. El umbral 1,5 es una aproximación, no un valor crítico simulado para cada muestra.
+- **Fragilidad sistémica** (Kritzman et al. 2011): `absorption_ratio` sobre el universo; z ≥ 1 vuelve el régimen más defensivo.
+- **Paridad de riesgo con covarianza real** (`risk_parity`), con reparación de Higham (2002) si la matriz de correlación no es válida.
+- **Volatilidad de la cartera corregida** por el sesgo del optimizador (Pafka y Kondor 2003) antes de compararla con el objetivo del 10 %.
+- **Dos estrategias nuevas** en el playbook: `ema_20_100` y `donchian_20` (Brock et al. 1992; Levine y Pedersen 2016). El Deflated Sharpe ya penaliza el mayor número de pruebas.
+- **Impacto de mercado** (ley de la raíz cuadrada): cada orden muestra su coste estimado en puntos básicos y se recorta si pasa de 50 pb. La referencia concreta (Bonart, arXiv 2606.07059) es un preprint que no aparece en OpenAlex y va marcada como no verificada.
+
+Además hay 9 tools nuevas (`qf_bubble_test`, `qf_systemic_fragility`, `qf_pairs_ou`, `qf_risk_parity`, `qf_execution_plan`, `qf_yield_curve`, `qf_bond`, `qf_kelly_binary`, `qf_market_making`), disponibles por MCP, en el chat y en el panel **Laboratorio quantfin** de la pantalla QUANTLIB. La pantalla FUND muestra el absorption ratio, las burbujas detectadas y el presupuesto de riesgo en el acta, y la biblioteca de papers de la investigación (`GET /fund/research/library`). La base de investigación pasa de 23 a 36 referencias.
 
 ## 3. Arranque
 
@@ -174,7 +188,7 @@ Barra de comandos (`/` o `Ctrl+K`): `AAPL` · `SAN.MC GO` · `BUY 10 NVDA` · `S
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest -q      # 72 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, analítica, chat
+.venv/bin/python -m pytest -q      # 110 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
 ```
 
 ### Evaluación del servidor MCP

@@ -19,6 +19,11 @@ import re
 import statistics
 from dataclasses import dataclass, field
 
+import numpy as np
+
+from quantfin import avanzados as qa  # librería quant-finance-research de Agustín Ortega
+from quantfin import mercados as qm
+
 from ..backtest import CostModel, perf_metrics, run_signals, sma
 
 # ── universo global multi-activo (instrumentos negociables en la cuenta paper) ─
@@ -66,6 +71,9 @@ def realized_vol(closes: list[float], n: int) -> float:
     return statistics.pstdev(rets) * math.sqrt(252) if len(rets) > 2 else 0.0
 
 
+SADF_CRITICAL = 1.5
+
+
 def asset_signals(closes: list[float]) -> dict:
     """Foto técnica de un activo: tendencia, momentum, reversión, volatilidad."""
     if len(closes) < 210:
@@ -86,7 +94,11 @@ def asset_signals(closes: list[float]) -> dict:
         momentum *= 0.5
     reversion = 0.5 if r < 30 else -0.5 if r > 75 else 0.0
     score = max(-1.0, min(1.0, 0.45 * trend + 0.45 * momentum + 0.10 * reversion))
+    # Phillips, Shi y Yu (2015) vía quantfin.sadf: régimen explosivo en el último año de log-precios.
+    # Umbral aproximado 1.5 (el valor crítico exacto depende de n); detecta la burbuja, no cuándo revienta.
+    sadf_stat = float(qa.sadf(np.log(np.asarray(closes[-252:], dtype=float))))
     return {"price": px, "sma50": s50, "sma200": s200, "mom_12_1": mom_12_1, "mom_3m": mom_3m, "rsi14": r,
+            "sadf": sadf_stat, "bubble": sadf_stat > SADF_CRITICAL,
             "vol20": vol20, "vol60": vol60, "drawdown": px / high - 1, "trend": trend, "momentum": momentum,
             "reversion": reversion, "panic_state": panic, "score": score}
 
@@ -111,6 +123,16 @@ def _strat_tsmom12(closes):  # Moskowitz, Ooi, Pedersen (2012): signo del rendim
     return [None if i < 252 else int(closes[i] > closes[i - 252]) for i in range(len(closes))]
 
 
+def _strat_ema(closes):  # quantfin.senal_ema: cruce EMA 20/100 (Brock et al. 1992; Levine y Pedersen 2016)
+    sig = qa.senal_ema(np.asarray(closes, dtype=float), 20, 100)
+    return [None if i < 100 else int(v > 0) for i, v in enumerate(sig)]
+
+
+def _strat_donchian(closes):  # quantfin.senal_donchian: ruptura del canal de 20 sesiones
+    sig = qa.senal_donchian(np.asarray(closes, dtype=float), 20)
+    return [None if i < 20 else int(v) for i, v in enumerate(sig)]
+
+
 def _strat_reversion(closes):  # compra sobreventa (RSI<30), sale al normalizar (RSI>55)
     r, out, pos = rsi(closes), [], 0
     for v in r:
@@ -127,6 +149,8 @@ PLAYBOOK = {
     "sma_50_200": ("Cruce dorado SMA50/SMA200", _strat_cross),
     "momentum_3m": ("Momentum de series temporales a 3 meses", _strat_momentum),
     "tsmom_12m": ("Time-series momentum 12 meses (Moskowitz et al. 2012)", _strat_tsmom12),
+    "ema_20_100": ("Cruce de EMAs 20/100 (quantfin.senal_ema)", _strat_ema),
+    "donchian_20": ("Ruptura de Donchian 20 (quantfin.senal_donchian)", _strat_donchian),
     "mean_reversion": ("Reversión a la media por RSI", _strat_reversion),
 }
 
@@ -218,6 +242,9 @@ def debate(view: dict, regime: str) -> dict:
         bear.append(f"volatilidad al alza ({s['vol20']:.0%} vs {s['vol60']:.0%})")
     if s["drawdown"] < -0.2:
         bear.append(f"a {s['drawdown']:.0%} de su máximo de 52 semanas")
+    if s.get("bubble"):
+        bear.append(f"régimen explosivo (SADF {s['sadf']:.2f} > {SADF_CRITICAL}): peso máximo a la mitad "
+                    "(Phillips, Shi y Yu 2015)")
     if st["validated"]:
         (bull if st["current_signal"] else bear).append(
             f"estrategia {st['strategy']} validada (DSR {st['deflated_sharpe']:.2f}) dice {'dentro' if st['current_signal'] else 'fuera'}")
@@ -238,9 +265,27 @@ def debate(view: dict, regime: str) -> dict:
 
 # ── estratega macro ─────────────────────────────────────────────────────────
 
-def macro_regime(fed: list[float] | None, unemployment: list[float] | None, inflation: list[float] | None) -> dict:
+def systemic_fragility(returns: np.ndarray, window: int = 63, step: int = 5) -> dict | None:
+    """Kritzman, Li, Page y Rigobon (2011) vía quantfin.absorption_ratio: cuánta varianza absorbe el
+    primer 20 % de componentes principales. Se compara el valor actual con su historia (z-score)."""
+    if returns is None or returns.ndim != 2 or returns.shape[0] < window + 4 * step or returns.shape[1] < 3:
+        return None
+    series = [float(qa.absorption_ratio(returns[i - window:i])) for i in range(window, returns.shape[0] + 1, step)]
+    hist, cur = series[:-1], series[-1]
+    sd = statistics.pstdev(hist) if len(hist) > 1 else 0.0
+    z = (cur - statistics.fmean(hist)) / sd if sd > 0 else 0.0
+    return {"absorption_ratio": cur, "z": z, "fragile": z >= 1.0, "windows": len(series)}
+
+
+def macro_regime(fed: list[float] | None, unemployment: list[float] | None, inflation: list[float] | None,
+                 fragility: dict | None = None) -> dict:
     """Régimen a partir de series mensuales (más reciente al final). Sin datos → neutral."""
     notes, score = [], 0.0
+    if fragility:
+        notes.append(f"Absorption ratio {fragility['absorption_ratio']:.2f} (z {fragility['z']:+.1f})")
+        if fragility["fragile"]:
+            score -= 0.5
+            notes.append("mercado frágil: correlaciones concentradas")
     if unemployment and len(unemployment) >= 13:
         sahm = statistics.fmean(unemployment[-3:]) - min(unemployment[-13:-1])
         notes.append(f"Regla de Sahm {sahm:+.2f} pp")
@@ -314,15 +359,45 @@ class RiskPolicy:
     desk_max: dict = field(default_factory=lambda: dict(DESK_MAX))
 
 
-def apply_risk(raw: dict[str, float], vols: dict[str, float], policy: RiskPolicy) -> tuple[dict[str, float], list[dict]]:
+def covariance(returns: dict[str, list[float]]) -> tuple[list[str], np.ndarray, int] | None:
+    """Covarianza diaria (alineada) reparada con quantfin.nearest_correlation (Higham 2002) si no es válida."""
+    syms = [s for s, r in returns.items() if len(r) >= 60]
+    if len(syms) < 2:
+        return None
+    t = min(len(returns[s]) for s in syms)
+    m = np.array([returns[s][-t:] for s in syms], dtype=float).T
+    cov = np.cov(m.T)
+    sd = np.sqrt(np.clip(np.diag(cov), 1e-12, None))
+    corr = cov / np.outer(sd, sd)
+    if np.linalg.eigvalsh(corr).min() < -1e-10:  # matriz no válida (datos faltantes, ruido): repararla
+        corr = qa.nearest_correlation(corr)
+        cov = corr * np.outer(sd, sd)
+    return syms, cov, t
+
+
+def portfolio_vol(w: dict[str, float], cov_info, vols: dict[str, float]) -> tuple[float, str]:
+    """Vol anual de la cartera. Con covarianza: sqrt(w'Σw) corregida por Pafka y Kondor (2003): el riesgo
+    estimado es (1 − n/T) del real (quantfin.sesgo_optimizador). Sin ella: cota superior (correlación 1)."""
+    if cov_info:
+        syms, cov, t = cov_info
+        if all(s in syms for s in w):
+            idx = [syms.index(s) for s in w]
+            vec = np.array(list(w.values()))
+            est = float(np.sqrt(vec @ cov[np.ix_(idx, idx)] @ vec * 252))
+            return est / qa.sesgo_optimizador(len(syms), t), "covarianza + Pafka-Kondor"
+    return sum(w[s] * vols.get(s, 0.3) for s in w), "cota superior (correlación 1)"
+
+
+def apply_risk(raw: dict[str, float], vols: dict[str, float], policy: RiskPolicy, cov_info=None,
+               bubbles: set[str] | None = None) -> tuple[dict[str, float], list[dict]]:
     """Recorta pesos brutos a los límites. Devuelve (pesos, registro de cada control)."""
     checks: list[dict] = []
     w = {s: max(0.0, v) for s, v in raw.items() if s in BY_SYMBOL}  # allowlist y solo largos
     dropped = sorted(set(raw) - set(w) - {s for s, v in raw.items() if v <= 0})
     if dropped:
         checks.append({"check": "allowlist", "status": "blocked", "detail": f"fuera del universo: {dropped}"})
-    for s in list(w):  # límite individual
-        cap = BY_SYMBOL[s].max_weight
+    for s in list(w):  # límite individual (a la mitad si el activo está en régimen explosivo)
+        cap = BY_SYMBOL[s].max_weight * (0.5 if bubbles and s in bubbles else 1.0)
         if w[s] > cap:
             checks.append({"check": f"límite {s}", "status": "clamped", "detail": f"{w[s]:.1%} → {cap:.0%}"})
             w[s] = cap
@@ -334,12 +409,12 @@ def apply_risk(raw: dict[str, float], vols: dict[str, float], policy: RiskPolicy
                 if BY_SYMBOL[s].desk == desk:
                     w[s] *= f
             checks.append({"check": f"mesa {desk}", "status": "clamped", "detail": f"{tot:.1%} → {cap:.0%}"})
-    port_vol = sum(w[s] * vols.get(s, 0.3) for s in w)  # cota superior (correlación 1)
-    if port_vol > policy.target_vol:
+    port_vol, method = portfolio_vol(w, cov_info, vols)
+    if port_vol > policy.target_vol:  # solo techo, nunca apalanca (DeMiguel et al. 2024)
         f = policy.target_vol / port_vol
         w = {s: v * f for s, v in w.items()}
         checks.append({"check": "objetivo de volatilidad", "status": "scaled",
-                       "detail": f"vol ≤ {port_vol:.1%} → {policy.target_vol:.0%} (×{f:.2f})"})
+                       "detail": f"vol {port_vol:.1%} ({method}) → {policy.target_vol:.0%} (×{f:.2f})"})
     gross_cap = min(policy.max_gross, 1 - policy.min_cash)
     gross = sum(w.values())
     if gross > gross_cap:
@@ -365,27 +440,54 @@ def circuit_breaker(equity: float, peak: float, consecutive_losses: int, policy:
 
 # ── director de inversiones (combina las opiniones) ─────────────────────────
 
-def build_portfolio(views: dict[str, dict], regime: dict, sentiment: dict, desk_trust: dict[str, float]) -> dict:
-    """Pesos brutos ∝ convicción × confianza en la estrategia × confianza en la mesa × inclinación macro,
-    con paridad de riesgo (inverso de la volatilidad)."""
+def risk_budget(cands: list[str], views: dict[str, dict], cov_info) -> tuple[dict[str, float], str]:
+    """Reparto base del riesgo entre candidatos: paridad de riesgo con covarianza real
+    (quantfin.risk_parity; Maillard et al. 2010) o, sin covarianza, inverso de la volatilidad."""
+    if cov_info and len(cands) >= 2 and all(c in cov_info[0] for c in cands):
+        syms, cov, _ = cov_info
+        idx = [syms.index(c) for c in cands]
+        w = qm.risk_parity(cov[np.ix_(idx, idx)])
+        if np.all(np.isfinite(w)) and w.min() > 0:
+            return dict(zip(cands, map(float, w))), "paridad de riesgo (covarianza)"
+    inv = {c: 1 / max(views[c]["signals"]["vol60"], 0.04) for c in cands}
+    tot = sum(inv.values())
+    return {c: v / tot for c, v in inv.items()}, "inverso de la volatilidad"
+
+
+def build_portfolio(views: dict[str, dict], regime: dict, sentiment: dict, desk_trust: dict[str, float],
+                    cov_info=None) -> dict:
+    """Pesos brutos ∝ convicción × confianza en la estrategia × confianza en la mesa × inclinación macro
+    × presupuesto de riesgo (paridad de riesgo con covarianza si está disponible)."""
     tilt = REGIME_TILT[regime["regime"]]
-    raw = {}
+    conv_by, cands = {}, []
     for s, v in views.items():
         a = BY_SYMBOL[s]
         conv = v["score"] + (sentiment["tilt"] if a.desk in ("equities", "crypto") else 0.0)
         if conv <= 0.05 or v["strategy"]["current_signal"] == 0 and v["strategy"]["validated"]:
             continue  # la estrategia validada dice "fuera": se respeta
-        inv_vol = 1 / max(v["signals"]["vol60"], 0.04)
-        raw[s] = conv * v["strategy"]["trust"] * desk_trust.get(a.desk, 1.0) * tilt[a.desk] * inv_vol
+        conv_by[s] = conv
+        cands.append(s)
+    if not cands:
+        return {}
+    budget, _ = risk_budget(cands, views, cov_info)
+    raw = {s: conv_by[s] * views[s]["strategy"]["trust"] * desk_trust.get(BY_SYMBOL[s].desk, 1.0)
+           * tilt[BY_SYMBOL[s].desk] * budget[s] for s in cands}
     tot = sum(raw.values())
     return {s: x / tot for s, x in raw.items()} if tot else {}
 
 
 # ── trader (pesos → órdenes) ────────────────────────────────────────────────
 
+MAX_IMPACT_BPS = 50.0
+
+
 def plan_orders(target: dict[str, float], positions: dict[str, float], prices: dict[str, float], equity: float,
-                policy: RiskPolicy) -> tuple[list[dict], list[dict]]:
-    """Ventas primero (liberan caja), luego compras; respeta banda y rotación máxima."""
+                policy: RiskPolicy, liquidity: dict[str, tuple[float, float]] | None = None
+                ) -> tuple[list[dict], list[dict]]:
+    """Ventas primero (liberan caja), luego compras; respeta banda y rotación máxima.
+
+    `liquidity[s] = (vol_diaria, volumen_medio)`: con ello se estima el impacto con la ley de la raíz
+    cuadrada (quantfin.impacto_raiz: Y·σ·√(Q/V)) y se recorta la orden si supera MAX_IMPACT_BPS."""
     orders, checks = [], []
     symbols = sorted(set(target) | {s for s in positions if s in BY_SYMBOL})
     for s in symbols:
@@ -404,8 +506,21 @@ def plan_orders(target: dict[str, float], positions: dict[str, float], prices: d
             qty = min(qty if qty else positions.get(s, 0.0), positions.get(s, 0.0))
         if qty <= 0:
             continue
+        impact = None
+        if liquidity and s in liquidity and liquidity[s][1] > 0:
+            sig_d, vol_avg = liquidity[s]
+            impact = float(qa.impacto_raiz(sig_d, qty, vol_avg)) * 1e4
+            if impact > MAX_IMPACT_BPS and sig_d > 0:
+                q_max = vol_avg * (MAX_IMPACT_BPS / 1e4 / (0.7 * sig_d)) ** 2
+                new_qty = round(q_max, 4) if frac else math.floor(q_max)
+                checks.append({"check": f"impacto {s}", "status": "clamped",
+                               "detail": f"{impact:.0f} pb > {MAX_IMPACT_BPS:.0f} pb: {qty} → {new_qty}"})
+                qty, impact = new_qty, MAX_IMPACT_BPS
+                if qty <= 0:
+                    continue
         orders.append({"symbol": s, "side": "buy" if diff > 0 else "sell", "qty": qty, "price": px,
-                       "notional": qty * px, "from_weight": round(cur_w, 4), "to_weight": round(target.get(s, 0.0), 4)})
+                       "notional": qty * px, "from_weight": round(cur_w, 4), "to_weight": round(target.get(s, 0.0), 4),
+                       "impact_bps": None if impact is None else round(impact, 2)})
     # Ventas primero; las compras por convicción (peso objetivo) para que el límite de rotación
     # aplace las posiciones pequeñas, nunca las de mayor convicción.
     orders.sort(key=lambda o: (o["side"] != "sell", -o["to_weight"]))

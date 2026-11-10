@@ -444,6 +444,185 @@ async def _wl_add(ctx, a):
     return {"id": row["id"], "name": row["name"], "symbols": json.loads(row["symbols"])}
 
 
+# ── Laboratorio quant (librería quantfin de quant-finance-research) ─────────
+
+def _qf():
+    import numpy as np
+
+    from quantfin import avanzados as qa
+    from quantfin import mercados as qm
+    return np, qa, qm
+
+
+async def _daily_closes(symbol: str, period: str = "1y") -> tuple[str, list[dict], str]:
+    h = await market.history(_sym({"symbol": symbol}), period, "1d")
+    if len(h["candles"]) < 60:
+        raise ToolError(f"Only {len(h['candles'])} daily candles for {h['symbol']}: need 60+.")
+    return h["symbol"], h["candles"], h["source"]
+
+
+@tool("qf_bubble_test", "Bubble test (SADF)", "Phillips-Shi-Yu (2015) SADF test on 1y of log prices: detects an "
+      "explosive regime while it happens (it does not predict when it bursts). Statistic > ~1.5 suggests a bubble "
+      "(critical value depends on sample size).", "quant", obj({"symbol": SYMBOL, "period": {**PERIOD, "default": "1y"}},
+                                                               ["symbol"]), open_world=True)
+async def _qf_bubble(ctx, a):
+    np, qa, _ = _qf()
+    sym, candles, src = await _daily_closes(a["symbol"], a.get("period", "1y"))
+    stat = float(await asyncio.to_thread(qa.sadf, np.log(np.array([c["c"] for c in candles], dtype=float))))
+    return {"symbol": sym, "sadf": stat, "explosive": stat > 1.5, "threshold": 1.5, "observations": len(candles),
+            "source": src, "reference": "Phillips, Shi y Yu (2015), International Economic Review"}
+
+
+@tool("qf_systemic_fragility", "Systemic fragility (absorption ratio)", "Kritzman et al. (2011) absorption ratio "
+      "of the fund's global multi-asset universe over the last year: share of variance absorbed by the top 20% "
+      "principal components, with a z-score versus its own history (z >= 1 = fragile, correlated market).", "quant",
+      obj({}), open_world=True, idempotent=False)
+async def _qf_fragility(ctx, a):
+    np, _, _ = _qf()
+    from .fund import agents as FA
+    from .fund.engine import _histories, aligned_returns
+    rets = aligned_returns(await _histories())
+    if not rets or len({len(r) for r in rets.values()}) != 1:
+        raise ToolError("Not enough aligned history across the universe right now; retry later.")
+    out = await asyncio.to_thread(FA.systemic_fragility, np.array(list(rets.values())).T)
+    if not out:
+        raise ToolError("Not enough history to compute the absorption ratio.")
+    return {**out, "assets": len(rets), "reference": "Kritzman, Li, Page y Rigobon (2011), JPM"}
+
+
+@tool("qf_pairs_ou", "Pairs trading (Ornstein-Uhlenbeck)", "Fit an Ornstein-Uhlenbeck process to the log-price "
+      "spread of two tickers (hedge ratio by OLS) and return mean-reversion speed, half-life, current z-score and the "
+      "signal (+1 long spread, -1 short spread, 0 flat) at |z| > entry.", "quant",
+      obj({"symbol_a": SYMBOL, "symbol_b": SYMBOL, "period": {**PERIOD, "default": "2y"},
+           "entry_z": p_num("Z-score threshold to enter.", minimum=0.5, maximum=5, default=2.0)},
+          ["symbol_a", "symbol_b"]), open_world=True)
+async def _qf_pairs(ctx, a):
+    np, qa, _ = _qf()
+    (sa, ca, src), (sb, cb, _) = await asyncio.gather(_daily_closes(a["symbol_a"], a.get("period", "2y")),
+                                                      _daily_closes(a["symbol_b"], a.get("period", "2y")))
+    da, db = {c["t"] // 86400: c["c"] for c in ca}, {c["t"] // 86400: c["c"] for c in cb}
+    days = sorted(set(da) & set(db))
+    if len(days) < 120:
+        raise ToolError(f"Only {len(days)} common days between {sa} and {sb}: need 120+.")
+    la, lb = np.log([da[d] for d in days]), np.log([db[d] for d in days])
+    beta, alpha = np.polyfit(lb, la, 1)
+    spread = la - (alpha + beta * lb)
+    theta, mu, sigma, half_life = qa.ajustar_ou(spread)
+    if not np.isfinite(theta) or theta <= 0:
+        return {"pair": [sa, sb], "mean_reverting": False, "hedge_ratio": float(beta), "source": src,
+                "note": "The spread does not mean-revert (b >= 1 in the AR(1) fit): no pairs signal."}
+    z, signal = qa.zscore_pairs(spread, mu, sigma, theta, float(a.get("entry_z", 2.0)))
+    return {"pair": [sa, sb], "mean_reverting": True, "hedge_ratio": float(beta), "theta": float(theta),
+            "half_life_days": float(half_life * 252), "z_score": float(z[-1]), "signal": int(signal[-1]),
+            "observations": len(days), "source": src, "reference": "Uhlenbeck y Ornstein (1930); quantfin.ajustar_ou"}
+
+
+@tool("qf_risk_parity", "Risk parity weights", "Equal-risk-contribution weights (Maillard et al. 2010) from the "
+      "last year of daily returns of 2-20 tickers, with each asset's annual volatility and risk contribution.",
+      "quant", obj({"symbols": {"type": "array", "items": SYMBOL, "minItems": 2, "maxItems": 20,
+                                "description": "Tickers, e.g. ['SPY', 'TLT', 'GLD']."}}, ["symbols"]),
+      open_world=True)
+async def _qf_risk_parity(ctx, a):
+    np, _, qm = _qf()
+    from .fund import agents as FA
+    from .fund.engine import aligned_returns
+    res = await asyncio.gather(*(market.history(_sym({"symbol": s}), "1y", "1d") for s in a["symbols"]))
+    rets = aligned_returns({h["symbol"]: h["candles"] for h in res})
+    info = FA.covariance(rets)
+    if not info:
+        raise ToolError("Not enough common history between those tickers.")
+    syms, cov, t = info
+    w = qm.risk_parity(cov)
+    rc = w * (cov @ w)
+    return {"weights": dict(zip(syms, map(float, w))), "annual_vol": dict(zip(syms, map(float, np.sqrt(np.diag(cov) * 252)))),
+            "risk_contribution": dict(zip(syms, map(float, rc / rc.sum()))), "days": t,
+            "reference": "Maillard, Roncalli y Teïletche (2010); quantfin.risk_parity"}
+
+
+@tool("qf_yield_curve", "Fit yield curve (Nelson-Siegel)", "Fit a Nelson-Siegel curve to maturities (years) and "
+      "yields (decimals). Returns level, slope, curvature, lambda and fitted yields.", "quant",
+      obj({"maturities": {"type": "array", "items": p_num("Maturity in years.", exclusiveMinimum=0, maximum=100),
+                          "minItems": 4, "maxItems": 40, "description": "e.g. [0.25, 1, 2, 5, 10, 30]"},
+           "yields": {"type": "array", "items": p_num("Yield as decimal (0.042 = 4.2%).", minimum=-0.1, maximum=1),
+                      "minItems": 4, "maxItems": 40, "description": "Same length as maturities."}},
+          ["maturities", "yields"]))
+async def _qf_curve(ctx, a):
+    np, _, qm = _qf()
+    tau, y = np.array(a["maturities"], dtype=float), np.array(a["yields"], dtype=float)
+    if len(tau) != len(y):
+        raise ToolError("maturities and yields must have the same length.")
+    b0, b1, b2, lam = qm.ajustar_ns(tau, y)
+    fit = qm.nelson_siegel(tau, b0, b1, b2, lam)
+    return {"level": float(b0), "slope": float(b1), "curvature": float(b2), "lambda": float(lam),
+            "fitted": [float(v) for v in fit], "rmse_bp": float(np.sqrt(np.mean((fit - y) ** 2)) * 1e4),
+            "reference": "Nelson y Siegel (1987), Journal of Business"}
+
+
+@tool("qf_bond", "Bond price, duration and convexity", "Price (per 100 face), modified duration and convexity of a "
+      "fixed-coupon bond.", "quant",
+      obj({"coupon": p_num("Annual coupon rate as decimal.", minimum=0, maximum=1),
+           "ytm": p_num("Yield to maturity as decimal.", minimum=-0.05, maximum=1),
+           "years": p_int("Years to maturity.", minimum=1, maximum=100),
+           "freq": p_int("Coupons per year.", minimum=1, maximum=12, default=2)}, ["coupon", "ytm", "years"]))
+async def _qf_bond(ctx, a):
+    _, _, qm = _qf()
+    price, mod_dur, conv = qm.duracion_convexidad(float(a["coupon"]), float(a["ytm"]), int(a["years"]),
+                                                  int(a.get("freq", 2)))
+    return {"price": float(price), "modified_duration": float(mod_dur), "convexity": float(conv)}
+
+
+@tool("qf_kelly_binary", "Kelly bet (prediction market)", "Kelly fraction of capital to buy YES on a binary contract "
+      "that pays 1, given your probability and the market price (0 if you have no edge).", "quant",
+      obj({"probability": p_num("Your probability of YES.", minimum=0, maximum=1),
+           "price": p_num("Market price of YES (0-1).", exclusiveMinimum=0, maximum=0.9999)},
+          ["probability", "price"]))
+async def _qf_kelly(ctx, a):
+    _, _, qm = _qf()
+    f = qm.kelly_binario(float(a["probability"]), float(a["price"]))
+    return {"kelly_fraction": f, "half_kelly": f / 2,
+            "note": "Full Kelly is very volatile; practitioners often bet half Kelly or less."}
+
+
+@tool("qf_market_making", "Market-making quotes (Avellaneda-Stoikov)", "Optimal bid/ask around a mid price given "
+      "inventory, risk aversion, volatility, time left and order-arrival decay.", "quant",
+      obj({"mid": p_num("Mid price.", exclusiveMinimum=0), "inventory": p_num("Current inventory (units)."),
+           "gamma": p_num("Risk aversion.", exclusiveMinimum=0, maximum=10, default=0.1),
+           "sigma": p_num("Volatility of the mid price (price units).", exclusiveMinimum=0),
+           "time_left": p_num("Remaining horizon (fraction of session).", exclusiveMinimum=0, maximum=1, default=0.5),
+           "k": p_num("Order-arrival decay.", exclusiveMinimum=0, default=1.5)}, ["mid", "inventory", "sigma"]))
+async def _qf_mm(ctx, a):
+    _, _, qm = _qf()
+    bid, ask = qm.avellaneda_stoikov(float(a["mid"]), float(a["inventory"]), float(a.get("gamma", 0.1)),
+                                     float(a["sigma"]), float(a.get("time_left", 0.5)), float(a.get("k", 1.5)))
+    return {"bid": float(bid), "ask": float(ask), "spread": float(ask - bid), "reservation_price": float((bid + ask) / 2)}
+
+
+@tool("qf_execution_plan", "Execution cost and schedule", "Estimate the market impact of trading `qty` units with "
+      "the square-root law (sigma * sqrt(Q/V), from 20-day volatility and volume) and an Almgren-Chriss liquidation "
+      "schedule over `steps` slices.", "quant",
+      obj({"symbol": SYMBOL, "qty": p_num("Units to trade.", exclusiveMinimum=0),
+           "steps": p_int("Number of slices.", minimum=2, maximum=50, default=5),
+           "risk_aversion": p_num("Almgren-Chriss lambda.", minimum=0, maximum=1, default=1e-6)}, ["symbol", "qty"]),
+      open_world=True)
+async def _qf_impact(ctx, a):
+    np, qa, qm = _qf()
+    from .fund.engine import liquidity
+    sym, candles, src = await _daily_closes(a["symbol"], "3mo")
+    liq = liquidity({sym: candles}).get(sym)
+    if not liq or not liq[1]:
+        raise ToolError(f"No volume data for {sym}: impact cannot be estimated.")
+    sig_d, vol_avg = liq
+    qty = float(a["qty"])
+    impact = float(qa.impacto_raiz(sig_d, qty, vol_avg))
+    lam = float(a.get("risk_aversion", 1e-6))
+    eta = max(1e-9, impact * candles[-1]["c"] / max(qty, 1))  # escala la impaciencia con el impacto estimado
+    sched = qm.almgren_chriss(qty, 1.0, int(a.get("steps", 5)), sig_d * candles[-1]["c"], eta, lam) if lam > 0 else \
+        np.linspace(qty, 0, int(a.get("steps", 5)) + 1)
+    return {"symbol": sym, "qty": qty, "pct_of_daily_volume": qty / vol_avg * 100, "impact_bps": impact * 1e4,
+            "daily_vol": sig_d, "remaining_inventory_by_step": [float(x) for x in sched], "source": src,
+            "references": ["Bonart (2026, preprint) — ley de la raíz cuadrada", "Almgren y Chriss (2001)"]}
+
+
 # ── Fondo multi-agente (paper) ──────────────────────────────────────────────
 
 def _fund_summary(run: dict | None) -> dict | None:

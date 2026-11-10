@@ -19,8 +19,11 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 import logging
 import time
+
+import numpy as np
 
 from .. import macro, news, paper
 from ..datahub import hub
@@ -88,6 +91,31 @@ async def _emit(uid: int, stage: str, status: str, msg: str = "") -> None:
 async def _histories() -> dict[str, list[dict]]:
     res = await asyncio.gather(*(market.history(a.symbol, "5y", "1d") for a in A.UNIVERSE), return_exceptions=True)
     return {a.symbol: r["candles"] for a, r in zip(A.UNIVERSE, res) if isinstance(r, dict) and len(r["candles"]) > 330}
+
+
+def aligned_returns(hist: dict[str, list[dict]], days: int = 252) -> dict[str, list[float]]:
+    """Rendimientos diarios en las mismas fechas para todos los activos (cripto cotiza en fin de semana)."""
+    by_day = {s: {c["t"] // 86400: c["c"] for c in cs} for s, cs in hist.items()}
+    common = sorted(set.intersection(*(set(d) for d in by_day.values()))) if by_day else []
+    common = common[-(days + 1):]
+    out = {}
+    for s, d in by_day.items():
+        px = [d[k] for k in common]
+        out[s] = [px[i] / px[i - 1] - 1 for i in range(1, len(px)) if px[i - 1]]
+    return out
+
+
+def liquidity(hist: dict[str, list[dict]]) -> dict[str, tuple[float, float]]:
+    """(volatilidad diaria, volumen medio de 20 sesiones) para el modelo de impacto."""
+    out = {}
+    for s, cs in hist.items():
+        closes = [c["c"] for c in cs[-21:]]
+        rets = [closes[i] / closes[i - 1] - 1 for i in range(1, len(closes)) if closes[i - 1]]
+        vols = [c["v"] for c in cs[-20:] if c.get("v")]
+        if len(rets) > 5 and vols:
+            mu = sum(rets) / len(rets)
+            out[s] = (math.sqrt(sum((r - mu) ** 2 for r in rets) / len(rets)), sum(vols) / len(vols))
+    return out
 
 
 async def _macro_series() -> dict:
@@ -181,10 +209,13 @@ async def _run_cycle(uid: int, execute: bool, trigger: str) -> dict:
         cb = {"halted": True, "reason": st["halt_reason"] or "parada manual", "drawdown": cb["drawdown"]}
     await _emit(uid, "risk_gate", "blocked" if cb["halted"] else "done", cb["reason"] or "operativa permitida")
 
-    # 3-4. macro y sentimiento
-    await _emit(uid, "macro", "running", "Leyendo tipos, paro e inflación (DBnomics)")
-    series = await _macro_series()
-    regime = A.macro_regime(series["fed"], series["unemployment"], series["inflation"])
+    # 3-4. macro (tipos, paro, inflación + fragilidad sistémica) y sentimiento
+    await _emit(uid, "macro", "running", "Tipos, paro e inflación (DBnomics) + absorption ratio")
+    series, hist = await asyncio.gather(_macro_series(), _histories())
+    rets = aligned_returns(hist)
+    matrix = np.array([r for r in rets.values()]).T if rets and len({len(r) for r in rets.values()}) == 1 else None
+    fragility = await asyncio.to_thread(A.systemic_fragility, matrix) if matrix is not None else None
+    regime = A.macro_regime(series["fed"], series["unemployment"], series["inflation"], fragility)
     await _emit(uid, "macro", "done", f"régimen {regime['regime']}")
     await _emit(uid, "sentiment", "running", "Analizando titulares")
     sent = A.news_sentiment(await news.top_news(60))
@@ -192,7 +223,6 @@ async def _run_cycle(uid: int, execute: bool, trigger: str) -> dict:
 
     # 5. analistas por mesa + investigador cuant
     await _emit(uid, "analysts", "running", f"{len(A.UNIVERSE)} activos en {len(A.DESKS)} mesas")
-    hist = await _histories()
 
     def analyse() -> dict:
         out = {}
@@ -209,13 +239,15 @@ async def _run_cycle(uid: int, execute: bool, trigger: str) -> dict:
     await _emit(uid, "analysts", "done", f"{len(views)} opiniones")
 
     # 6-7. CIO + gestor de riesgos
-    raw = A.build_portfolio(views, regime, sent, trust)
+    cov_info = A.covariance({s: r for s, r in rets.items() if s in views})
+    raw = A.build_portfolio(views, regime, sent, trust, cov_info)
     vols = {s: v["signals"]["vol60"] for s, v in views.items()}
-    target, risk_checks = A.apply_risk(raw, vols, POLICY)
+    bubbles = {s for s, v in views.items() if v["signals"].get("bubble")}
+    target, risk_checks = A.apply_risk(raw, vols, POLICY, cov_info, bubbles)
     await _emit(uid, "risk", "done", f"{len(risk_checks)} controles")
 
     # 8. trader
-    orders, order_checks = A.plan_orders(target, positions, prices, equity, POLICY)
+    orders, order_checks = A.plan_orders(target, positions, prices, equity, POLICY, liquidity(hist))
     if cb["halted"]:
         blocked = [o for o in orders if o["side"] == "buy"]
         orders = [o for o in orders if o["side"] == "sell"]
@@ -230,12 +262,17 @@ async def _run_cycle(uid: int, execute: bool, trigger: str) -> dict:
         "data_source": next(iter(quotes.values()), {}).get("source", "?"),
         # Qué investigación respalda cada etapa (ver research.py y la pantalla FUND).
         "evidence": {
-            "memory": cite("yu2024"), "macro": cite("sahm2019"), "sentiment": cite("tetlock2007", "greshake2023"),
+            "memory": cite("yu2024"), "macro": cite("sahm2019", "kritzman2011"), "sentiment": cite("tetlock2007", "greshake2023"),
             "analysts": cite("moskowitz2012", "jegadeesh1993", "daniel2016", "miyazaki2026"),
-            "quant": cite("bailey2014", "bailey2016", "harvey2016", "hurst2017", "faber2007"),
+            "quant": cite("bailey2014", "bailey2016", "harvey2016", "hurst2017", "faber2007", "brock1992",
+                          "levine2016"),
             "cio": cite("maillard2010", "xiao2024", "huang2026", "glasserman2023"),
-            "risk": cite("moreira2017", "demiguel2024", "li2025"),
+            "risk": cite("moreira2017", "demiguel2024", "li2025", "pafka2003", "higham2002", "phillips2015"),
+            "execution": cite("bonart2026", "almgren2001"),
         },
+        "quantfin": {"fragility": fragility, "bubbles": sorted(bubbles),
+                     "risk_budget": A.risk_budget(list(raw), views, cov_info)[1] if raw else None,
+                     "covariance": {"assets": len(cov_info[0]), "days": cov_info[2]} if cov_info else None},
         "disagreement": round(sum(v["debate"]["disagreement"] for v in views.values()) / max(1, len(views)), 3),
     }
     rep["memo"] = _deterministic_memo(rep)

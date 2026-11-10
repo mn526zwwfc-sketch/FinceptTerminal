@@ -11,6 +11,8 @@ para que esta tabla no se desincronice del motor.
 
 from __future__ import annotations
 
+QF = "quantfin (quant-finance-research, A. Ortega)"  # origen de las referencias integradas desde ella
+
 REFERENCES: list[dict] = [
     # ── Momentum y tendencia (investigador cuant / analistas) ──────────────
     {"id": "moskowitz2012", "title": "Time Series Momentum", "authors": "Moskowitz, Ooi, Pedersen", "year": 2012,
@@ -155,6 +157,96 @@ REFERENCES: list[dict] = [
      "verified": True, "agent": "Arquitectura",
      "finding": "Revisión del estado del arte de agentes LLM en inversión: cartera, riesgo y generación de estrategias.",
      "applied": "Marco general del diseño.", "applied_in": ["engine._run_cycle"]},
+    # ── Integrados desde la librería quantfin (quant-finance-research, A. Ortega) ──
+    {"id": "phillips2015", "title": "Testing for Multiple Bubbles: Historical Episodes of Exuberance and Collapse in "
+     "the S&P 500", "authors": "Phillips, Shi, Yu", "year": 2015, "venue": "International Economic Review",
+     "doi": "10.1111/iere.12132", "openalex": "W3125260748", "cited_by": 1182, "verified": True,
+     "agent": "Analistas / gestor de riesgos", "source": QF,
+     "finding": "La prueba recursiva SADF detecta un régimen explosivo mientras ocurre (no predice cuándo revienta).",
+     "applied": "quantfin.sadf sobre el último año de log-precios; si supera 1,5 el peso máximo del activo se reduce "
+                "a la mitad y entra como argumento bajista.",
+     "applied_in": ["agents.asset_signals", "agents.apply_risk", "tools._qf_bubble"]},
+    {"id": "kritzman2011", "title": "Principal Components as a Measure of Systemic Risk",
+     "authors": "Kritzman, Li, Page, Rigobon", "year": 2011, "venue": "Journal of Portfolio Management",
+     "doi": "10.3905/jpm.2011.37.4.112", "openalex": "W3124088450", "cited_by": 359, "verified": True,
+     "agent": "Estratega macro", "source": QF,
+     "finding": "El 'absorption ratio' (varianza que absorben los primeros componentes principales) sube antes de "
+                "las crisis.",
+     "applied": "quantfin.absorption_ratio en ventanas de 63 sesiones sobre el universo; z ≥ 1 resta puntos al "
+                "régimen (mercado frágil).",
+     "applied_in": ["agents.systemic_fragility", "agents.macro_regime", "tools._qf_fragility"]},
+    {"id": "pafka2003", "title": "Noisy covariance matrices and portfolio optimization II", "authors": "Pafka, Kondor",
+     "year": 2003, "venue": "Physica A", "doi": "10.1016/s0378-4371(02)01499-1", "openalex": "W2615820837",
+     "cited_by": 121, "verified": True, "agent": "Gestor de riesgos", "source": QF,
+     "finding": "El riesgo estimado con una covarianza de muestra es (1 − n/T) del real (en desviación típica).",
+     "applied": "La volatilidad de la cartera se calcula con covarianza real y se corrige con "
+                "quantfin.sesgo_optimizador antes de compararla con el objetivo del 10 %.",
+     "applied_in": ["agents.portfolio_vol"]},
+    {"id": "higham2002", "title": "Computing the nearest correlation matrix — a problem from finance",
+     "authors": "Higham", "year": 2002, "venue": "IMA Journal of Numerical Analysis", "doi": "10.1093/imanum/22.3.329",
+     "openalex": "W2091560152", "cited_by": 919, "verified": True, "agent": "Gestor de riesgos", "source": QF,
+     "finding": "La correlación válida más cercana se obtiene con proyecciones alternadas y corrección de Dykstra.",
+     "applied": "Si la matriz de correlación no es semidefinida positiva se repara con quantfin.nearest_correlation.",
+     "applied_in": ["agents.covariance"]},
+    {"id": "brock1992", "title": "Simple Technical Trading Rules and the Stochastic Properties of Stock Returns",
+     "authors": "Brock, Lakonishok, LeBaron", "year": 1992, "venue": "Journal of Finance",
+     "doi": "10.1111/j.1540-6261.1992.tb04681.x", "openalex": "W2101544483", "cited_by": 2321, "verified": True,
+     "agent": "Investigador cuant", "source": QF,
+     "finding": "Medias móviles y rupturas de rango tuvieron poder predictivo en el Dow Jones (1897-1986); la ventaja "
+                "en un solo activo se ha erosionado con el tiempo.",
+     "applied": "Estrategias ema_20_100 (quantfin.senal_ema) y donchian_20 (quantfin.senal_donchian); el Deflated "
+                "Sharpe penaliza haber añadido más pruebas.",
+     "applied_in": ["agents._strat_ema", "agents._strat_donchian"]},
+    {"id": "levine2016", "title": "Which Trend Is Your Friend?", "authors": "Levine, Pedersen", "year": 2016,
+     "venue": "Financial Analysts Journal", "doi": "10.2469/faj.v72.n3.3", "openalex": "W2936121733", "cited_by": 60,
+     "verified": True, "agent": "Investigador cuant", "source": QF,
+     "finding": "Cruces de medias móviles y time-series momentum son casi la misma señal con distintos filtros.",
+     "applied": "Por eso las variantes de tendencia compiten entre sí y solo se elige una por activo.",
+     "applied_in": ["agents._strat_ema", "agents.select_strategy"]},
+    {"id": "harvey2018", "title": "The Impact of Volatility Targeting", "authors": "Harvey, Hoyle, Korgaonkar, "
+     "Rattray, Sargaison, Van Hemert", "year": 2018, "venue": "Journal of Portfolio Management",
+     "doi": "10.3905/jpm.2018.45.1.014", "openalex": "W3125613883", "cited_by": 94, "verified": True,
+     "agent": "Gestor de riesgos", "source": QF,
+     "finding": "El objetivo de volatilidad mejora el Sharpe en activos de riesgo y siempre reduce la volatilidad de "
+                "la volatilidad.",
+     "applied": "Complementa a DeMiguel et al. (2024): se usa como techo de riesgo de la cartera.",
+     "applied_in": ["agents.apply_risk"]},
+    {"id": "bonart2026", "title": "Ley de la raíz cuadrada del impacto de mercado (arXiv 2606.07059)",
+     "authors": "Bonart", "year": 2026, "venue": "arXiv (preprint, sin revisión por pares)", "doi": None,
+     "openalex": None, "cited_by": None, "verified": False, "agent": "Trader", "source": QF,
+     "finding": "El impacto de una orden es ∝ σ·√(Q/V) (volatilidad diaria, tamaño, volumen diario).",
+     "applied": "quantfin.impacto_raiz estima el coste de cada orden; se recorta si supera 50 pb. No encontrado en "
+                "OpenAlex: la ley es estándar en microestructura, pero esta referencia concreta no está verificada.",
+     "applied_in": ["agents.plan_orders", "tools._qf_impact"]},
+    {"id": "almgren2001", "title": "Optimal execution of portfolio transactions", "authors": "Almgren, Chriss",
+     "year": 2001, "venue": "Journal of Risk", "doi": "10.21314/jor.2001.041", "openalex": "W1988270113",
+     "cited_by": 1573, "verified": True, "agent": "Trader", "source": QF,
+     "finding": "Calendario óptimo de liquidación: equilibra impacto y riesgo de precio (TWAP si no hay aversión).",
+     "applied": "Tool qf_execution_plan (quantfin.almgren_chriss) para planificar órdenes grandes.",
+     "applied_in": ["tools._qf_impact"]},
+    {"id": "avellaneda2008", "title": "High-frequency trading in a limit order book", "authors": "Avellaneda, Stoikov",
+     "year": 2008, "venue": "Quantitative Finance", "doi": "10.1080/14697680701381228", "openalex": "W2162288466",
+     "cited_by": 504, "verified": True, "agent": "Laboratorio quant", "source": QF,
+     "finding": "Un creador de mercado ajusta su precio de reserva según su inventario y la volatilidad.",
+     "applied": "Tool qf_market_making (quantfin.avellaneda_stoikov).", "applied_in": ["tools._qf_mm"]},
+    {"id": "nelson1987", "title": "Parsimonious Modeling of Yield Curves", "authors": "Nelson, Siegel", "year": 1987,
+     "venue": "Journal of Business", "doi": "10.1086/296409", "openalex": "W2077252204", "cited_by": 2855,
+     "verified": True, "agent": "Laboratorio quant", "source": QF,
+     "finding": "Tres factores (nivel, pendiente, curvatura) describen la curva de tipos.",
+     "applied": "Tool qf_yield_curve (quantfin.ajustar_ns) y qf_bond (duración y convexidad).",
+     "applied_in": ["tools._qf_curve", "tools._qf_bond"]},
+    {"id": "uhlenbeck1930", "title": "On the Theory of the Brownian Motion", "authors": "Uhlenbeck, Ornstein",
+     "year": 1930, "venue": "Physical Review", "doi": "10.1103/physrev.36.823", "openalex": "W2017957151",
+     "cited_by": 4713, "verified": True, "agent": "Laboratorio quant", "source": QF,
+     "finding": "Proceso de reversión a la media dX = θ(μ − X)dt + σdW, base del pairs trading.",
+     "applied": "Tool qf_pairs_ou (quantfin.ajustar_ou + zscore_pairs) sobre el spread logarítmico de dos activos.",
+     "applied_in": ["tools._qf_pairs"]},
+    {"id": "kelly1956", "title": "A New Interpretation of Information Rate", "authors": "Kelly", "year": 1956,
+     "venue": "Bell System Technical Journal", "doi": "10.1002/j.1538-7305.1956.tb03809.x", "openalex": "W2034489173",
+     "cited_by": 1634, "verified": True, "agent": "Laboratorio quant", "source": QF,
+     "finding": "La fracción óptima a apostar maximiza el crecimiento logarítmico del capital.",
+     "applied": "Tool qf_kelly_binary (quantfin.kelly_binario) para mercados de predicción.",
+     "applied_in": ["tools._qf_kelly"]},
     # ── Seguridad ──────────────────────────────────────────────────────────
     {"id": "greshake2023", "title": "Not What You've Signed Up For: Compromising Real-World LLM-Integrated "
      "Applications with Indirect Prompt Injection", "authors": "Greshake et al.", "year": 2023,
