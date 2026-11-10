@@ -44,7 +44,10 @@ class FakeGateway:
             return httpx.Response(200, json={"orders": [{k: v for k, v in o.items() if not k.startswith("_")}
                                                         for o in self.orders.values()]})
         if req.method == "DELETE" and path.startswith(f"/iserver/account/{ACCOUNT}/order/"):
-            self.orders[path.rsplit("/", 1)[1]]["status"] = "Cancelled"
+            oid = path.rsplit("/", 1)[1]
+            if oid not in self.orders:
+                return httpx.Response(404, json={"error": "order not found"})
+            self.orders[oid]["status"] = "Cancelled"
             return httpx.Response(200, json={"msg": "ok"})
         if path == f"/portfolio/{ACCOUNT}/positions/0":
             return httpx.Response(200, json=[{"conid": c, "position": q} for c, q in self.positions.items()])
@@ -262,9 +265,42 @@ def test_orders_ibkr_stops_listing_block_buys_until_resolved(user, gw, monkeypat
                                engine.POLICY)
     assert orders == [] and any("sin conciliar" in c["detail"] for c in checks)
     with pytest.raises(live.LiveError, match="precio medio"):
-        live.reconcile(uid, o["id"], 1, None)
-    done = live.reconcile(uid, o["id"], 1, 501.0)  # la persona mira su cuenta de IBKR: se ejecutó
+        run(live.reconcile(uid, o["id"], 1, None))
+    done = run(live.reconcile(uid, o["id"], 1, 501.0))  # la persona mira su cuenta de IBKR: se ejecutó
     assert done["status"] == "filled" and live.ledger(uid, real_prices)["positions"] == {"SPY": 1}
+
+
+def test_reconciling_as_not_filled_cancels_at_ibkr_first(user, gw, monkeypatch, real_prices):
+    uid = user["id"]
+    o = _pending(uid, real_prices, monkeypatch)
+    _send(uid, o)
+    hidden = gw.orders.pop("1000")
+    run(live.refresh(uid))
+    assert live.orders(uid)[0]["status"] == "unreconciled"
+    gw.orders["1000"] = hidden
+    done = run(live.reconcile(uid, o["id"], 0, None))
+    assert ("DELETE", f"/iserver/account/{ACCOUNT}/order/1000") in gw.calls  # por si seguía viva
+    assert done["status"] == "cancelled" and live.ledger(uid, real_prices)["positions"] == {}
+
+
+def test_refresh_retries_before_marking_unreconciled(user, gw, monkeypatch, real_prices):
+    uid = user["id"]
+    o = _pending(uid, real_prices, monkeypatch)
+    _send(uid, o)
+    real = gw.handler
+    calls = {"n": 0}
+
+    def flaky(req):  # la primera lista de órdenes llega vacía
+        if req.url.path.endswith("/iserver/account/orders"):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                return httpx.Response(200, json={"orders": []})
+        return real(req)
+    monkeypatch.setattr(gw, "handler", flaky)
+    monkeypatch.setattr(live, "client_factory",
+                        lambda: IBKRClient("https://localhost:5000/v1/api", transport=httpx.MockTransport(gw.handler)))
+    run(live.refresh(uid))
+    assert calls["n"] == 2 and live.orders(uid)[0]["status"] == "submitted"
 
 
 def test_gateway_down_blocks_approval(user, gw, monkeypatch, real_prices):
@@ -306,12 +342,16 @@ def test_daily_loss_limit(user, monkeypatch):
 # ── API y comité ────────────────────────────────────────────────────────────
 
 def test_approval_requires_a_human_session(client, user, gw, monkeypatch, real_prices):
-    o = _pending(user["id"], real_prices, monkeypatch)
     api_only = {"X-API-Key": user["api_key"]}
+    cfg = {"capital": 1e6, "max_order": 1e6, "daily_loss_pct": 0.2, "account": ACCOUNT}
+    assert client.put("/fund/live/config", headers=api_only, json=cfg).status_code == 403
+    assert client.put("/fund/live/mode", headers=api_only, json={"mode": "live"}).status_code == 403
+    o = _pending(user["id"], real_prices, monkeypatch)
     r = client.post(f"/fund/live/orders/{o['id']}/approve", headers=api_only, json={"confirm": "x"})
     assert r.status_code == 403
     r = client.post(f"/fund/live/orders/{o['id']}/reject", headers=user["headers"]).json()
     assert r["success"] and r["data"]["status"] == "rejected"
+    assert client.post("/fund/halt", headers=api_only, json={"halted": True}).status_code == 200  # parar, siempre
 
 
 def test_no_mcp_tool_can_approve_real_orders():

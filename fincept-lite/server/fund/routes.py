@@ -144,7 +144,8 @@ async def live_status(user: dict = Depends(require_auth)):
 
 
 @router.put("/live/config")
-async def live_config(body: LiveConfigIn, user: dict = Depends(require_auth)):
+async def live_config(body: LiveConfigIn, request: Request, user: dict = Depends(require_auth)):
+    _human_session(request)  # los límites del dinero real solo los fija la persona en la terminal
     try:
         return ok(live.set_config(user["id"], body.model_dump()))
     except live.LiveError as e:
@@ -152,7 +153,8 @@ async def live_config(body: LiveConfigIn, user: dict = Depends(require_auth)):
 
 
 @router.put("/live/mode")
-async def live_mode(body: LiveModeIn, user: dict = Depends(require_auth)):
+async def live_mode(body: LiveModeIn, request: Request, user: dict = Depends(require_auth)):
+    _human_session(request)
     try:
         return ok(await live.set_mode(user["id"], body.mode))
     except live.LiveError as e:
@@ -208,7 +210,7 @@ async def live_reconcile(order_id: int, body: ReconcileIn, request: Request, use
     """Resolver a mano una orden que IBKR dejó de listar, con lo que muestra tu cuenta de IBKR."""
     _human_session(request)
     try:
-        return ok(live.reconcile(user["id"], order_id, body.filled_qty, body.avg_price))
+        return ok(await live.reconcile(user["id"], order_id, body.filled_qty, body.avg_price))
     except live.LiveError as e:
         return fail(str(e))
 

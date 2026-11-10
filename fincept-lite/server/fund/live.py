@@ -397,8 +397,11 @@ def reject(uid: int, order_id: int) -> dict:
     return {"id": order_id, "status": "rejected"}
 
 
-def reconcile(uid: int, order_id: int, filled_qty: float, avg_price: float | None) -> dict:
-    """La persona resuelve una orden que IBKR dejó de listar, con lo que ve en su cuenta de IBKR."""
+async def reconcile(uid: int, order_id: int, filled_qty: float, avg_price: float | None) -> dict:
+    """La persona resuelve una orden que IBKR dejó de listar, con lo que ve en su cuenta de IBKR.
+
+    Antes se envía la cancelación a IBKR: si la orden siguiera viva y se ejecutara después, el fondo
+    tendría acciones que su registro no conoce."""
     o = _get(uid, order_id)
     if o["status"] != "unreconciled":
         raise LiveError(f"La orden está '{o['status']}': no hace falta conciliarla.")
@@ -406,6 +409,15 @@ def reconcile(uid: int, order_id: int, filled_qty: float, avg_price: float | Non
         raise LiveError(f"La cantidad ejecutada debe estar entre 0 y {o['qty']:g}.")
     if filled_qty and not (avg_price and avg_price > 0):
         raise LiveError("Indica el precio medio de ejecución.")
+    try:
+        c = client_factory()
+        try:
+            await c.cancel(config(uid)["account"], o["broker_order_id"])
+            _log(order_id, "cancelación antes de conciliar", "enviada a IBKR")
+        finally:
+            await c.close()
+    except IBKRError as e:  # p. ej. IBKR ya no la conoce: es lo esperable en una orden DAY caducada
+        _log(order_id, "cancelación antes de conciliar", f"IBKR: {e}")
     status = "filled" if filled_qty == o["qty"] else "cancelled"
     _set_status(order_id, status, "conciliación manual", f"{filled_qty:g} ejecutadas a {avg_price or 0:g}",
                 filled_qty=filled_qty, avg_price=avg_price if filled_qty else None)
@@ -425,6 +437,8 @@ async def refresh(uid: int) -> dict:
         return {"ok": False, "changed": 0, "error": str(e)}
     try:
         book = await c.orders()
+        if any(str(o["broker_order_id"]) not in book for o in sent):
+            book |= await c.orders()  # IBKR a veces devuelve la lista incompleta en la primera llamada
     except IBKRError as e:
         return {"ok": False, "changed": 0, "error": str(e)}
     finally:

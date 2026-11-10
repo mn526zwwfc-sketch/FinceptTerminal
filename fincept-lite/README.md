@@ -142,7 +142,9 @@ Protecciones del código, que no dependen del modelo:
 - **Solo estrategias validadas con datos reales.** Una compra exige que el activo tenga una estrategia entrenada con datos reales y validada (prueba final + Deflated Sharpe). Sin periodo en sombra, por tu decisión. Cripto no se opera en IBKR en esta versión.
 - **Órdenes acotadas.** Limitadas DAY a ±0,5 % del precio de referencia, en acciones enteras, sin superar el máximo por orden ni el capital asignado.
 - **Registro propio del fondo.** El fondo lleva la cuenta de lo que compró y vendió, así que **nunca vende posiciones de tu cuenta que no sean suyas**. Las acciones que ya están en venta se descuentan de lo disponible, y las compras aún sin ejecutar comprometen capital. Antes de vender comprueba también lo que muestra IBKR.
-- **Conciliación con IBKR.** Antes de cada aprobación se concilia con IBKR. Si el gateway no responde, no se aprueba nada. Si IBKR deja de listar una orden, queda «sin conciliar» y no se compra hasta que la resuelvas con lo que ves en tu cuenta (botón RESOLVER).
+- **Conciliación con IBKR.** Antes de cada aprobación se concilia con IBKR. Si el gateway no responde, no se aprueba nada. Si IBKR deja de listar una orden (aun después de volver a pedírselo), queda «sin conciliar» y no se compra hasta que la resuelvas con lo que ves en tu cuenta (botón RESOLVER). Al resolverla se envía antes la cancelación a IBKR, por si la orden siguiera viva. Es normal que las órdenes DAY no ejecutadas aparezcan así al día siguiente.
+- **Límites y modo solo desde la terminal.** Cambiar los límites o activar el modo real exige una sesión iniciada, igual que aprobar. Parar el fondo se puede siempre.
+- **Comisiones.** El registro del fondo no descuenta las comisiones de IBKR (en torno a 1 USD por orden), así que su caja está ligeramente sobrestimada.
 - **Comprobación al aprobar.** Se revisa otra vez que el precio no se haya movido más de un 1 %, que la propuesta tenga menos de 15 minutos, que el fondo no esté parado y que no se haya superado la pérdida diaria.
 - **Pérdida diaria.** Si se alcanza, el fondo se para solo y cancela en IBKR lo enviado. Los límites no se pueden cambiar con el modo real activo: cambiar el capital a mitad de día falsearía la pérdida diaria.
 - **Moneda.** Capital y límites en USD, porque el universo operable son ETF de EE. UU.
@@ -252,7 +254,7 @@ Barra de comandos (`/` o `Ctrl+K`): `AAPL` · `SAN.MC GO` · `BUY 10 NVDA` · `S
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest -q      # 186 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
+.venv/bin/python -m pytest -q      # 188 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
 ```
 
 ### Evaluación del servidor MCP
