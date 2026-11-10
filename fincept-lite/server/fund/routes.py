@@ -1,13 +1,15 @@
-"""API REST del fondo (/fund/*). Ejecutar exige una llamada explícita y siempre es PAPER."""
+"""API REST del fondo (/fund/*). En paper, ejecutar exige una llamada explícita; en modo real (IBKR),
+cada orden la aprueba una persona con sesión iniciada en la terminal."""
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from ..auth import fail, ok, require_auth
 from . import agents as A
 from . import engine
+from . import live
 from .research import knowledge_base
 
 router = APIRouter(prefix="/fund")
@@ -62,7 +64,10 @@ class HaltIn(BaseModel):
 
 @router.post("/halt")
 async def halt(body: HaltIn, user: dict = Depends(require_auth)):
-    return ok(engine.set_halt(user["id"], body.halted, body.reason or "parada manual"))
+    out = engine.set_halt(user["id"], body.halted, body.reason or "parada manual")
+    if body.halted:  # la parada de emergencia también caduca lo pendiente y cancela en IBKR lo enviado
+        out["live_cancelled"] = await live.cancel_open(user["id"], "parada de emergencia")
+    return ok(out)
 
 
 class AutopilotIn(BaseModel):
@@ -113,3 +118,74 @@ async def agents_profiles(user: dict = Depends(require_auth)):
     """Perfil de cada agente: skills con sus reglas, papers de la base y código que los aplica."""
     from . import training as T
     return ok(T.agent_profiles())
+
+
+# ── modo real (Interactive Brokers) ─────────────────────────────────────────
+
+class LiveConfigIn(BaseModel):
+    capital: float = Field(gt=0, le=10_000_000)
+    max_order: float = Field(gt=0)
+    daily_loss_pct: float = Field(gt=0, le=0.2)
+    account: str = Field(min_length=4, max_length=20)
+
+
+class LiveModeIn(BaseModel):
+    mode: str = Field(pattern="^(paper|live)$")
+
+
+class ApproveIn(BaseModel):
+    confirm: str = Field(max_length=80)
+
+
+@router.get("/live")
+async def live_status(user: dict = Depends(require_auth)):
+    await live.refresh(user["id"])
+    return ok(await live.status(user["id"]))
+
+
+@router.put("/live/config")
+async def live_config(body: LiveConfigIn, user: dict = Depends(require_auth)):
+    try:
+        return ok(live.set_config(user["id"], body.model_dump()))
+    except live.LiveError as e:
+        return fail(str(e))
+
+
+@router.put("/live/mode")
+async def live_mode(body: LiveModeIn, user: dict = Depends(require_auth)):
+    try:
+        return ok(await live.set_mode(user["id"], body.mode))
+    except live.LiveError as e:
+        return fail(str(e))
+
+
+def _human_session(request: Request) -> None:
+    """Las órdenes reales solo las aprueba una persona con sesión iniciada en la terminal (no una API key sola,
+    no un agente por MCP)."""
+    if not getattr(request.state, "session_token", None):
+        raise HTTPException(status_code=403, detail="Aprobar órdenes reales requiere una sesión iniciada en la terminal.")
+
+
+@router.post("/live/orders/{order_id}/approve")
+async def live_approve(order_id: int, body: ApproveIn, request: Request, user: dict = Depends(require_auth)):
+    _human_session(request)
+    from . import training as T
+    o = next((x for x in live.orders(user["id"], 500) if x["id"] == order_id), None)
+    if not o:
+        return fail("Orden no encontrada.")
+    try:
+        run = engine.get_run(user["id"], o["run_id"])
+        book = (T.latest(user["id"]) or {}).get("book", {})
+        return ok(await live.approve(user["id"], order_id, body.confirm, run["finished"],
+                                     engine.get_state(user["id"])["halted"], book))
+    except (live.LiveError, engine.FundError) as e:
+        return fail(str(e))
+
+
+@router.post("/live/orders/{order_id}/reject")
+async def live_reject(order_id: int, request: Request, user: dict = Depends(require_auth)):
+    _human_session(request)
+    try:
+        return ok(live.reject(user["id"], order_id))
+    except live.LiveError as e:
+        return fail(str(e))

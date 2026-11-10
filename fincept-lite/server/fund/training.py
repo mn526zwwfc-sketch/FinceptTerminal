@@ -355,9 +355,12 @@ def _desk_doctrine(book: dict) -> dict:
     return out
 
 
-def train_all(hist: dict[str, list[dict]]) -> dict:
-    t0 = time.time()
-    book = {s: train_asset(c) | {"desk": A.BY_SYMBOL[s].desk} for s, c in hist.items() if s in A.BY_SYMBOL}
+def train_all(hist: dict[str, list[dict]], sources: dict[str, str] | None = None) -> dict:
+    """`sources[s]` = proveedor de los datos ('yahoo' real, 'sim' simulado): el modo real solo usa
+    estrategias entrenadas con datos reales."""
+    t0, sources = time.time(), sources or {}
+    book = {s: train_asset(c) | {"desk": A.BY_SYMBOL[s].desk, "data_source": sources.get(s, "desconocida")}
+            for s, c in hist.items() if s in A.BY_SYMBOL}
     trained = {s: b for s, b in book.items() if b.get("trained")}
     kb = {e["id"]: e for e in knowledge_base()}
     used = sorted({r for b in trained.values() for m in b.get("members", [])
@@ -370,6 +373,7 @@ def train_all(hist: dict[str, list[dict]]) -> dict:
                                    "functions": list(f.functions), "configs": len(f.grid) * 2} for f in FAMILIES],
                      "vol_target_refs": list(VT_REFS)},
         "book": book, "desks": _desk_doctrine(book),
+        "data_sources": sorted(set(sources.values())) or ["desconocida"],
         "summary": {"assets": len(book), "trained": len(trained),
                     "with_edge": sum(b.get("edge", False) for b in trained.values()),
                     "validated": sum(b.get("validated", False) for b in trained.values()),

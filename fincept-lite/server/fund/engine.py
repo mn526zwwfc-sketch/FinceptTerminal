@@ -30,6 +30,7 @@ from ..datahub import hub
 from ..db import get_db
 from ..market.providers import market
 from . import agents as A
+from . import live as L
 from . import training as T
 from .research import cite
 
@@ -89,9 +90,15 @@ async def _emit(uid: int, stage: str, status: str, msg: str = "") -> None:
 
 # ── datos ───────────────────────────────────────────────────────────────────
 
-async def _histories() -> dict[str, list[dict]]:
+async def _fetch_histories() -> tuple[dict[str, list[dict]], dict[str, str]]:
+    """Históricos diarios de 5 años y su fuente ('yahoo' real o 'sim')."""
     res = await asyncio.gather(*(market.history(a.symbol, "5y", "1d") for a in A.UNIVERSE), return_exceptions=True)
-    return {a.symbol: r["candles"] for a, r in zip(A.UNIVERSE, res) if isinstance(r, dict) and len(r["candles"]) > 330}
+    ok_ = [(a.symbol, r) for a, r in zip(A.UNIVERSE, res) if isinstance(r, dict) and len(r["candles"]) > 330]
+    return {s: r["candles"] for s, r in ok_}, {s: r.get("source", "?") for s, r in ok_}
+
+
+async def _histories() -> dict[str, list[dict]]:
+    return (await _fetch_histories())[0]
 
 
 def aligned_returns(hist: dict[str, list[dict]], days: int = 252) -> dict[str, list[float]]:
@@ -184,10 +191,11 @@ async def _llm_memo(rep: dict) -> str | None:
 
 # ── entrenamiento ───────────────────────────────────────────────────────────
 
-async def _train(uid: int, hist: dict | None = None, trigger: str = "manual") -> dict:
-    await _emit(uid, "training", "running", "Los agentes entrenan sus estrategias (60/20/20 + DSR)")
-    hist = hist if hist is not None else await _histories()
-    result = await asyncio.to_thread(T.train_all, hist)
+async def _train(uid: int, hist: dict | None = None, sources: dict | None = None, trigger: str = "manual") -> dict:
+    await _emit(uid, "training", "running", "El equipo de investigación entrena sus estrategias (60/20/20 + DSR)")
+    if hist is None:
+        hist, sources = await _fetch_histories()
+    result = await asyncio.to_thread(T.train_all, hist, sources)
     result["trigger"] = trigger
     T.save(uid, result)
     s = result["summary"]
@@ -216,33 +224,50 @@ async def run_cycle(uid: int, execute: bool = False, trigger: str = "manual") ->
 async def _run_cycle(uid: int, execute: bool, trigger: str) -> dict:
     started = time.time()
     st = get_state(uid)
-    acc = await paper.account(uid)
-    equity = acc["equity"]
-    positions = {p["symbol"]: p["qty"] for p in acc["positions"]}
+    mode = L.mode(uid)
+    if mode == "live":
+        execute = False  # dinero real: cada orden la aprueba una persona, nunca el ciclo ni el autopiloto
+        await L.refresh(uid)
+        positions = L.ledger(uid, {})["positions"]
+    else:
+        acc = await paper.account(uid)
+        positions = {p["symbol"]: p["qty"] for p in acc["positions"]}
 
     # 1. memoria / aprendizaje
     await _emit(uid, "memory", "running", "Evaluando las opiniones del ciclo anterior")
     prev = last_run(uid)
     quotes = await market.quotes([a.symbol for a in A.UNIVERSE] + list(positions))
     prices = {s: q["price"] for s, q in quotes.items()}
+    if mode == "live":
+        led = L.ledger(uid, prices)
+        equity, cash = led["equity"], led["cash"]
+        peak = max(L._row(uid)["peak_equity"] or 0.0, equity)
+    else:
+        equity, cash = acc["equity"], acc["cash"]
+        peak = max(st["peak_equity"] or 0.0, equity)
     trust, learning = st["desk_trust"], {}
-    losses = st["consecutive_losses"]
+    same_mode = bool(prev) and prev["report"].get("mode", "paper") == mode
+    losses = st["consecutive_losses"] if same_mode else 0  # cada modo lleva su propia racha y su propio máximo
     if prev and prev["report"].get("views"):
         trust, learning = A.update_desk_trust(trust, prev["report"]["views"], prev["report"].get("prices", {}),
                                               prices)
-        losses = losses + 1 if prev["equity"] and equity < prev["equity"] * 0.999 else 0
-    peak = max(st["peak_equity"] or 0.0, equity)
+        if same_mode:
+            losses = losses + 1 if prev["equity"] and equity < prev["equity"] * 0.999 else 0
     await _emit(uid, "memory", "done", f"{len(learning)} mesas evaluadas")
 
     # 2. cortacircuitos
     cb = A.circuit_breaker(equity, peak, losses, POLICY)
+    daily = L.daily_check(uid, equity) if mode == "live" else None
+    if daily and daily["breached"] and not st["halted"]:
+        set_halt(uid, True, f"pérdida diaria de {daily['loss']:.1%} (límite {daily['limit']:.1%})")
+        st = get_state(uid)
     if st["halted"]:
         cb = {"halted": True, "reason": st["halt_reason"] or "parada manual", "drawdown": cb["drawdown"]}
     await _emit(uid, "risk_gate", "blocked" if cb["halted"] else "done", cb["reason"] or "operativa permitida")
 
     # 3-4. macro (tipos, paro, inflación + fragilidad sistémica) y sentimiento
     await _emit(uid, "macro", "running", "Tipos, paro e inflación (DBnomics) + absorption ratio")
-    series, hist = await asyncio.gather(_macro_series(), _histories())
+    series, (hist, hist_src) = await asyncio.gather(_macro_series(), _fetch_histories())
     rets = aligned_returns(hist)
     matrix = np.array([r for r in rets.values()]).T if rets and len({len(r) for r in rets.values()}) == 1 else None
     fragility = await asyncio.to_thread(A.systemic_fragility, matrix) if matrix is not None else None
@@ -258,7 +283,7 @@ async def _run_cycle(uid: int, execute: bool, trigger: str) -> dict:
     # 5a. entrenamiento: si no hay libro de estrategias o tiene más de 30 días, los agentes entrenan antes
     training = T.latest(uid)
     if training is None or training["stale"]:
-        training = await _train(uid, hist, trigger="auto")
+        training = await _train(uid, hist, hist_src, trigger="auto")
     book = training["book"] if training else {}
 
     def analyse() -> dict:
@@ -291,8 +316,11 @@ async def _run_cycle(uid: int, execute: bool, trigger: str) -> dict:
         if blocked:
             order_checks.append({"check": "cortacircuitos", "status": "blocked",
                                  "detail": f"{len(blocked)} compra(s) bloqueadas"})
+    if mode == "live":  # las órdenes reales se crean abajo, pendientes de aprobación una a una
+        orders = []
     rep = {
-        "equity": equity, "cash": acc["cash"], "prices": {s: prices[s] for s in views if s in prices},
+        "mode": mode, "daily": daily,
+        "equity": equity, "cash": cash, "prices": {s: prices[s] for s in views if s in prices},
         "positions": positions, "macro": regime, "sentiment": sent, "learning": learning, "desk_trust": trust,
         "circuit_breaker": cb, "views": views, "raw_weights": raw, "target": target, "risk_checks": risk_checks,
         "orders": orders, "order_checks": order_checks, "policy": vars(POLICY), "fills": [],
@@ -320,15 +348,66 @@ async def _run_cycle(uid: int, execute: bool, trigger: str) -> dict:
         rep["memo_llm"] = llm
     await _emit(uid, "cio", "done", "acta lista")
 
-    _save_state(uid, desk_trust=trust, peak_equity=peak, consecutive_losses=losses, last_cycle_at=started)
+    if mode == "live":
+        get_db().execute("UPDATE fund_live SET peak_equity=? WHERE user_id=?", (peak, uid))
+        _save_state(uid, desk_trust=trust, consecutive_losses=losses, last_cycle_at=started)
+    else:
+        _save_state(uid, desk_trust=trust, peak_equity=peak, consecutive_losses=losses, last_cycle_at=started)
     cur = get_db().execute(
         "INSERT INTO fund_runs(user_id, started, finished, trigger, status, equity, report) VALUES (?,?,?,?,?,?,?)",
         (uid, started, time.time(), trigger, "proposed", equity, json.dumps(rep, default=str)))
     run_id = cur.lastrowid
+    if mode == "live":
+        live_orders, live_checks = L.plan(uid, run_id, target, views, prices,
+                                          {s: q.get("source", "?") for s, q in quotes.items()},
+                                          (training or {}).get("book", {}), liquidity(hist), POLICY,
+                                          allow_buys=not cb["halted"])
+        rep["live_orders"], rep["order_checks"] = live_orders, rep["order_checks"] + live_checks
+    rep["team"] = _team(rep)
+    get_db().execute("UPDATE fund_runs SET report=? WHERE id=?", (json.dumps(rep, default=str), run_id))
     if execute:
         await execute_run(uid, run_id)
     await _emit(uid, "done", "done", f"ciclo #{run_id}")
     return get_run(uid, run_id)
+
+
+def _team(rep: dict) -> dict:
+    """Cómo trabajó el equipo: lo que aportó cada agente de investigación y cada miembro del comité,
+    y qué pasó con cada recomendación de investigación al llegar al comité."""
+    views, target, live = rep["views"], rep["target"], rep.get("mode") == "live"
+    ranked = sorted(views.items(), key=lambda kv: -kv[1]["score"])
+    tr = rep.get("training") or {}
+    research = [
+        {"agent": "Estratega macro", "output": f"régimen {rep['macro']['regime']}: {'; '.join(rep['macro']['notes'])}"},
+        {"agent": "Analista de sentimiento", "output": f"tono {rep['sentiment']['avg_sentiment']:+.2f} en "
+                                                       f"{rep['sentiment']['headlines']} titulares, "
+                                                       f"{rep['sentiment']['dropped_suspicious']} descartados"},
+        {"agent": "Analistas por mesa", "output": "más alcistas: " + ", ".join(s for s, _ in ranked[:3])
+                                                  + "; más bajistas: " + ", ".join(s for s, _ in ranked[-3:])},
+        {"agent": "Investigador cuant", "output": (f"{tr['summary']['validated']} estrategias validadas de "
+                                                   f"{tr['summary']['trained']} entrenadas" if tr else "sin entrenar")},
+    ]
+    blocked = {c["check"].split(" ", 1)[1]: c["detail"] for c in rep["order_checks"]
+               if c["check"].startswith("real ") and c["status"] == "blocked"}
+    recs = []
+    for s, v in ranked:
+        if v["score"] <= 0.05:
+            continue
+        w = target.get(s)
+        recs.append({"symbol": s, "research": v["debate"]["verdict"], "score": round(v["score"], 2),
+                     "committee": f"{w:.1%} objetivo" if w else "descartada por el CIO o el gestor de riesgos",
+                     "live": (blocked.get(s) or ("cripto no se opera en IBKR en esta versión"
+                                                 if s in L.NOT_IN_IBKR and w else None)) if live else None})
+    n_orders = len(rep.get("live_orders") or []) if live else len(rep["orders"])
+    committee = [
+        {"agent": "CIO", "output": f"{len(target)} posiciones objetivo, {sum(target.values()):.0%} invertido"},
+        {"agent": "Gestor de riesgos", "output": f"{len(rep['risk_checks'])} controles"
+                                                 + (f"; CORTACIRCUITOS: {rep['circuit_breaker']['reason']}"
+                                                    if rep["circuit_breaker"]["halted"] else "")},
+        {"agent": "Trader", "output": f"{n_orders} órdenes " + ("reales pendientes de tu aprobación (IBKR)" if live
+                                                                else "en paper")},
+    ]
+    return {"research": research, "committee": committee, "recommendations": recs}
 
 
 def get_run(uid: int, run_id: int) -> dict:
@@ -341,6 +420,8 @@ def get_run(uid: int, run_id: int) -> dict:
 
 async def execute_run(uid: int, run_id: int) -> dict:
     """Ejecuta en PAPER las órdenes de un ciclo propuesto. Revalida todo antes de enviar (defensa en profundidad)."""
+    if L.mode(uid) == "live":
+        raise FundError("El fondo está en modo real: aprueba cada orden en la pantalla FUND (IBKR).")
     run = get_run(uid, run_id)
     if run["status"] != "proposed":
         raise FundError(f"El ciclo está '{run['status']}', no se puede ejecutar.")

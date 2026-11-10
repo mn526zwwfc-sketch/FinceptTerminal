@@ -103,7 +103,7 @@ Está en `src/mcp/server/McpHttpServer*.cpp` y expone las ~900 tools internas a 
 
 ## 2b. Fondo de IA multi-agente (pantalla FUND, comando `FUND`)
 
-Un equipo de agentes que funciona como un comité de inversión sobre un universo global multi-activo: renta variable de EE. UU., Europa, Japón, emergentes y España; bonos; oro, plata y petróleo; dólar, euro y yen; y cripto. **Opera solo en la cuenta paper (dinero simulado).**
+Un equipo de agentes que funciona como un comité de inversión sobre un universo global multi-activo: renta variable de EE. UU., Europa, Japón, emergentes y España; bonos; oro, plata y petróleo; dólar, euro y yen; y cripto. Funciona en dos modos: **paper** (dinero simulado, el modo por defecto) y **real** con Interactive Brokers, en el que cada orden la apruebas tú (ver más abajo).
 
 | Agente | Qué hace | Skill de la que aprende |
 |---|---|---|
@@ -115,9 +115,37 @@ Un equipo de agentes que funciona como un comité de inversión sobre un univers
 | Gestor de riesgos (veto) | Límites por activo y mesa, volatilidad objetivo 10 %, caja mínima 5 %, sin apalancamiento ni cortos, cortacircuitos (drawdown 10 % o 3 ciclos en pérdidas) | `llm-trading-agent-security` |
 | Trader | Órdenes con banda de rebalanceo, rotación máx. 30 % por ciclo, ventas primero y compras por convicción | `llm-trading-agent-security` |
 
+**Equipo.** Los agentes trabajan en dos grupos:
+- El **equipo de investigación** (estratega macro, analista de sentimiento, analistas por mesa e investigador cuant) estudia el mercado y entrena las estrategias.
+- El **comité de inversión** (CIO, gestor de riesgos y trader) decide qué se compra y se vende.
+
+Cada acta incluye `team`: lo que aportó cada agente y qué pasó con cada recomendación de investigación al llegar al comité. Puede quedar en peso objetivo, descartada por el CIO o el gestor de riesgos, o bloqueada para el modo real. Se ve en el panel *Equipo* de FUND.
+
 **Aprendizaje:** cada ciclo guarda sus opiniones; el siguiente las compara con lo que hizo el mercado y sube o baja la confianza de cada mesa (0,5–1,5). La estrategia de cada activo se reelige con los datos nuevos.
 
 **Ejecución:** el comité solo **propone**. Para ejecutar hace falta el botón de aprobar (la propuesta caduca a los 15 minutos), la tool MCP `fund_execute_run` (con permiso de acciones y aprobación en la terminal) o el **autopiloto**, que hay que activar a mano (mínimo cada 15 minutos). La **parada de emergencia** bloquea las compras y apaga el autopiloto. Todo ciclo queda auditado en `fund_runs`, también lo bloqueado y lo rechazado.
+
+### Modo real con Interactive Brokers
+
+El fondo puede operar con dinero real en tu cuenta de IBKR a través de la **Client Portal Web API** (`server/fund/ibkr.py`, `server/fund/live.py`). Viene **apagado**.
+
+Para encenderlo hacen falta:
+1. Arrancar el servidor con datos reales (`FINCEPT_DATA_MODE=live`).
+2. Arrancar el gateway de IBKR (clientportal.gw o IBeam) **en la misma máquina** e iniciar sesión en él desde el navegador. Este servidor nunca ve tu usuario ni tu contraseña de IBKR.
+3. Fijar en FUND tu **capital**, el **máximo por orden**, la **pérdida diaria máxima** y la **cuenta**, y pulsar ACTIVAR MODO REAL. IBKR ofrece cuentas de prueba (DU…) para ensayar con el mismo flujo.
+
+Protecciones del código, que no dependen del modelo:
+- **Aprobación orden a orden.** El comité y el autopiloto solo proponen. Aprobar exige una sesión iniciada en la terminal (una API key sola recibe 403) y la confirmación exacta de la orden (`BUY 4 EWJ @ 90.48`). Ninguna tool MCP puede aprobar órdenes reales.
+- **Solo datos reales.** No se propone ni se envía nada con precios de fuente simulada. Si Yahoo se pausa y el precio viene del simulador, la orden se bloquea.
+- **Solo estrategias validadas con datos reales.** Una compra exige que el activo tenga una estrategia entrenada con datos reales y validada (prueba final + Deflated Sharpe). Sin periodo en sombra, por tu decisión. Cripto no se opera en IBKR en esta versión.
+- **Órdenes acotadas.** Limitadas DAY a ±0,5 % del precio de referencia, en acciones enteras, sin superar el máximo por orden ni el capital asignado.
+- **Registro propio del fondo.** El fondo lleva la cuenta de lo que compró y vendió, así que **nunca vende posiciones de tu cuenta que no sean suyas**. Antes de vender comprueba también lo que muestra IBKR.
+- **Comprobación al aprobar.** Se revisa otra vez que el precio no se haya movido más de un 1 %, que la propuesta tenga menos de 15 minutos, que el fondo no esté parado y que no se haya superado la pérdida diaria.
+- **Pérdida diaria.** Si se alcanza, el fondo se para solo.
+- **Parada de emergencia.** Caduca lo pendiente y cancela en IBKR lo ya enviado.
+- **Auditoría.** Cada intento queda registrado en `fund_live_orders`, también los bloqueados, los rechazados y los avisos de IBKR.
+
+Mientras el modo real está activo, la ejecución en paper queda desactivada. Los tests usan un gateway de IBKR simulado; con IBKR de verdad no se ha probado desde aquí.
 
 ### Entrenamiento de los agentes
 
@@ -195,6 +223,8 @@ ANTHROPIC_API_KEY=sk-ant-… ./run.sh       # chat IA con Claude (Opus 5.5, tool
 | `FINCEPT_DEV` | `1` | Devuelve el OTP en la respuesta y crea el usuario demo. **Ponlo a `0` fuera de local.** |
 | `FINCEPT_AI` | — | `offline` fuerza el agente sin LLM |
 | `FINCEPT_AI_MODEL` / `FINCEPT_AI_EFFORT` | `claude-opus-5-5` / `medium` | Modelo y esfuerzo del chat |
+| `FINCEPT_IBKR_URL` | `https://localhost:5000/v1/api` | Gateway de la Client Portal Web API de IBKR. Solo se acepta loopback |
+| `FINCEPT_IBKR_CA` | — | Certificado del gateway; vacío = certificado autofirmado aceptado solo en loopback |
 | `FINCEPT_MCP_GRACE` | `8` | Segundos antes de que una tool larga pase a ser un job |
 
 Si Yahoo responde **429** (ocurre desde IPs compartidas o de la nube), el proveedor se pausa con *backoff* exponencial y las cotizaciones salen del simulador. La UI lo indica con la insignia `YAHOO PAUSADO · SIM` y con una etiqueta `SIM` en cada precio. Nunca se muestran datos simulados como si fueran reales.
@@ -218,7 +248,7 @@ Barra de comandos (`/` o `Ctrl+K`): `AAPL` · `SAN.MC GO` · `BUY 10 NVDA` · `S
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest -q      # 163 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
+.venv/bin/python -m pytest -q      # 181 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
 ```
 
 ### Evaluación del servidor MCP

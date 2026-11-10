@@ -650,9 +650,12 @@ const SCREENS = {
         <button class="btn buy" id="f-exec" disabled>APROBAR Y EJECUTAR EN PAPER</button>
         <button class="btn sell" id="f-halt">PARADA DE EMERGENCIA</button>
         <span class="sp" style="flex:1"></span>
-        <span class="badge sim">SOLO PAPER · DINERO SIMULADO</span>
+        <span class="badge sim" id="f-modebadge">PAPER · DINERO SIMULADO</span>
         <button class="btn" id="f-auto">AUTOPILOTO: —</button>
         <select class="f" id="f-int">${[15, 30, 60, 240, 1440].map((m) => `<option value="${m}">cada ${m >= 60 ? m / 60 + " h" : m + " min"}</option>`).join("")}</select></div>
+      <div class="grid g2" id="f-top" style="margin-bottom:6px">
+        ${panel("Modo del fondo · Interactive Brokers", '<div class="empty">Cargando…</div>')}
+        ${panel("Equipo · investigación → comité de inversión", '<div class="empty">Convoca el comité para ver cómo trabaja el equipo</div>')}</div>
       <div class="grid dash">
         ${panel("Comité en vivo", `<table><tbody>${STAGES.map(([k, l]) => `<tr data-st="${k}"><td>${l}<div class="dim" data-ev style="font-size:10px"></div></td><td class="dim" data-m>—</td><td class="num dim" data-s>en espera</td></tr>`).join("")}</tbody></table>`, "<small>fund:&lt;uid&gt;:status</small>")}
         ${panel("Acta del comité (CIO)", '<div class="empty">Convoca el comité para ver la primera propuesta</div>', "", "chartpanel")}
@@ -665,7 +668,7 @@ const SCREENS = {
         ${panel("Entrenamiento · libro de estrategias por activo", '<div class="empty">Cargando…</div>', "<small>60/20/20 + Deflated Sharpe</small>", "span3")}
         ${panel("Agentes · skills, papers y código con que se entrenan", '<div class="empty">Cargando…</div>', "", "span3")}
         ${panel("Base de conocimiento · papers, investigación y código", '<div class="empty">Cargando…</div>', "", "span3")}</div>`;
-    const [stEl, memoEl, deskEl, allocEl, riskEl, ordEl, histEl, dbEl, trEl, agEl, resEl] = $$(".panel .body", el);
+    const [stEl, memoEl, deskEl, allocEl, riskEl, ordEl, histEl, dbEl, trEl, agEl, resEl] = $$(".grid.dash .panel .body", el);
     [stEl, allocEl, ordEl, histEl, deskEl, resEl, trEl, agEl].forEach((b) => b.classList.add("flush"));
     const STAGE_EV = { memory: "memory", risk_gate: "risk", macro: "macro", sentiment: "sentiment", analysts: "quant", training: "quant", risk: "risk", cio: "cio" };
     const doiLink = (doi, txt) => (doi ? `<a href="https://doi.org/${esc(doi)}" target="_blank" rel="noopener noreferrer">${txt}</a>` : txt);
@@ -677,6 +680,62 @@ const SCREENS = {
         <div><div class="neg" style="font-weight:700">EN CONTRA</div>${v.debate.bear.map((b) => `<div>▼ ${esc(b)}</div>`).join("") || '<div class="dim">sin argumentos</div>'}</div></div>
         <div class="dim" style="margin-top:6px">Cuant: ${st.candidates.map((c) => `${esc(c.strategy)} IS ${c.is_sharpe.toFixed(2)} / OOS ${c.oos_sharpe.toFixed(2)}`).join(" · ")}. Elegida ${esc(st.strategy)} con Deflated Sharpe ${st.deflated_sharpe.toFixed(2)} (umbral 0,50) → confianza ${st.trust}. <a href="#" data-eq="${esc(sym)}">abrir ficha ▸</a></div>`;
     };
+    const [liveEl, teamEl] = $$("#f-top .panel .body", el);
+    let liveSt = null;
+    const ST_CLS = { pending: "warn", submitted: "cyan", partially_filled: "cyan", filled: "pos", blocked: "neg", error: "neg", rejected: "dim", expired: "dim", cancelled: "dim" };
+    const confirmText = (o) => `${o.side.toUpperCase()} ${Math.trunc(o.qty)} ${o.symbol} @ ${o.limit_price.toFixed(2)}`;
+    const paintLive = (d) => {
+      liveSt = d;
+      const isLive = d.mode === "live", c = d.config || {}, g = d.gateway || {}, L = d.ledger;
+      const badge = $("#f-modebadge");
+      badge.textContent = isLive ? `MODO REAL · IBKR ${c.account || ""}` : "PAPER · DINERO SIMULADO";
+      badge.className = "badge " + (isLive ? "live" : "sim");
+      badge.style.color = isLive ? "var(--neg)" : ""; badge.style.borderColor = isLive ? "var(--neg)" : "";
+      $("#f-exec").title = isLive ? "En modo real cada orden se aprueba abajo, una a una" : "";
+      const gw = g.authenticated ? `<span class="pos">gateway conectado</span>${g.account_ok ? "" : ' · <span class="neg">la cuenta no aparece en el gateway</span>'}` : `<span class="neg">${esc(g.error || "gateway sin sesión")}</span>`;
+      const rows = d.orders.map((o) => `<tr><td class="dim">${o.id}</td><td class="dim">#${o.run_id}</td><td class="sym">${esc(o.symbol)}</td><td class="${o.side === "buy" ? "pos" : "neg"}">${o.side.toUpperCase()}</td><td class="num">${o.qty}</td><td class="num">${fmtPx(o.limit_price)}</td><td class="num">${fmtN(o.notional)}</td><td class="${ST_CLS[o.status] || ""}">${esc(o.status.toUpperCase())}${o.filled_qty ? ` · ${o.filled_qty} a ${fmtPx(o.avg_price)}` : ""}</td><td class="dim" style="white-space:normal;min-width:180px">${esc((o.detail[o.detail.length - 1] || {}).result || "")}</td><td>${o.status === "pending" && isLive ? `<button class="btn small buy" data-approve="${o.id}">APROBAR</button> <button class="btn small" data-reject="${o.id}">RECHAZAR</button>` : ""}</td></tr>`).join("");
+      liveEl.innerHTML = `<div class="help" style="padding:8px">${isLive ? '<b class="neg">Dinero real.</b> El comité solo propone: cada orden la apruebas tú. Órdenes limitadas DAY, acciones enteras, solo ETF de la mesa (sin cripto). Compras solo con estrategias validadas con datos reales.' : "El fondo opera en paper. Configura tu capital y tus límites y activa el modo real cuando el gateway de IBKR esté conectado."} Datos del servidor: <b>${esc(d.data_mode)}</b> · ${gw}</div>
+        <div class="row" style="padding:0 8px 8px;gap:6px;flex-wrap:wrap">
+          <label class="dim">Capital <input class="f" id="lv-cap" type="number" min="0" step="100" style="width:110px" value="${c.capital ?? ""}"></label>
+          <label class="dim">Máx. por orden <input class="f" id="lv-max" type="number" min="0" step="50" style="width:100px" value="${c.max_order ?? ""}"></label>
+          <label class="dim">Pérdida diaria máx. % <input class="f" id="lv-loss" type="number" min="0.1" max="20" step="0.1" style="width:70px" value="${c.daily_loss_pct ? (c.daily_loss_pct * 100).toFixed(1) : ""}"></label>
+          <label class="dim">Cuenta IBKR <input class="f" id="lv-acct" style="width:110px" placeholder="U1234567" value="${esc(c.account || "")}"></label>
+          <button class="btn" id="lv-save">GUARDAR LÍMITES</button>
+          <button class="btn ${isLive ? "" : "sell"}" id="lv-mode">${isLive ? "VOLVER A PAPER" : "ACTIVAR MODO REAL"}</button></div>
+        ${c.capital ? `<div class="dim" style="padding:0 8px 8px">Fondo en IBKR: caja ${fmtN(L.cash)} (reservado ${fmtN(L.reserved)}) · patrimonio ${fmtN(L.equity)} · posiciones ${Object.entries(L.positions).map(([s, q]) => `${esc(s)} ${q}`).join(", ") || "ninguna"}</div>` : ""}
+        ${rows ? `<table><thead><tr><th>#</th><th>Ciclo</th><th>Activo</th><th>Lado</th><th class="num">Cant.</th><th class="num">Límite</th><th class="num">Nominal</th><th>Estado</th><th>Último evento</th><th></th></tr></thead><tbody>${rows}</tbody></table>` : '<div class="empty">Sin órdenes reales todavía</div>'}`;
+    };
+    const loadLive = async () => { const r = await api("/fund/live"); if (r.success) paintLive(r.data); };
+    const paintTeam = (t) => {
+      if (!t) return;
+      const col = (title, xs) => `<div><div class="cyan" style="font-weight:700;margin-bottom:4px">${title}</div>${xs.map((x) => `<div style="margin-bottom:4px"><b>${esc(x.agent)}</b><div class="muted">${esc(x.output)}</div></div>`).join("")}</div>`;
+      const recs = t.recommendations.map((r) => `<tr><td class="sym">${esc(r.symbol)}</td><td>${esc(r.research)} <span class="dim">(${r.score.toFixed(2)})</span></td><td>${esc(r.committee)}</td><td class="${r.live ? "neg" : "dim"}" style="white-space:normal;min-width:200px">${esc(r.live || "")}</td></tr>`).join("");
+      teamEl.innerHTML = `<div class="grid g2" style="padding:8px;gap:12px">${col("Equipo de investigación", t.research)}${col("Comité de inversión", t.committee)}</div>${recs ? `<table><thead><tr><th>Recomendación</th><th>Investigación</th><th>Comité</th><th>Modo real</th></tr></thead><tbody>${recs}</tbody></table>` : ""}`;
+    };
+    ctx.on(liveEl, "click", async (e) => {
+      const ap = e.target.dataset.approve, rj = e.target.dataset.reject;
+      if (e.target.id === "lv-save") {
+        const body = { capital: +$("#lv-cap").value, max_order: +$("#lv-max").value, daily_loss_pct: +$("#lv-loss").value / 100, account: $("#lv-acct").value.trim() };
+        const r = await api("/fund/live/config", { method: "PUT", body });
+        toast(r.success ? "Límites guardados" : r.message || "Revisa los datos", r.success ? "ok" : "err"); if (r.success) loadLive();
+      } else if (e.target.id === "lv-mode") {
+        const goLive = liveSt.mode !== "live";
+        if (goLive && !(await confirmModal("ACTIVAR MODO REAL (DINERO REAL)", `El fondo dejará de operar en paper. El comité propondrá órdenes reales en tu cuenta <b>${esc((liveSt.config || {}).account || "?")}</b> de Interactive Brokers con un capital de <b>${fmtN((liveSt.config || {}).capital || 0)}</b>. Ninguna se envía sin tu aprobación, una a una.`))) return;
+        const r = await api("/fund/live/mode", { method: "PUT", body: { mode: goLive ? "live" : "paper" } });
+        toast(r.success ? (goLive ? "Modo real activado" : "Modo paper activado") : r.message, r.success ? "ok" : "err"); loadLive();
+      } else if (ap) {
+        const o = liveSt.orders.find((x) => x.id === +ap); if (!o) return;
+        const text = confirmText(o);
+        if (!(await confirmModal("APROBAR ORDEN REAL", `<div>Se enviará a Interactive Brokers (cuenta ${esc(liveSt.config.account)}):</div><pre class="code">${esc(text)}  ·  límite DAY  ·  ${fmtN(o.notional)}</pre><div class="dim">Antes de enviar se revalidan el precio (desvío máx. ${(liveSt.rules.max_drift * 100).toFixed(0)} %), la antigüedad de la propuesta, tus límites y la parada de emergencia.</div>`))) return;
+        e.target.disabled = true;
+        const r = await api(`/fund/live/orders/${o.id}/approve`, { method: "POST", body: { confirm: text } });
+        toast(r.success ? `Enviada a IBKR: orden ${r.data.broker_order_id}` : r.message, r.success ? "ok" : "err"); loadLive();
+      } else if (rj) {
+        const r = await api(`/fund/live/orders/${rj}/reject`, { method: "POST" });
+        toast(r.success ? "Orden rechazada" : r.message, r.success ? "" : "err"); loadLive();
+      }
+    });
+    loadLive();
     const paintTraining = (t) => {
       if (!t || !t.book) { trEl.innerHTML = '<div class="empty">Aún no hay entrenamiento: pulsa ENTRENAR AGENTES (o convoca el comité, que entrena solo la primera vez).</div>'; return; }
       const s = t.summary, f2 = (v) => (v == null ? "—" : v.toFixed(2));
@@ -728,7 +787,9 @@ const SCREENS = {
     const paintRun = (r) => {
       run = r; const d = r.report; if (!d) return;
       $("#f-runlbl").textContent = `ciclo #${r.id} · ${r.status} · equity ${fmtN(d.equity)} · datos ${d.data_source}`;
-      $("#f-exec").disabled = r.status !== "proposed" || !d.orders.length;
+      $("#f-exec").disabled = r.status !== "proposed" || !d.orders.length || d.mode === "live";
+      paintTeam(d.team);
+      if (d.mode === "live") loadLive();
       const cb = d.circuit_breaker, m = d.macro, s = d.sentiment;
       for (const [stage, key] of Object.entries(STAGE_EV)) {
         const cell = stEl.querySelector(`tr[data-st="${stage}"] [data-ev]`);
@@ -771,7 +832,7 @@ const SCREENS = {
         paintRun(r.data); toast(`${r.data.report.fills.length} órdenes ejecutadas en paper`, "ok"); load();
       } else if (id === "f-halt") {
         const r = await api("/fund/halt", { method: "POST", body: { halted: !state.halted, reason: "parada manual desde la terminal" } });
-        if (r.success) { toast(r.data.halted ? "Fondo parado: no se enviarán compras" : "Fondo reanudado", r.data.halted ? "err" : "ok"); load(); }
+        if (r.success) { toast(r.data.halted ? `Fondo parado: no se enviarán compras${r.data.live_cancelled ? ` · ${r.data.live_cancelled} órdenes reales canceladas en IBKR` : ""}` : "Fondo reanudado", r.data.halted ? "err" : "ok"); load(); loadLive(); }
       } else if (id === "f-auto") {
         if (!state.autopilot && !(await confirmModal("ACTIVAR AUTOPILOTO", `El comité se convocará <b>${$("#f-int").selectedOptions[0].textContent}</b> y ejecutará sus propuestas automáticamente en la cuenta <b>paper</b>, con todos los límites y cortacircuitos activos. Puedes pararlo en cualquier momento.`))) return;
         const r = await api("/fund/autopilot", { method: "PUT", body: { on: !state.autopilot, interval_min: +$("#f-int").value } });

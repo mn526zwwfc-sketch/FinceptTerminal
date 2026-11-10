@@ -1,0 +1,395 @@
+"""Modo real del fondo con Interactive Brokers: aprobación orden a orden y protecciones en el código.
+
+Nada de esto depende del modelo ni de los agentes: son comprobaciones deterministas que se hacen
+al proponer y otra vez al aprobar cada orden.
+
+* El modo real arranca apagado. Para encenderlo hacen falta capital, máximo por orden, pérdida
+  diaria máxima y cuenta configurados por la persona, datos de mercado reales
+  (FINCEPT_DATA_MODE=live) y el gateway de IBKR con sesión iniciada.
+* El fondo lleva su propio registro de lo que compró y vendió: nunca vende posiciones de la cuenta
+  que no sean suyas y nunca gasta más que el capital asignado.
+* Compras solo en activos con estrategia entrenada con datos reales y validada (sin periodo en
+  sombra, por decisión del usuario). Ventas siempre permitidas (reducen riesgo).
+* Cada orden es limitada (±0,5 % del precio de referencia), DAY, con número entero de acciones y
+  como máximo el importe por orden configurado. Cripto no se opera en IBKR en esta versión.
+* Al aprobar: precio fresco de fuente real con desvío ≤ 1 %, propuesta de menos de 15 minutos,
+  confirmación textual exacta de la orden, fondo no parado y pérdida diaria no superada.
+* La parada de emergencia cancela las órdenes enviadas. Todo intento queda auditado.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+import time
+from datetime import datetime, timezone
+
+from ..config import settings
+from ..db import get_db
+from ..market.providers import market
+from . import agents as A
+from .ibkr import IBKRClient, IBKRError
+
+LIVE_SOURCE = "yahoo"  # proveedor de datos reales; "sim" nunca sirve para dinero real
+LIMIT_BAND = 0.005
+MAX_DRIFT = 0.01
+FRESH_SECONDS = 15 * 60
+NOT_IN_IBKR = {a.symbol for a in A.UNIVERSE if a.desk == "crypto"}
+OPEN = ("pending", "submitted", "partially_filled")
+
+client_factory = IBKRClient  # los tests lo sustituyen por un gateway simulado
+
+
+class LiveError(Exception):
+    pass
+
+
+# ── estado y configuración ──────────────────────────────────────────────────
+
+def _row(uid: int) -> dict:
+    db = get_db()
+    row = db.one("SELECT * FROM fund_live WHERE user_id=?", (uid,))
+    if not row:
+        db.execute("INSERT INTO fund_live(user_id) VALUES (?)", (uid,))
+        row = db.one("SELECT * FROM fund_live WHERE user_id=?", (uid,))
+    row["config"] = json.loads(row["config"] or "{}")
+    return row
+
+
+def config(uid: int) -> dict:
+    return _row(uid)["config"]
+
+
+def mode(uid: int) -> str:
+    return _row(uid)["mode"]
+
+
+def validate_config(cfg: dict) -> dict:
+    try:
+        capital, max_order = float(cfg["capital"]), float(cfg["max_order"])
+        loss, account = float(cfg["daily_loss_pct"]), str(cfg["account"]).strip().upper()
+    except (KeyError, TypeError, ValueError) as e:
+        raise LiveError("Faltan datos: capital, max_order, daily_loss_pct y account.") from e
+    if not 0 < capital <= 10_000_000:
+        raise LiveError("El capital debe estar entre 0 y 10.000.000.")
+    if not 0 < max_order <= capital:
+        raise LiveError("El máximo por orden debe ser positivo y no superar el capital.")
+    if not 0 < loss <= 0.2:
+        raise LiveError("La pérdida diaria máxima debe estar entre 0 y 20 % (0.02 = 2 %).")
+    if not re.fullmatch(r"[A-Z0-9]{4,20}", account):
+        raise LiveError("Cuenta de IBKR no válida (p. ej. U1234567 o DU1234567 para la cuenta de prueba de IBKR).")
+    return {"capital": capital, "max_order": max_order, "daily_loss_pct": loss, "account": account}
+
+
+def set_config(uid: int, cfg: dict) -> dict:
+    clean = validate_config(cfg)
+    _row(uid)
+    get_db().execute("UPDATE fund_live SET config=?, updated=? WHERE user_id=?", (json.dumps(clean), time.time(), uid))
+    return clean
+
+
+async def gateway_status(uid: int) -> dict:
+    cfg = config(uid)
+    try:
+        c = client_factory()
+    except IBKRError as e:
+        return {"reachable": False, "authenticated": False, "error": str(e)}
+    try:
+        st = await c.status()
+        accounts = await c.accounts() if st["authenticated"] else []
+        return {"reachable": True, **st, "accounts": accounts,
+                "account_ok": bool(cfg.get("account")) and cfg.get("account") in accounts}
+    except IBKRError as e:
+        return {"reachable": False, "authenticated": False, "error": str(e)}
+    finally:
+        await c.close()
+
+
+async def set_mode(uid: int, new: str) -> dict:
+    if new not in ("paper", "live"):
+        raise LiveError("Modo desconocido.")
+    if new == "live":
+        problems = []
+        if not config(uid):
+            problems.append("configura capital, máximo por orden, pérdida diaria y cuenta")
+        if settings.data_mode != "live":
+            problems.append("el servidor usa datos simulados (arranca con FINCEPT_DATA_MODE=live)")
+        gw = await gateway_status(uid)
+        if not gw.get("authenticated"):
+            problems.append(gw.get("error") or "el gateway de IBKR no tiene sesión iniciada")
+        elif not gw.get("account_ok"):
+            problems.append("la cuenta configurada no aparece en el gateway de IBKR")
+        if problems:
+            raise LiveError("No se puede activar el modo real: " + "; ".join(problems) + ".")
+    else:  # al volver a paper, lo pendiente de aprobar caduca (lo ya enviado a IBKR sigue su curso)
+        _audit_bulk(uid, "pending", "expired", "modo paper activado")
+    get_db().execute("UPDATE fund_live SET mode=?, updated=? WHERE user_id=?", (new, time.time(), uid))
+    return {"mode": new}
+
+
+# ── registro propio del fondo ───────────────────────────────────────────────
+
+def orders(uid: int, limit: int = 100) -> list[dict]:
+    rows = get_db().all("SELECT * FROM fund_live_orders WHERE user_id=? ORDER BY id DESC LIMIT ?", (uid, limit))
+    for r in rows:
+        r["detail"] = json.loads(r["detail"] or "[]")
+    return rows
+
+
+def ledger(uid: int, prices: dict[str, float]) -> dict:
+    """Posiciones y caja DEL FONDO según sus propias órdenes ejecutadas (no la cuenta entera)."""
+    cfg = config(uid)
+    qty: dict[str, float] = {}
+    cash = float(cfg.get("capital") or 0.0)
+    for o in get_db().all("SELECT symbol, side, filled_qty, avg_price FROM fund_live_orders "
+                          "WHERE user_id=? AND filled_qty > 0", (uid,)):
+        sign = 1 if o["side"] == "buy" else -1
+        qty[o["symbol"]] = qty.get(o["symbol"], 0.0) + sign * o["filled_qty"]
+        cash -= sign * o["filled_qty"] * (o["avg_price"] or 0.0)
+    reserved = sum(o["qty"] * o["limit_price"] for o in get_db().all(
+        "SELECT qty, limit_price FROM fund_live_orders WHERE user_id=? AND side='buy' AND status IN "
+        "('submitted','partially_filled')", (uid,)))
+    positions = {s: q for s, q in qty.items() if q > 1e-9}
+    equity = cash + sum(q * prices.get(s, 0.0) for s, q in positions.items())
+    return {"capital": cfg.get("capital"), "cash": cash, "reserved": reserved, "positions": positions,
+            "equity": equity}
+
+
+def _log(row_id: int, action: str, result: str, **extra) -> None:
+    row = get_db().one("SELECT detail FROM fund_live_orders WHERE id=?", (row_id,))
+    detail = json.loads(row["detail"] or "[]") + [{"at": time.time(), "action": action, "result": result, **extra}]
+    get_db().execute("UPDATE fund_live_orders SET detail=?, updated=? WHERE id=?",
+                     (json.dumps(detail, default=str), time.time(), row_id))
+
+
+def _set_status(row_id: int, status: str, action: str, result: str, **cols) -> None:
+    sets = ", ".join(f"{k}=?" for k in ("status", *cols))  # columnas fijas de este módulo
+    get_db().execute(f"UPDATE fund_live_orders SET {sets} WHERE id=?", (status, *cols.values(), row_id))
+    _log(row_id, action, result)
+
+
+def _audit_bulk(uid: int, from_status: str, to_status: str, reason: str) -> None:
+    for r in get_db().all("SELECT id FROM fund_live_orders WHERE user_id=? AND status=?", (uid, from_status)):
+        _set_status(r["id"], to_status, "sistema", reason)
+
+
+# ── propuesta (comité) ──────────────────────────────────────────────────────
+
+def daily_check(uid: int, equity: float) -> dict:
+    """Guarda el patrimonio del fondo al empezar el día (UTC) y dice si se ha superado la pérdida máxima."""
+    row, today = _row(uid), datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if row["day"] != today or not row["day_start_equity"]:
+        get_db().execute("UPDATE fund_live SET day=?, day_start_equity=? WHERE user_id=?", (today, equity, uid))
+        start = equity
+    else:
+        start = row["day_start_equity"]
+    limit = float(row["config"].get("daily_loss_pct") or 0)
+    loss = 1 - equity / start if start else 0.0
+    return {"day": today, "start_equity": start, "loss": loss, "limit": limit,
+            "breached": bool(limit) and loss >= limit}
+
+
+def live_gate(symbol: str, view: dict | None, book_entry: dict | None) -> str | None:
+    """Motivo por el que NO se puede comprar este activo con dinero real (None = se puede)."""
+    if symbol in NOT_IN_IBKR:
+        return "cripto no se opera en IBKR en esta versión"
+    if not book_entry or not book_entry.get("trained"):
+        return "sin estrategia entrenada"
+    if book_entry.get("data_source") != LIVE_SOURCE:
+        return "estrategia entrenada con datos simulados: reentrena con datos reales"
+    if not book_entry.get("validated"):
+        return "estrategia no validada (prueba final + Deflated Sharpe)"
+    if view and not view["strategy"].get("trained"):
+        return "el comité no usó la estrategia entrenada"
+    return None
+
+
+def plan(uid: int, run_id: int, target: dict[str, float], views: dict, prices: dict[str, float],
+         sources: dict[str, str], book: dict, liquidity: dict | None, policy,
+         allow_buys: bool = True) -> tuple[list[dict], list[dict]]:
+    """Convierte los pesos objetivo en órdenes reales pendientes de aprobación."""
+    cfg, checks = config(uid), []
+    led = ledger(uid, prices)
+    raw, plan_checks = A.plan_orders(target, led["positions"], prices, led["equity"], policy, liquidity)
+    checks += plan_checks
+    cash = led["cash"] - led["reserved"]
+    out = []
+    for o in raw:  # ventas primero (plan_orders ya las ordena así)
+        s, side, px = o["symbol"], o["side"], prices.get(o["symbol"])
+        if sources.get(s) != LIVE_SOURCE:
+            checks.append({"check": f"real {s}", "status": "blocked", "detail": "precio no real (fuente simulada)"})
+            continue
+        if side == "buy" and not allow_buys:
+            checks.append({"check": f"real {s}", "status": "blocked", "detail": "cortacircuitos: solo ventas"})
+            continue
+        if side == "buy":
+            why = live_gate(s, views.get(s), book.get(s))
+            if why:
+                checks.append({"check": f"real {s}", "status": "blocked", "detail": why})
+                continue
+            limit = px * (1 + LIMIT_BAND)
+            qty = int(min(o["qty"], cfg["max_order"] // limit, max(cash, 0.0) // limit))
+        else:
+            limit = px * (1 - LIMIT_BAND)
+            qty = int(min(o["qty"], led["positions"].get(s, 0.0)))
+        if qty < 1:
+            checks.append({"check": f"real {s}", "status": "info",
+                           "detail": "menos de 1 acción tras límites de capital y de importe por orden"})
+            continue
+        if side == "buy":
+            cash -= qty * limit
+        cur = get_db().execute(
+            "INSERT INTO fund_live_orders(user_id, run_id, symbol, side, qty, limit_price, ref_price, notional, "
+            "status, created, updated, detail) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            (uid, run_id, s, side, qty, round(limit, 2), px, qty * limit, "pending", time.time(), time.time(),
+             json.dumps([{"at": time.time(), "action": "propuesta", "result": f"ciclo #{run_id}"}])))
+        out.append({"id": cur.lastrowid, "symbol": s, "side": side, "qty": qty, "limit_price": round(limit, 2),
+                    "notional": qty * limit})
+    return out, checks
+
+
+def confirm_text(o: dict) -> str:
+    return f"{o['side'].upper()} {int(o['qty'])} {o['symbol']} @ {o['limit_price']:.2f}"
+
+
+# ── aprobación orden a orden ────────────────────────────────────────────────
+
+async def approve(uid: int, order_id: int, confirm: str, run_finished: float, halted: bool, book: dict) -> dict:
+    o = get_db().one("SELECT * FROM fund_live_orders WHERE id=? AND user_id=?", (order_id, uid))
+    if not o:
+        raise LiveError("Orden no encontrada.")
+    if o["status"] != "pending":
+        raise LiveError(f"La orden está '{o['status']}', no se puede aprobar.")
+    if confirm != confirm_text(o):
+        _log(order_id, "aprobación", "rechazada: la confirmación no coincide")
+        raise LiveError(f"Escribe exactamente: {confirm_text(o)}")
+
+    def block(reason: str) -> None:
+        _set_status(order_id, "blocked", "aprobación", reason)
+        raise LiveError(reason)
+
+    cfg = config(uid)
+    if mode(uid) != "live":
+        block("el fondo no está en modo real")
+    if settings.data_mode != "live":
+        block("el servidor usa datos simulados")
+    if time.time() - run_finished > FRESH_SECONDS:
+        block("la propuesta tiene más de 15 minutos: convoca un comité nuevo")
+    if halted and o["side"] == "buy":
+        block("fondo parado: solo se permiten ventas")
+    q = await market.quote(o["symbol"])
+    if q.get("source") != LIVE_SOURCE:
+        block("el precio actual no viene de una fuente real")
+    if abs(q["price"] / o["ref_price"] - 1) > MAX_DRIFT:
+        block(f"el precio se ha movido más de un {MAX_DRIFT:.0%} desde la propuesta")
+    held = set(ledger(uid, {})["positions"]) - {o["symbol"]}
+    prices = {s: x["price"] for s, x in (await market.quotes(sorted(held))).items()} if held else {}
+    prices[o["symbol"]] = q["price"]
+    led = ledger(uid, prices)
+    if daily_check(uid, led["equity"])["breached"] and o["side"] == "buy":
+        block("pérdida diaria máxima alcanzada")
+    if o["side"] == "buy":
+        why = live_gate(o["symbol"], None, book.get(o["symbol"]))
+        if why:
+            block(why)
+        if o["notional"] > cfg["max_order"] + 1e-6:
+            block("supera el máximo por orden")
+        if o["notional"] > led["cash"] - led["reserved"] + 1e-6:
+            block("no queda capital asignado suficiente")
+    elif o["qty"] > led["positions"].get(o["symbol"], 0) + 1e-9:
+        block("el fondo no tiene esas acciones (nunca vende posiciones ajenas al fondo)")
+
+    c = client_factory()
+    try:
+        st = await c.status()
+        if not st["authenticated"]:
+            block("el gateway de IBKR no tiene sesión iniciada")
+        if cfg["account"] not in await c.accounts():
+            block("la cuenta configurada no está en el gateway")
+        conid = await c.conid(o["symbol"])
+        if o["side"] == "sell":
+            held = (await c.positions(cfg["account"])).get(conid, {}).get("qty", 0)
+            if o["qty"] > held + 1e-9:
+                block("IBKR muestra menos acciones de las que el fondo cree tener")
+        res = await c.place_limit(cfg["account"], conid, o["side"], int(o["qty"]), o["limit_price"],
+                                  coid=f"fincept-{uid}-{order_id}")
+    except IBKRError as e:
+        _set_status(order_id, "error", "envío", str(e))
+        raise LiveError(str(e)) from e
+    finally:
+        await c.close()
+    _set_status(order_id, "submitted", "envío", f"IBKR orden {res['order_id']} ({res['status']})",
+                broker_order_id=res["order_id"])
+    if res["warnings"]:
+        _log(order_id, "avisos de IBKR confirmados", " | ".join(res["warnings"])[:2000])
+    return get_db().one("SELECT * FROM fund_live_orders WHERE id=?", (order_id,))
+
+
+def reject(uid: int, order_id: int) -> dict:
+    o = get_db().one("SELECT status FROM fund_live_orders WHERE id=? AND user_id=?", (order_id, uid))
+    if not o:
+        raise LiveError("Orden no encontrada.")
+    if o["status"] != "pending":
+        raise LiveError(f"La orden está '{o['status']}'.")
+    _set_status(order_id, "rejected", "decisión", "rechazada por la persona")
+    return {"id": order_id, "status": "rejected"}
+
+
+async def refresh(uid: int) -> int:
+    """Actualiza con IBKR el estado de las órdenes enviadas (ejecutadas, parciales, canceladas)."""
+    sent = get_db().all("SELECT * FROM fund_live_orders WHERE user_id=? AND status IN ('submitted','partially_filled')",
+                        (uid,))
+    if not sent:
+        return 0
+    c = client_factory()
+    try:
+        book = await c.orders()
+    except IBKRError:
+        return 0
+    finally:
+        await c.close()
+    changed = 0
+    for o in sent:
+        b = book.get(str(o["broker_order_id"]))
+        if not b:
+            continue
+        status = {"Filled": "filled", "Cancelled": "cancelled", "Inactive": "cancelled"}.get(
+            b["status"], "partially_filled" if b["filled"] > 0 else "submitted")
+        if status != o["status"] or b["filled"] != o["filled_qty"]:
+            _set_status(o["id"], status, "IBKR", f"{b['status']}: {b['filled']:g} a {b['avg_price']}",
+                        filled_qty=b["filled"], avg_price=b["avg_price"])
+            changed += 1
+    return changed
+
+
+async def cancel_open(uid: int, reason: str) -> int:
+    """Parada de emergencia: caduca lo pendiente y cancela en IBKR lo enviado."""
+    _audit_bulk(uid, "pending", "expired", reason)
+    sent = get_db().all("SELECT * FROM fund_live_orders WHERE user_id=? AND status IN ('submitted','partially_filled')",
+                        (uid,))
+    if not sent:
+        return 0
+    c, n = client_factory(), 0
+    try:
+        for o in sent:
+            try:
+                await c.cancel(config(uid)["account"], o["broker_order_id"])
+                _log(o["id"], "cancelación", reason)
+                n += 1
+            except IBKRError as e:
+                _log(o["id"], "cancelación", f"falló: {e}")
+    finally:
+        await c.close()
+    await refresh(uid)  # refleja enseguida lo que IBKR ya canceló
+    return n
+
+
+async def status(uid: int, with_gateway: bool = True) -> dict:
+    row = _row(uid)
+    held = ledger(uid, {})["positions"]
+    prices = {s: q["price"] for s, q in (await market.quotes(list(held))).items()} if held else {}
+    return {"mode": row["mode"], "config": row["config"], "data_mode": settings.data_mode,
+            "gateway": await gateway_status(uid) if with_gateway else None,
+            "ledger": ledger(uid, prices), "orders": orders(uid, 50),
+            "tradable": sorted(a.symbol for a in A.UNIVERSE if a.symbol not in NOT_IN_IBKR),
+            "rules": {"limit_band": LIMIT_BAND, "max_drift": MAX_DRIFT, "fresh_minutes": FRESH_SECONDS // 60}}

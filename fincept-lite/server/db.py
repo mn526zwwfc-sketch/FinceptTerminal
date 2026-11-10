@@ -89,6 +89,15 @@ CREATE TABLE IF NOT EXISTS fund_runs (
 CREATE TABLE IF NOT EXISTS fund_training (
     id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, created REAL, report TEXT
 );
+CREATE TABLE IF NOT EXISTS fund_live (
+    user_id INTEGER PRIMARY KEY, mode TEXT DEFAULT 'paper', config TEXT DEFAULT '{}', day TEXT,
+    day_start_equity REAL, peak_equity REAL DEFAULT 0, updated REAL
+);
+CREATE TABLE IF NOT EXISTS fund_live_orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, run_id INTEGER, symbol TEXT, side TEXT, qty REAL,
+    limit_price REAL, ref_price REAL, notional REAL, status TEXT, broker_order_id TEXT, filled_qty REAL DEFAULT 0,
+    avg_price REAL, detail TEXT DEFAULT '[]', created REAL, updated REAL
+);
 CREATE TABLE IF NOT EXISTS chat_messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER, session_id TEXT, role TEXT, text TEXT, at REAL

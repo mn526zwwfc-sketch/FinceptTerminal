@@ -35,6 +35,10 @@ class Settings:
     # Modelo para el chat IA (solo se usa si hay credenciales de Anthropic).
     ai_model: str = os.environ.get("FINCEPT_AI_MODEL", "claude-opus-5-5")
     ai_effort: str = os.environ.get("FINCEPT_AI_EFFORT", "medium")
+    # Interactive Brokers (Client Portal Web API). Solo se acepta un gateway en esta máquina (loopback):
+    # la URL no se puede cambiar desde la interfaz ni por API.
+    ibkr_url: str = os.environ.get("FINCEPT_IBKR_URL", "https://localhost:5000/v1/api")
+    ibkr_ca: str = os.environ.get("FINCEPT_IBKR_CA", "")  # certificado del gateway; vacío = autofirmado en loopback
     # Ventana de gracia del protocolo de jobs MCP: una tool que tarda más
     # devuelve {job_id, status:"running"} y el cliente hace polling.
     mcp_grace_seconds: float = float(os.environ.get("FINCEPT_MCP_GRACE", "8"))
