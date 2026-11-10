@@ -27,6 +27,7 @@ from ..datahub import hub
 from ..db import get_db
 from ..market.providers import market
 from . import agents as A
+from .research import cite
 
 log = logging.getLogger("fincept.fund")
 POLICY = A.RiskPolicy()
@@ -109,7 +110,10 @@ def _deterministic_memo(rep: dict) -> str:
              "titulares.",
              "Mayores posiciones objetivo: " + ", ".join(f"{s} {w:.1%}" for s, w in top) + "." if top else
              "Sin posiciones objetivo: todas las señales están neutrales o negativas.",
-             f"Inversión objetivo {sum(rep['target'].values()):.0%}; el resto queda en caja."]
+             f"Inversión objetivo {sum(rep['target'].values()):.0%}; el resto queda en caja.",
+             f"{sum(v['strategy']['validated'] for v in rep['views'].values())} de {len(rep['views'])} estrategias "
+             "superan el Deflated Sharpe y la prueba fuera de muestra; desacuerdo medio entre señales "
+             f"{rep['disagreement']:.2f} (se preserva, no se promedia: Huang et al. 2026)."]
     if rep["circuit_breaker"]["halted"]:
         lines.append(f"CORTACIRCUITOS ACTIVO: {rep['circuit_breaker']['reason']}. Solo se permiten ventas.")
     return " ".join(lines)
@@ -199,6 +203,7 @@ async def _run_cycle(uid: int, execute: bool, trigger: str) -> dict:
             except ValueError:
                 continue
             out[s] = {"desk": A.BY_SYMBOL[s].desk, "signals": sig, "strategy": strat, "score": sig["score"]}
+            out[s]["debate"] = A.debate(out[s], regime["regime"])
         return out
     views = await asyncio.to_thread(analyse)
     await _emit(uid, "analysts", "done", f"{len(views)} opiniones")
@@ -223,6 +228,15 @@ async def _run_cycle(uid: int, execute: bool, trigger: str) -> dict:
         "circuit_breaker": cb, "views": views, "raw_weights": raw, "target": target, "risk_checks": risk_checks,
         "orders": orders, "order_checks": order_checks, "policy": vars(POLICY), "fills": [],
         "data_source": next(iter(quotes.values()), {}).get("source", "?"),
+        # Qué investigación respalda cada etapa (ver research.py y la pantalla FUND).
+        "evidence": {
+            "memory": cite("yu2024"), "macro": cite("sahm2019"), "sentiment": cite("tetlock2007", "greshake2023"),
+            "analysts": cite("moskowitz2012", "jegadeesh1993", "daniel2016", "miyazaki2026"),
+            "quant": cite("bailey2014", "bailey2016", "harvey2016", "hurst2017", "faber2007"),
+            "cio": cite("maillard2010", "xiao2024", "huang2026", "glasserman2023"),
+            "risk": cite("moreira2017", "demiguel2024", "li2025"),
+        },
+        "disagreement": round(sum(v["debate"]["disagreement"] for v in views.values()) / max(1, len(views)), 3),
     }
     rep["memo"] = _deterministic_memo(rep)
     await _emit(uid, "cio", "running", "Redactando el acta del comité")

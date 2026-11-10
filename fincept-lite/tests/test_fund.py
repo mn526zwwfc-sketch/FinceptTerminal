@@ -62,7 +62,8 @@ def test_strategy_selection_never_sees_holdout():
     a, b = A.select_strategy(_candles(base)), A.select_strategy(_candles(tampered))
     assert a["strategy"] == b["strategy"] and a["is_sharpe"] == b["is_sharpe"]
     assert {c["strategy"] for c in a["candidates"]} == set(A.PLAYBOOK)
-    assert a["trust"] == (1.0 if a["validated"] else 0.5)
+    assert a["trust"] == 0.5 + 0.25 * a["oos_ok"] + 0.25 * a["dsr_ok"]
+    assert a["validated"] == (a["oos_ok"] and a["dsr_ok"]) and 0 <= a["deflated_sharpe"] <= 1
 
 
 def test_prompt_injection_headlines_are_dropped():

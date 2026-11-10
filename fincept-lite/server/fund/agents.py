@@ -79,11 +79,16 @@ def asset_signals(closes: list[float]) -> dict:
     high = max(closes[-252:])
     trend = (1 if px > s200 else -1) * 0.5 + (0.5 if s50 > s200 else -0.5)
     momentum = math.tanh((0.6 * mom_12_1 + 0.4 * mom_3m) / max(vol60, 0.05))
+    # Daniel & Moskowitz (2016): el momentum se desploma en "estados de pánico" (tras caídas
+    # fuertes y con volatilidad disparada). En ese estado su peso se reduce a la mitad.
+    panic = vol20 > 1.5 * vol60 and px / high - 1 < -0.20
+    if panic:
+        momentum *= 0.5
     reversion = 0.5 if r < 30 else -0.5 if r > 75 else 0.0
     score = max(-1.0, min(1.0, 0.45 * trend + 0.45 * momentum + 0.10 * reversion))
     return {"price": px, "sma50": s50, "sma200": s200, "mom_12_1": mom_12_1, "mom_3m": mom_3m, "rsi14": r,
             "vol20": vol20, "vol60": vol60, "drawdown": px / high - 1, "trend": trend, "momentum": momentum,
-            "reversion": reversion, "score": score}
+            "reversion": reversion, "panic_state": panic, "score": score}
 
 
 # ── playbook de estrategias (investigador cuant) ────────────────────────────
@@ -102,6 +107,10 @@ def _strat_momentum(closes):  # momentum de 3 meses
     return [None if i < 63 else int(closes[i] > closes[i - 63]) for i in range(len(closes))]
 
 
+def _strat_tsmom12(closes):  # Moskowitz, Ooi, Pedersen (2012): signo del rendimiento de 12 meses
+    return [None if i < 252 else int(closes[i] > closes[i - 252]) for i in range(len(closes))]
+
+
 def _strat_reversion(closes):  # compra sobreventa (RSI<30), sale al normalizar (RSI>55)
     r, out, pos = rsi(closes), [], 0
     for v in r:
@@ -117,8 +126,44 @@ PLAYBOOK = {
     "trend_200d": ("Tendencia: largo si precio > SMA200", _strat_trend),
     "sma_50_200": ("Cruce dorado SMA50/SMA200", _strat_cross),
     "momentum_3m": ("Momentum de series temporales a 3 meses", _strat_momentum),
+    "tsmom_12m": ("Time-series momentum 12 meses (Moskowitz et al. 2012)", _strat_tsmom12),
     "mean_reversion": ("Reversión a la media por RSI", _strat_reversion),
 }
+
+
+EULER_GAMMA = 0.5772156649015329
+
+
+def _rets(equity: list[float]) -> list[float]:
+    return [equity[i] / equity[i - 1] - 1 for i in range(1, len(equity)) if equity[i - 1]]
+
+
+def _moments(r: list[float]) -> tuple[float, float, float]:
+    """Sharpe por periodo, asimetría y curtosis (no excesiva: normal = 3)."""
+    if len(r) < 3:
+        return 0.0, 0.0, 3.0
+    mu, sd = statistics.fmean(r), statistics.pstdev(r)
+    if sd == 0:
+        return 0.0, 0.0, 3.0
+    skew = statistics.fmean([((x - mu) / sd) ** 3 for x in r])
+    kurt = statistics.fmean([((x - mu) / sd) ** 4 for x in r])
+    return mu / sd, skew, kurt
+
+
+def deflated_sharpe(chosen: list[float], trial_sharpes: list[float]) -> float:
+    """Bailey & López de Prado (2014): P(Sharpe real > 0) corrigiendo por haber elegido el mejor de N
+    intentos, la asimetría, la curtosis y la longitud de la muestra. Sharpe por periodo (no anualizado)."""
+    sr, skew, kurt = _moments(chosen)
+    n, t = len(trial_sharpes), len(chosen)
+    if t < 3:
+        return 0.0
+    z = statistics.NormalDist().inv_cdf
+    var = statistics.pvariance(trial_sharpes) if n > 1 else 0.0
+    sr0 = math.sqrt(var) * ((1 - EULER_GAMMA) * z(1 - 1 / n) + EULER_GAMMA * z(1 - 1 / (n * math.e))) if n > 1 else 0.0
+    denom = 1 - skew * sr + (kurt - 1) / 4 * sr * sr
+    if denom <= 0:
+        return 0.0
+    return statistics.NormalDist().cdf((sr - sr0) * math.sqrt(t - 1) / math.sqrt(denom))
 
 
 def select_strategy(candles: list[dict], holdout: float = 0.3, costs: CostModel = CostModel()) -> dict:
@@ -130,20 +175,65 @@ def select_strategy(candles: list[dict], holdout: float = 0.3, costs: CostModel 
     split = int(len(candles) * (1 - holdout))
     if split < 260 or len(candles) - split < 60:
         raise ValueError("not enough history to select a strategy")
-    rows = []
+    rows, is_returns = [], {}
     for key, (label, fn) in PLAYBOOK.items():
         sig = fn(closes)
         warm = next((i for i, v in enumerate(sig) if v is not None), len(sig))
-        is_r = run_signals(candles, sig, warm, split, costs=costs)
+        is_r = run_signals(candles, sig, min(warm, split - 2), split, costs=costs)
         oos_r = run_signals(candles, sig, split, costs=costs)
         is_m = perf_metrics([1.0] + [e / is_r["equity"][0] for e in is_r["equity"]])
         oos_m = perf_metrics([1.0] + [e / oos_r["equity"][0] for e in oos_r["equity"]])
+        is_returns[key] = _rets(is_r["equity"])
         rows.append({"strategy": key, "label": label, "is_sharpe": is_m["sharpe"], "oos_sharpe": oos_m["sharpe"],
                      "oos_return": oos_m["total_return"], "current_signal": sig[-1]})
     best = max(rows, key=lambda r: r["is_sharpe"])  # selección in-sample
-    validated = best["oos_sharpe"] > 0  # validación fuera de muestra
-    return {**best, "validated": validated, "candidates": rows,
-            "trust": 1.0 if validated else 0.5}
+    trial_srs = [_moments(r)[0] for r in is_returns.values()]
+    dsr = deflated_sharpe(is_returns[best["strategy"]], trial_srs)  # corrige por elegir 1 de N
+    oos_ok, dsr_ok = best["oos_sharpe"] > 0, dsr >= 0.5
+    return {**best, "deflated_sharpe": dsr, "oos_ok": oos_ok, "dsr_ok": dsr_ok, "validated": oos_ok and dsr_ok,
+            "candidates": rows, "trust": 0.5 + 0.25 * oos_ok + 0.25 * dsr_ok}
+
+
+# ── debate alcista / bajista (TradingAgents 2024; Huang et al. 2026) ────────
+
+def debate(view: dict, regime: str) -> dict:
+    """Argumentos a favor y en contra de cada activo a partir de señales INDEPENDIENTES.
+
+    Huang et al. (2026) muestran que el valor del debate está en preservar el desacuerdo
+    (la "convergencia complaciente" lo destruye). Aquí ningún agente revisa su señal a la
+    vista de las demás: el desacuerdo se mide y se reporta, no se negocia.
+    """
+    s, st = view["signals"], view["strategy"]
+    bull, bear = [], []
+    (bull if s["trend"] > 0 else bear).append(
+        f"precio {'sobre' if s['price'] > s['sma200'] else 'bajo'} su SMA200 (Faber 2007; Hurst et al. 2017)")
+    (bull if s["mom_12_1"] > 0 else bear).append(f"momentum 12-1 de {s['mom_12_1']:+.1%} (Moskowitz et al. 2012)")
+    if s["rsi14"] is not None and s["rsi14"] < 30:
+        bull.append(f"sobreventa, RSI {s['rsi14']:.0f}")
+    if s["rsi14"] is not None and s["rsi14"] > 75:
+        bear.append(f"sobrecompra, RSI {s['rsi14']:.0f}")
+    if s["panic_state"]:
+        bear.append("estado de pánico: riesgo de desplome del momentum (Daniel y Moskowitz 2016)")
+    if s["vol20"] > 1.3 * s["vol60"]:
+        bear.append(f"volatilidad al alza ({s['vol20']:.0%} vs {s['vol60']:.0%})")
+    if s["drawdown"] < -0.2:
+        bear.append(f"a {s['drawdown']:.0%} de su máximo de 52 semanas")
+    if st["validated"]:
+        (bull if st["current_signal"] else bear).append(
+            f"estrategia {st['strategy']} validada (DSR {st['deflated_sharpe']:.2f}) dice {'dentro' if st['current_signal'] else 'fuera'}")
+    else:
+        bear.append(f"estrategia {st['strategy']} sin validar (DSR {st['deflated_sharpe']:.2f}, Sharpe OOS "
+                    f"{st['oos_sharpe']:.2f}): posible sobreajuste (Bailey y López de Prado 2014)")
+    tilt = REGIME_TILT[regime][view["desk"]]
+    if tilt > 1:
+        bull.append(f"el régimen {regime} favorece a esta mesa (×{tilt})")
+    elif tilt < 1:
+        bear.append(f"el régimen {regime} penaliza a esta mesa (×{tilt})")
+    signs = [1 if s["trend"] > 0 else -1, 1 if s["momentum"] > 0 else -1, 1 if st["current_signal"] else -1]
+    if s["reversion"]:
+        signs.append(1 if s["reversion"] > 0 else -1)
+    return {"bull": bull, "bear": bear, "disagreement": round(1 - abs(sum(signs)) / len(signs), 3),
+            "verdict": "alcista" if len(bull) > len(bear) else "bajista" if len(bear) > len(bull) else "dividido"}
 
 
 # ── estratega macro ─────────────────────────────────────────────────────────

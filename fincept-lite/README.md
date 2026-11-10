@@ -119,6 +119,20 @@ Un equipo de agentes que funciona como un comité de inversión sobre un univers
 
 **Ejecución:** el comité solo **propone**. Para ejecutar hace falta el botón de aprobar (la propuesta caduca a los 15 minutos), la tool MCP `fund_execute_run` (con permiso de acciones y aprobación en la terminal) o el **autopiloto**, que hay que activar a mano (mínimo cada 15 minutos). La **parada de emergencia** bloquea las compras y apaga el autopiloto. Todo ciclo queda auditado en `fund_runs`, también lo bloqueado y lo rechazado.
 
+### Base de investigación del fondo
+
+Cada regla del fondo está respaldada por literatura académica verificada en OpenAlex (`server/fund/research.py`, panel **Base de investigación** en FUND y `GET /fund/research`). Hay 23 referencias: clásicos (Jegadeesh y Titman 1993; Moskowitz, Ooi y Pedersen 2012; Bailey y López de Prado 2014…) y trabajos de 2024–2026 sobre agentes LLM (TradingAgents 2024, FinCon 2024, HedgeAgents 2025, Miyazaki et al. 2026, Huang et al. 2026). Un test comprueba que cada paper apunta a una función que existe en el código.
+
+Qué cambió en el código por esa investigación:
+- **Deflated Sharpe Ratio** (Bailey y López de Prado 2014): el cuant elige entre 5 estrategias, y eso infla el Sharpe de la ganadora. Ahora una estrategia solo queda *validada* si su DSR ≥ 0,5 **y** su Sharpe fuera de muestra es > 0; su confianza es 0,5, 0,75 o 1,0.
+- **Momentum de series temporales a 12 meses** (Moskowitz et al. 2012; Hurst et al. 2017), como quinta estrategia del playbook.
+- **Estado de pánico** (Daniel y Moskowitz 2016): tras una caída > 20 % con la volatilidad disparada, el momentum pesa la mitad.
+- **Debate alcista/bajista por activo** (TradingAgents 2024) con **desacuerdo medido y preservado** (Huang et al. 2026: la "convergencia complaciente" empeora el Sharpe; preservar el desacuerdo lo mejora).
+- **Objetivo de volatilidad solo como techo** (DeMiguel et al. 2024: las carteras gestionadas por volatilidad de un solo factor fallan fuera de muestra y con costes).
+- **El LLM no decide ni entra en los backtests** (Glasserman y Lin 2023: sesgo de anticipación en señales de LLM; Greshake et al. 2023: inyección indirecta de instrucciones).
+
+La regla de Sahm (2019) es un informe de política del Hamilton Project y no está indexada en OpenAlex: va marcada como no verificada.
+
 ## 3. Arranque
 
 Requiere Python 3.10 o superior.
@@ -160,7 +174,7 @@ Barra de comandos (`/` o `Ctrl+K`): `AAPL` · `SAN.MC GO` · `BUY 10 NVDA` · `S
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest -q      # 66 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, analítica, chat
+.venv/bin/python -m pytest -q      # 72 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, analítica, chat
 ```
 
 ### Evaluación del servidor MCP

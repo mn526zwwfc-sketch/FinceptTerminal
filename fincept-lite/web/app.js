@@ -602,15 +602,31 @@ const SCREENS = {
         <button class="btn" id="f-auto">AUTOPILOTO: —</button>
         <select class="f" id="f-int">${[15, 30, 60, 240, 1440].map((m) => `<option value="${m}">cada ${m >= 60 ? m / 60 + " h" : m + " min"}</option>`).join("")}</select></div>
       <div class="grid dash">
-        ${panel("Comité en vivo", `<table><tbody>${STAGES.map(([k, l]) => `<tr data-st="${k}"><td>${l}</td><td class="dim" data-m>—</td><td class="num dim" data-s>en espera</td></tr>`).join("")}</tbody></table>`, "<small>fund:&lt;uid&gt;:status</small>")}
+        ${panel("Comité en vivo", `<table><tbody>${STAGES.map(([k, l]) => `<tr data-st="${k}"><td>${l}<div class="dim" data-ev style="font-size:10px"></div></td><td class="dim" data-m>—</td><td class="num dim" data-s>en espera</td></tr>`).join("")}</tbody></table>`, "<small>fund:&lt;uid&gt;:status</small>")}
         ${panel("Acta del comité (CIO)", '<div class="empty">Convoca el comité para ver la primera propuesta</div>', "", "chartpanel")}
         ${panel("Mesas · confianza aprendida", "")}
         ${panel("Asignación: actual → objetivo", "", '<small id="f-runlbl"></small>', "span2")}
         ${panel("Controles de riesgo", "")}
         ${panel("Órdenes", "", "", "span2")}
-        ${panel("Historial de ciclos", "")}</div>`;
-    const [stEl, memoEl, deskEl, allocEl, riskEl, ordEl, histEl] = $$(".panel .body", el);
-    [stEl, allocEl, ordEl, histEl, deskEl].forEach((b) => b.classList.add("flush"));
+        ${panel("Historial de ciclos", "")}
+        ${panel('Debate del activo · <span class="cyan" id="f-dsym">pulsa un activo</span>', '<div class="empty">Argumentos alcistas y bajistas de señales independientes (TradingAgents 2024; Huang et al. 2026)</div>', "", "span3")}
+        ${panel("Base de investigación · papers que respaldan cada regla", '<div class="empty">Cargando…</div>', "<small>verificados en OpenAlex</small>", "span3")}</div>`;
+    const [stEl, memoEl, deskEl, allocEl, riskEl, ordEl, histEl, dbEl, resEl] = $$(".panel .body", el);
+    [stEl, allocEl, ordEl, histEl, deskEl, resEl].forEach((b) => b.classList.add("flush"));
+    const STAGE_EV = { memory: "memory", risk_gate: "risk", macro: "macro", sentiment: "sentiment", analysts: "quant", risk: "risk", cio: "cio" };
+    const doiLink = (doi, txt) => (doi ? `<a href="https://doi.org/${esc(doi)}" target="_blank" rel="noopener noreferrer">${txt}</a>` : txt);
+    const showDebate = (sym) => {
+      const v = run && run.report.views[sym]; if (!v || !v.debate) return;
+      $("#f-dsym").textContent = `${sym} · veredicto ${v.debate.verdict} · desacuerdo ${v.debate.disagreement.toFixed(2)}`;
+      const st = v.strategy;
+      dbEl.innerHTML = `<div class="grid g2"><div><div class="pos" style="font-weight:700">A FAVOR</div>${v.debate.bull.map((b) => `<div>▲ ${esc(b)}</div>`).join("") || '<div class="dim">sin argumentos</div>'}</div>
+        <div><div class="neg" style="font-weight:700">EN CONTRA</div>${v.debate.bear.map((b) => `<div>▼ ${esc(b)}</div>`).join("") || '<div class="dim">sin argumentos</div>'}</div></div>
+        <div class="dim" style="margin-top:6px">Cuant: ${st.candidates.map((c) => `${esc(c.strategy)} IS ${c.is_sharpe.toFixed(2)} / OOS ${c.oos_sharpe.toFixed(2)}`).join(" · ")}. Elegida ${esc(st.strategy)} con Deflated Sharpe ${st.deflated_sharpe.toFixed(2)} (umbral 0,50) → confianza ${st.trust}. <a href="#" data-eq="${esc(sym)}">abrir ficha ▸</a></div>`;
+    };
+    api("/fund/research").then((r) => {
+      if (!r.success) return;
+      resEl.innerHTML = `<table><thead><tr><th>Año</th><th>Autores</th><th>Trabajo</th><th>Agente</th><th>Hallazgo</th><th>Cómo se aplica</th><th class="num">Citas</th></tr></thead><tbody>${r.data.slice().sort((a, b) => b.year - a.year).map((x) => `<tr><td>${x.year}</td><td class="dim">${esc(x.authors)}</td><td style="white-space:normal;min-width:220px">${doiLink(x.doi, esc(x.title))}<div class="dim">${esc(x.venue)}${x.verified ? "" : ' · <span class="warn">no indexado en OpenAlex</span>'}</div></td><td class="cyan">${esc(x.agent)}</td><td class="muted" style="white-space:normal;min-width:260px">${esc(x.finding)}</td><td style="white-space:normal;min-width:220px">${esc(x.applied)}</td><td class="num">${x.cited_by == null ? "—" : fmtN(x.cited_by, 0)}</td></tr>`).join("")}</tbody></table>`;
+    });
     let state = null, run = null;
     const paintState = () => {
       $("#f-auto").textContent = `AUTOPILOTO: ${state.autopilot ? "ON" : "OFF"}`;
@@ -625,12 +641,17 @@ const SCREENS = {
       $("#f-runlbl").textContent = `ciclo #${r.id} · ${r.status} · equity ${fmtN(d.equity)} · datos ${d.data_source}`;
       $("#f-exec").disabled = r.status !== "proposed" || !d.orders.length;
       const cb = d.circuit_breaker, m = d.macro, s = d.sentiment;
+      for (const [stage, key] of Object.entries(STAGE_EV)) {
+        const cell = stEl.querySelector(`tr[data-st="${stage}"] [data-ev]`);
+        const ev = (d.evidence || {})[key] || [];
+        if (cell) cell.innerHTML = ev.map((x) => doiLink(x.doi, esc(x.short))).join(" · ");
+      }
       memoEl.innerHTML = `<div class="row" style="margin-bottom:6px"><span class="chip ${m.regime === "risk_on" ? "positive" : m.regime === "risk_off" ? "negative" : ""}">régimen ${esc(m.regime)}</span><span class="chip">tipos ${esc(m.rates_direction)}</span><span class="chip ${s.avg_sentiment > 0 ? "positive" : s.avg_sentiment < 0 ? "negative" : ""}">sentimiento ${s.avg_sentiment.toFixed(2)}</span>${s.dropped_suspicious ? `<span class="chip negative">${s.dropped_suspicious} titular(es) descartado(s) por posible inyección</span>` : ""}${cb.halted ? `<span class="chip negative">CORTACIRCUITOS: ${esc(cb.reason)}</span>` : ""}</div>
         <div class="msg"><div class="txt">${md(d.memo_llm || d.memo)}</div></div>
         <div class="dim" style="margin-top:6px">${m.notes.map(esc).join(" · ")}${d.memo_llm ? " · acta redactada por Claude (no decide nada)" : ""}</div>`;
       const eq = d.equity, cur = (sym) => ((d.positions[sym] || 0) * (d.prices[sym] || 0)) / eq;
       const syms = [...new Set([...Object.keys(d.views), ...Object.keys(d.positions)])].sort((a, b) => (d.target[b] || 0) - (d.target[a] || 0));
-      allocEl.innerHTML = `<table><thead><tr><th>Activo</th><th>Mesa</th><th class="num">Puntuación</th><th>Estrategia (cuant)</th><th class="num">Sharpe IS / OOS</th><th class="num">Actual</th><th class="num">Objetivo</th></tr></thead><tbody>${syms.map((sym) => { const v = d.views[sym]; const st = v && v.strategy; return `<tr class="click" data-sym="${esc(sym)}"><td class="sym">${esc(sym)}</td><td class="dim">${esc(DESK[v ? v.desk : ""] || "—")}</td><td class="num ${v ? cls(v.score) : ""}">${v ? v.score.toFixed(2) : "—"}</td><td>${st ? `${esc(st.strategy)} <span class="${st.validated ? "pos" : "warn"}">${st.validated ? "✓ validada" : "✗ no validada"}</span>` : "—"}</td><td class="num dim">${st ? `${st.is_sharpe.toFixed(2)} / ${st.oos_sharpe.toFixed(2)}` : ""}</td><td class="num">${pct(cur(sym))}</td><td class="num ${(d.target[sym] || 0) > cur(sym) ? "pos" : (d.target[sym] || 0) < cur(sym) ? "neg" : ""}">${pct(d.target[sym] || 0)}</td></tr>`; }).join("")}</tbody></table>`;
+      allocEl.innerHTML = `<table><thead><tr><th>Activo</th><th>Mesa</th><th class="num">Puntuación</th><th>Estrategia (cuant)</th><th class="num">Sharpe IS / OOS</th><th class="num">DSR</th><th>Debate</th><th class="num">Actual</th><th class="num">Objetivo</th></tr></thead><tbody>${syms.map((sym) => { const v = d.views[sym]; const st = v && v.strategy; return `<tr class="click" data-sym="${esc(sym)}"><td class="sym">${esc(sym)}</td><td class="dim">${esc(DESK[v ? v.desk : ""] || "—")}</td><td class="num ${v ? cls(v.score) : ""}">${v ? v.score.toFixed(2) : "—"}</td><td>${st ? `${esc(st.strategy)} <span class="${st.validated ? "pos" : "warn"}">${st.validated ? "✓ validada" : "✗ no validada"}</span>` : "—"}</td><td class="num dim">${st ? `${st.is_sharpe.toFixed(2)} / ${st.oos_sharpe.toFixed(2)}` : ""}</td><td class="num ${st && st.dsr_ok ? "pos" : "warn"}">${st && st.deflated_sharpe != null ? st.deflated_sharpe.toFixed(2) : "—"}</td><td class="${v && v.debate ? (v.debate.verdict === "alcista" ? "pos" : v.debate.verdict === "bajista" ? "neg" : "warn") : "dim"}">${v && v.debate ? `${v.debate.verdict} · ${v.debate.disagreement.toFixed(2)}` : "—"}</td><td class="num">${pct(cur(sym))}</td><td class="num ${(d.target[sym] || 0) > cur(sym) ? "pos" : (d.target[sym] || 0) < cur(sym) ? "neg" : ""}">${pct(d.target[sym] || 0)}</td></tr>`; }).join("")}</tbody></table>`;
       deskEl.innerHTML = `<table><thead><tr><th>Mesa</th><th class="num">Objetivo</th><th class="num">Límite</th><th class="num">Confianza</th><th class="num">Aciertos</th></tr></thead><tbody>${Object.keys(DESK).map((k) => { const t = Object.entries(d.target).filter(([s]) => d.views[s] && d.views[s].desk === k).reduce((a, [, w]) => a + w, 0); const L = d.learning[k]; return `<tr><td>${DESK[k]}</td><td class="num">${pct(t)}</td><td class="num dim">${pct(state.desk_max[k])}</td><td class="num ${(d.desk_trust[k] || 1) > 1 ? "pos" : (d.desk_trust[k] || 1) < 1 ? "neg" : ""}">${(d.desk_trust[k] || 1).toFixed(2)}</td><td class="num dim">${L ? `${(L.hit_rate * 100).toFixed(0)}% de ${L.calls}` : "—"}</td></tr>`; }).join("")}</tbody></table><div class="dim" style="padding:6px">Caja objetivo ${pct(1 - Object.values(d.target).reduce((a, b) => a + b, 0))}. La confianza sube cuando la mesa acierta la dirección y baja cuando falla (0,5–1,5).</div>`;
       const checks = [...d.risk_checks, ...d.order_checks];
       riskEl.innerHTML = checks.map((c) => `<div><span class="${c.status === "ok" ? "pos" : c.status === "blocked" ? "neg" : "warn"}">${esc(c.status.toUpperCase())}</span> ${esc(c.check)} <span class="dim">${esc(c.detail)}</span></div>`).join("") + `<div class="dim" style="margin-top:6px">Objetivo de vol ${pct(d.policy.target_vol)} · caja mín. ${pct(d.policy.min_cash)} · rotación máx. ${pct(d.policy.max_turnover)} · parada si drawdown &gt; ${pct(d.policy.max_drawdown_halt)} o ${d.policy.max_consecutive_losses} ciclos en pérdidas</div>`;
@@ -664,7 +685,8 @@ const SCREENS = {
         if (!r.success) return toast(r.message, "err"); load();
       } else {
         const tr = e.target.closest("tr[data-run]"); if (tr) { const r = await api(`/fund/runs/${tr.dataset.run}`); if (r.success) paintRun(r.data); return; }
-        const sy = e.target.closest("tr[data-sym]"); if (sy) go("equity", sy.dataset.sym);
+        const eq = e.target.closest("[data-eq]"); if (eq) { e.preventDefault(); go("equity", eq.dataset.eq); return; }
+        const sy = e.target.closest("tr[data-sym]"); if (sy) showDebate(sy.dataset.sym);
       }
     });
     ctx.on($("#f-int"), "change", async () => { if (state.autopilot) { await api("/fund/autopilot", { method: "PUT", body: { on: true, interval_min: +$("#f-int").value } }); load(); } });

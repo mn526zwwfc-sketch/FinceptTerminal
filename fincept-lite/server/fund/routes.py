@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from ..auth import fail, ok, require_auth
 from . import agents as A
 from . import engine
+from .research import REFERENCES
 
 router = APIRouter(prefix="/fund")
 
@@ -75,3 +76,8 @@ async def autopilot(body: AutopilotIn, user: dict = Depends(require_auth)):
         return ok(engine.set_autopilot(user["id"], body.on, body.interval_min))
     except engine.FundError as e:
         return fail(str(e))
+
+
+@router.get("/research")
+async def research(user: dict = Depends(require_auth)):
+    return ok(REFERENCES)
