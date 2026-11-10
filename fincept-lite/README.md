@@ -119,9 +119,15 @@ Un equipo de agentes que funciona como un comité de inversión sobre un univers
 
 **Ejecución:** el comité solo **propone**. Para ejecutar hace falta el botón de aprobar (la propuesta caduca a los 15 minutos), la tool MCP `fund_execute_run` (con permiso de acciones y aprobación en la terminal) o el **autopiloto**, que hay que activar a mano (mínimo cada 15 minutos). La **parada de emergencia** bloquea las compras y apaga el autopiloto. Todo ciclo queda auditado en `fund_runs`, también lo bloqueado y lo rechazado.
 
-### Base de investigación del fondo
+### Base de conocimiento (papers, investigación y código)
 
-Cada regla del fondo está respaldada por literatura académica verificada en OpenAlex (`server/fund/research.py`, panel **Base de investigación** en FUND y `GET /fund/research`). Hay 23 referencias: clásicos (Jegadeesh y Titman 1993; Moskowitz, Ooi y Pedersen 2012; Bailey y López de Prado 2014…) y trabajos de 2024–2026 sobre agentes LLM (TradingAgents 2024, FinCon 2024, HedgeAgents 2025, Miyazaki et al. 2026, Huang et al. 2026). Un test comprueba que cada paper apunta a una función que existe en el código.
+Toda la información está junta en una sola base: los 36 papers que respaldan las reglas del fondo, los 43 papers de quant-finance-research y las 39 funciones de `quantfin`, fusionados sin duplicados en **83 entradas**. Cada entrada dice qué idea aporta y en qué parte del código se usa. Está en tres sitios:
+
+- **`docs/BASE_DE_CONOCIMIENTO.md`**: el documento completo, por tema, más el catálogo de funciones (se regenera con `python -m server.fund.research`; un test avisa si queda desactualizado).
+- **Pantalla FUND**, panel *Base de conocimiento*, con filtro de texto; y `GET /fund/research`.
+- **`GET /fund/research/functions`** y la tool `qf_catalog`: cada función con parámetros, salidas, papers y un ejemplo listo para correr.
+
+Las referencias del fondo incluyen clásicos (Jegadeesh y Titman 1993; Moskowitz, Ooi y Pedersen 2012; Bailey y López de Prado 2014…) y trabajos de 2024–2026 sobre agentes LLM (TradingAgents 2024, FinCon 2024, HedgeAgents 2025, Miyazaki et al. 2026, Huang et al. 2026). Un test comprueba que cada entrada apunta a funciones que existen en el código.
 
 Qué cambió en el código por esa investigación:
 - **Deflated Sharpe Ratio** (Bailey y López de Prado 2014): el cuant elige entre varias estrategias (hoy 7), y eso infla el Sharpe de la ganadora. Ahora una estrategia solo queda *validada* si su DSR ≥ 0,5 **y** su Sharpe fuera de muestra es > 0; su confianza es 0,5, 0,75 o 1,0.
@@ -130,8 +136,6 @@ Qué cambió en el código por esa investigación:
 - **Debate alcista/bajista por activo** (TradingAgents 2024) con **desacuerdo medido y preservado** (Huang et al. 2026: la "convergencia complaciente" empeora el Sharpe; preservar el desacuerdo lo mejora).
 - **Objetivo de volatilidad solo como techo** (DeMiguel et al. 2024: las carteras gestionadas por volatilidad de un solo factor fallan fuera de muestra y con costes).
 - **El LLM no decide ni entra en los backtests** (Glasserman y Lin 2023: sesgo de anticipación en señales de LLM; Greshake et al. 2023: inyección indirecta de instrucciones).
-
-La regla de Sahm (2019) es un informe de política del Hamilton Project y no está indexada en OpenAlex: va marcada como no verificada.
 
 ### Librería `quantfin` (quant-finance-research, Agustín Ortega)
 
@@ -143,9 +147,14 @@ Dónde la usa el fondo:
 - **Paridad de riesgo con covarianza real** (`risk_parity`), con reparación de Higham (2002) si la matriz de correlación no es válida.
 - **Volatilidad de la cartera corregida** por el sesgo del optimizador (Pafka y Kondor 2003) antes de compararla con el objetivo del 10 %.
 - **Dos estrategias nuevas** en el playbook: `ema_20_100` y `donchian_20` (Brock et al. 1992; Levine y Pedersen 2016). El Deflated Sharpe ya penaliza el mayor número de pruebas.
-- **Impacto de mercado** (ley de la raíz cuadrada): cada orden muestra su coste estimado en puntos básicos y se recorta si pasa de 50 pb. La referencia concreta (Bonart, arXiv 2606.07059) es un preprint que no aparece en OpenAlex y va marcada como no verificada.
+- **Impacto de mercado** (ley de la raíz cuadrada): cada orden muestra su coste estimado en puntos básicos y se recorta si pasa de 50 pb. (Bonart 2026, arXiv 2606.07059).
 
-Además hay 9 tools nuevas (`qf_bubble_test`, `qf_systemic_fragility`, `qf_pairs_ou`, `qf_risk_parity`, `qf_execution_plan`, `qf_yield_curve`, `qf_bond`, `qf_kelly_binary`, `qf_market_making`), disponibles por MCP, en el chat y en el panel **Laboratorio quantfin** de la pantalla QUANTLIB. La pantalla FUND muestra el absorption ratio, las burbujas detectadas y el presupuesto de riesgo en el acta, y la biblioteca de papers de la investigación (`GET /fund/research/library`). La base de investigación pasa de 23 a 36 referencias.
+Tools (por MCP, en el chat y en el panel **Laboratorio quantfin** de QUANTLIB):
+- 9 sobre datos de mercado: `qf_bubble_test`, `qf_systemic_fragility`, `qf_pairs_ou`, `qf_risk_parity`, `qf_execution_plan`, `qf_yield_curve`, `qf_bond`, `qf_kelly_binary`, `qf_market_making`.
+- **`qf_function`**: ejecuta cualquiera de las 39 funciones con los números que le pases (opciones, bonos, carry de divisas, basis de materias primas, TSMOM, DeFi, mercados de predicción, VaR/ES, GARCH, mínima varianza, OU, SADF, Deflated Sharpe, Higham…). Sin argumentos corre el ejemplo del catálogo. Los vectores y bucles tienen límites para no bloquear el servidor.
+- **`qf_catalog`**: lista y busca las funciones.
+
+La pantalla FUND muestra el absorption ratio, las burbujas detectadas y el presupuesto de riesgo en el acta, y el impacto estimado de cada orden.
 
 ## 3. Arranque
 
@@ -188,7 +197,7 @@ Barra de comandos (`/` o `Ctrl+K`): `AAPL` · `SAN.MC GO` · `BUY 10 NVDA` · `S
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest -q      # 110 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
+.venv/bin/python -m pytest -q      # 155 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
 ```
 
 ### Evaluación del servidor MCP

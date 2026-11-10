@@ -623,6 +623,50 @@ async def _qf_impact(ctx, a):
             "references": ["Bonart (2026, preprint) — ley de la raíz cuadrada", "Almgren y Chriss (2001)"]}
 
 
+@tool("qf_catalog", "List quantfin functions", "Catalogue of all 39 functions of the quantfin library "
+      "(quant-finance-research): market, parameters with limits, outputs, the papers behind each one, where the "
+      "terminal already uses it, and a ready-to-run example. Use it before qf_function.", "quant",
+      obj({"query": p_str("Filter by name, market or paper, e.g. 'bond', 'Kelly', 'covariance'.", maxLength=60),
+           "name": p_str("Return just this function's full description.", maxLength=40)}))
+async def _qf_catalog(ctx, a):
+    from . import quantfin_catalog as qc
+    if a.get("name"):
+        if a["name"] not in qc.FUNCS:
+            raise ToolError(f"Unknown function {a['name']!r}. Call qf_catalog() without arguments to list them.")
+        return qc.describe(a["name"])
+    q = str(a.get("query") or "").lower()
+    rows = [{k: d[k] for k in ("name", "market", "summary", "papers", "used_in")} | {"params": [p["name"] for p in d["params"]]}
+            for d in qc.catalog() if not q or q in f"{d['name']} {d['market']} {d['summary']} {d['papers']}".lower()]
+    return {"total": len(rows), "functions": rows}
+
+
+@tool("qf_function", "Run any quantfin function", "Run one of the 39 quantfin functions on numbers you pass: "
+      "options (black_scholes, monte_carlo_call, pnl_cobertura), bonds and curves, FX carry, commodity basis, "
+      "time-series momentum, market making, execution, DeFi (LVR, impermanent loss), prediction markets (Kelly, LMSR, "
+      "Brier), risk (VaR/ES, GARCH, min-variance, risk parity, Sharpe) and the advanced models (OU, SADF, absorption "
+      "ratio, Deflated Sharpe, Higham, Pafka-Kondor, EMA/Donchian, vol targeting, square-root impact). Arguments go "
+      "in `args` with the names from qf_catalog(name=...); arrays are capped (5000 values, 50000 matrix cells).",
+      "quant", obj({"function": p_str("Function name, e.g. 'black_scholes', 'var_es', 'carry_trade'.",
+                                      minLength=2, maxLength=40),
+                    "args": {"type": "object", "description": "Arguments by name, e.g. {\"S\":100,\"K\":100,"
+                             "\"T\":1,\"r\":0.05,\"sigma\":0.2}. Omit to run the catalogue example."}},
+                   ["function"]))
+async def _qf_function(ctx, a):
+    from . import quantfin_catalog as qc
+    name = str(a["function"])
+    if name not in qc.FUNCS:
+        raise ToolError(f"Unknown function {name!r}. Call qf_catalog(query=...) to find the right one.")
+    args = a.get("args")
+    if args is None:
+        args = qc.describe(name)["example"]
+    if not isinstance(args, dict):
+        raise ToolError("'args' must be an object with named arguments.")
+    try:
+        return await asyncio.to_thread(qc.call, name, args)
+    except qc.QfArgError as e:
+        raise ToolError(f"{e} See qf_catalog(name='{name}').") from e
+
+
 # ── Fondo multi-agente (paper) ──────────────────────────────────────────────
 
 def _fund_summary(run: dict | None) -> dict | None:

@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from ..auth import fail, ok, require_auth
 from . import agents as A
 from . import engine
-from .research import REFERENCES
+from .research import knowledge_base
 
 router = APIRouter(prefix="/fund")
 
@@ -80,16 +80,12 @@ async def autopilot(body: AutopilotIn, user: dict = Depends(require_auth)):
 
 @router.get("/research")
 async def research(user: dict = Depends(require_auth)):
-    return ok(REFERENCES)
+    """Base de conocimiento: papers del fondo + quant-finance-research + funciones de quantfin."""
+    return ok(knowledge_base())
 
 
-@router.get("/research/library")
-async def research_library(user: dict = Depends(require_auth)):
-    """Índice de papers de quant-finance-research (docs/quantfin/vince_quant_videos.csv)."""
-    import csv
-    from pathlib import Path
-    path = Path(__file__).resolve().parents[2] / "docs" / "quantfin" / "vince_quant_videos.csv"
-    with path.open(encoding="utf-8") as fh:
-        rows = [{k: (v or "").strip() for k, v in row.items()} for row in csv.DictReader(fh)]
-    return ok({"source": "quant-finance-research (Agustín Ortega, nov 2026)", "document": "docs/quantfin/investigacion.md",
-               "rows": rows})
+@router.get("/research/functions")
+async def research_functions(user: dict = Depends(require_auth)):
+    """Catálogo de las 39 funciones de quantfin con parámetros, papers y ejemplo."""
+    from ..quantfin_catalog import catalog
+    return ok(catalog())

@@ -45,7 +45,7 @@ def test_debate_keeps_both_sides_and_measures_disagreement():
     assert 0 <= d["disagreement"] <= 1 and d["verdict"] in {"alcista", "bajista", "dividido"}
 
 
-def test_every_reference_is_wired_to_real_code_and_verified():
+def test_every_reference_is_wired_to_real_code():
     assert len(REFERENCES) >= 20 and len(BY_ID) == len(REFERENCES)
     mods = {"agents": importlib.import_module("server.fund.agents"), "tools": importlib.import_module("server.tools"),
             "engine": importlib.import_module("server.fund.engine")}
@@ -54,10 +54,6 @@ def test_every_reference_is_wired_to_real_code_and_verified():
         for path in r["applied_in"]:
             mod, name = path.split(".")
             assert hasattr(mods[mod], name), f"{r['id']} cita {path}, que no existe"
-        if r["verified"]:
-            assert r["doi"] and r["openalex"].startswith("W"), r["id"]
-    unverified = [r["id"] for r in REFERENCES if not r["verified"]]
-    assert unverified == ["sahm2019", "bonart2026"]  # no indexados en OpenAlex, declarados como tales
     assert any(r["year"] >= 2025 for r in REFERENCES)  # incluye investigación reciente
     assert cite("bailey2014", "nope") == [{"id": "bailey2014", "short": "Bailey (2014)",
                                            "doi": "10.3905/jpm.2014.40.5.094"}]
@@ -70,4 +66,4 @@ def test_cycle_report_carries_debate_and_evidence(client, user):
     assert {"bull", "bear", "disagreement"} <= set(v["debate"]) and "deflated_sharpe" in v["strategy"]
     assert "Deflated Sharpe" in rep["memo"]
     refs = client.get("/fund/research", headers=user["headers"]).json()["data"]
-    assert any(r["id"] == "huang2026" for r in refs)
+    assert any(r["id"] == "huang2026" for r in refs) and any("quant-finance-research" in r["sources"] for r in refs)

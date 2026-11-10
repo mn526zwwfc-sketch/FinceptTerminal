@@ -429,7 +429,8 @@ const SCREENS = {
           <option value="qf_bond">Bono: precio, duración, convexidad</option>
           <option value="qf_kelly_binary">Kelly (mercado de predicción)</option>
           <option value="qf_market_making">Market making (Avellaneda-Stoikov)</option>
-        </select><input class="f" id="lab-a" style="flex:1"><button class="btn primary" id="lab-go">CALCULAR</button></div>
+          <option value="qf_function">Cualquier función de quantfin (39)…</option>
+        </select><select class="f" id="lab-fn" style="display:none"></select><input class="f" id="lab-a" style="flex:1"><button class="btn primary" id="lab-go">CALCULAR</button></div>
         <div class="dim" id="lab-h"></div><div id="lab-out" style="margin-top:6px"></div>`, "", "span2")}
       ${panel("Riesgo de un activo", `<div class="row"><input class="f" id="r-sym" value="${esc(S.focus)}" style="width:120px"><select class="f" id="r-per"><option>6mo</option><option selected>1y</option><option>2y</option><option>5y</option></select><select class="f" id="r-cf"><option value="0.95">VaR 95%</option><option value="0.99">VaR 99%</option></select><button class="btn primary" id="r-go">ANALIZAR</button></div><div id="r-out" class="kpis" style="margin-top:10px"></div>`)}</div>`;
     let type = "call";
@@ -463,13 +464,29 @@ const SCREENS = {
       qf_kelly_binary: ['{"probability":0.6,"price":0.5}', "Fracción de capital; medio Kelly es más prudente."],
       qf_market_making: ['{"mid":100,"inventory":5,"sigma":2}', "Precio de reserva según inventario y volatilidad."],
     };
-    const labSet = () => { const [a, h] = LAB[$("#lab-t").value]; $("#lab-a").value = a; $("#lab-h").textContent = h; };
-    const show = (v) => typeof v === "number" ? Number.isInteger(v) ? fmtN(v, 0) : (Math.abs(v) < 1e-3 && v !== 0 ? v.toExponential(3) : fmtN(v, 4)) : Array.isArray(v) ? v.map((x) => show(x)).join(", ") : v && typeof v === "object" ? Object.entries(v).map(([k, x]) => `${esc(k)} ${show(x)}`).join(" · ") : esc(String(v));
+    let QF = [];
+    const labSet = () => {
+      const t = $("#lab-t").value;
+      $("#lab-fn").style.display = t === "qf_function" ? "" : "none";
+      if (t !== "qf_function") { const [a, h] = LAB[t]; $("#lab-a").value = a; $("#lab-h").textContent = h; return; }
+      const f = QF.find((x) => x.name === $("#lab-fn").value);
+      if (!f) return;
+      $("#lab-a").value = JSON.stringify(f.example);
+      $("#lab-h").textContent = `${f.summary} Parámetros: ${f.params.map((p) => p.name).join(", ")}. Papers: ${f.papers}.`;
+    };
+    api("/fund/research/functions").then((r) => {
+      if (!r.success) return;
+      QF = r.data;
+      $("#lab-fn").innerHTML = QF.map((f) => `<option value="${esc(f.name)}">${esc(f.market)} · ${esc(f.name)}</option>`).join("");
+    });
+    ctx.on($("#lab-fn"), "change", labSet);
+    const show = (v) => typeof v === "number" ? Number.isInteger(v) ? fmtN(v, 0) : (Math.abs(v) < 1e-3 && v !== 0 ? v.toExponential(3) : fmtN(v, 4)) : Array.isArray(v) ? v.slice(0, 12).map((x) => show(x)).join(", ") + (v.length > 12 ? ` … (${v.length} valores)` : "") : v && typeof v === "object" ? Object.entries(v).map(([k, x]) => `${esc(k)} ${show(x)}`).join(" · ") : esc(String(v));
     ctx.on($("#lab-t"), "change", labSet);
     ctx.on($("#lab-go"), "click", async () => {
       let args; try { args = JSON.parse($("#lab-a").value || "{}"); } catch { return toast("Argumentos JSON inválidos", "err"); }
       $("#lab-out").innerHTML = '<div class="empty">calculando…</div>';
-      const r = await tool($("#lab-t").value, args);
+      const t = $("#lab-t").value;
+      const r = await tool(t, t === "qf_function" ? { function: $("#lab-fn").value, args } : args);
       $("#lab-out").innerHTML = r.success ? `<table><tbody>${Object.entries(r.data).map(([k, v]) => `<tr><td class="muted">${esc(k)}</td><td>${show(v)}</td></tr>`).join("")}</tbody></table>` : `<div class="neg">${esc(r.message)}</div>`;
     });
     labSet();
@@ -644,7 +661,7 @@ const SCREENS = {
         ${panel("Órdenes", "", "", "span2")}
         ${panel("Historial de ciclos", "")}
         ${panel('Debate del activo · <span class="cyan" id="f-dsym">pulsa un activo</span>', '<div class="empty">Argumentos alcistas y bajistas de señales independientes (TradingAgents 2024; Huang et al. 2026)</div>', "", "span3")}
-        ${panel("Base de investigación · papers que respaldan cada regla", '<div class="empty">Cargando…</div>', "<small>verificados en OpenAlex</small>", "span3")}</div>`;
+        ${panel("Base de conocimiento · papers, investigación y código", '<div class="empty">Cargando…</div>', "", "span3")}</div>`;
     const [stEl, memoEl, deskEl, allocEl, riskEl, ordEl, histEl, dbEl, resEl] = $$(".panel .body", el);
     [stEl, allocEl, ordEl, histEl, deskEl, resEl].forEach((b) => b.classList.add("flush"));
     const STAGE_EV = { memory: "memory", risk_gate: "risk", macro: "macro", sentiment: "sentiment", analysts: "quant", risk: "risk", cio: "cio" };
@@ -657,15 +674,21 @@ const SCREENS = {
         <div><div class="neg" style="font-weight:700">EN CONTRA</div>${v.debate.bear.map((b) => `<div>▼ ${esc(b)}</div>`).join("") || '<div class="dim">sin argumentos</div>'}</div></div>
         <div class="dim" style="margin-top:6px">Cuant: ${st.candidates.map((c) => `${esc(c.strategy)} IS ${c.is_sharpe.toFixed(2)} / OOS ${c.oos_sharpe.toFixed(2)}`).join(" · ")}. Elegida ${esc(st.strategy)} con Deflated Sharpe ${st.deflated_sharpe.toFixed(2)} (umbral 0,50) → confianza ${st.trust}. <a href="#" data-eq="${esc(sym)}">abrir ficha ▸</a></div>`;
     };
-    api("/fund/research/library").then((r) => {
-      if (!r.success) return;
-      const box = document.createElement("div");
-      box.innerHTML = `<div class="help" style="padding:8px">Biblioteca de <b>${esc(r.data.source)}</b>: ${r.data.rows.length} papers de los videos de @vince.quant, verificados en esa investigación (ver <code>${esc(r.data.document)}</code>). Los marcados con función están implementados en <code>quantfin</code>.</div><table><thead><tr><th>Tema</th><th>Paper</th><th>Idea clave</th><th>Función</th></tr></thead><tbody>${r.data.rows.map((x) => `<tr><td class="dim">${esc(x.tema)}</td><td style="white-space:normal;min-width:200px">${esc(x.paper.replace(/\*/g, ""))}</td><td class="muted" style="white-space:normal;min-width:300px">${esc(x.idea_clave)}</td><td class="cyan">${esc((x.funcion || "").replace(/`/g, ""))}</td></tr>`).join("")}</tbody></table>`;
-      resEl.after(box);
-    });
+    const extLink = (url, txt) => (url && /^https:\/\//.test(url) ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${txt}</a>` : txt);
     api("/fund/research").then((r) => {
       if (!r.success) return;
-      resEl.innerHTML = `<table><thead><tr><th>Año</th><th>Autores</th><th>Trabajo</th><th>Agente</th><th>Hallazgo</th><th>Cómo se aplica</th><th class="num">Citas</th></tr></thead><tbody>${r.data.slice().sort((a, b) => b.year - a.year).map((x) => `<tr><td>${x.year}</td><td class="dim">${esc(x.authors)}</td><td style="white-space:normal;min-width:220px">${doiLink(x.doi, esc(x.title))}<div class="dim">${esc(x.venue)}${x.verified ? "" : ' · <span class="warn">no indexado en OpenAlex</span>'}</div></td><td class="cyan">${esc(x.agent)}</td><td class="muted" style="white-space:normal;min-width:260px">${esc(x.finding)}</td><td style="white-space:normal;min-width:220px">${esc(x.applied)}</td><td class="num">${x.cited_by == null ? "—" : fmtN(x.cited_by, 0)}</td></tr>`).join("")}</tbody></table>`;
+      const kb = r.data;
+      const srcN = (s) => kb.filter((x) => x.sources.includes(s)).length;
+      const row = (x) => `<tr><td>${x.year || ""}</td><td class="dim" style="white-space:normal;min-width:120px">${esc(x.topic || "")}</td><td style="white-space:normal;min-width:240px">${extLink(x.url, esc(x.title))}${x.venue ? `<div class="dim">${esc(x.venue)}</div>` : ""}${x.videos.filter((v) => v.url).map((v) => `<div>${extLink(v.url, "▶ " + esc(v.title))}</div>`).join("")}</td><td class="muted" style="white-space:normal;min-width:280px">${esc(x.finding)}${x.videos.filter((v) => v.idea && v.idea !== x.finding).map((v) => `<div>${esc(v.idea)}</div>`).join("")}</td><td style="white-space:normal;min-width:220px">${esc(x.applied)}${x.functions.length ? `<div class="cyan">${x.functions.map((f) => esc(f) + "()").join(", ")}</div>` : ""}</td><td class="dim">${esc(x.sources.join(" + "))}</td></tr>`;
+      resEl.innerHTML = `<div class="row" style="padding:8px;gap:8px"><input class="f" id="kb-q" placeholder="Filtrar: tema, autor, función, idea…" style="flex:1"><span class="dim" id="kb-n"></span></div><div class="help" style="padding:0 8px 8px">${kb.length} entradas: ${srcN("fondo")} del fondo, ${srcN("quant-finance-research")} de quant-finance-research (${kb.reduce((n, x) => n + x.videos.length, 0)} videos) y ${srcN("quantfin")} solo del código de quantfin. Documento completo: <code>docs/BASE_DE_CONOCIMIENTO.md</code>; investigación original: <code>docs/quantfin/investigacion.md</code>.</div><table><thead><tr><th>Año</th><th>Tema</th><th>Paper</th><th>Idea clave</th><th>Código</th><th>Fuente</th></tr></thead><tbody id="kb-body"></tbody></table>`;
+      const draw = () => {
+        const q = $("#kb-q").value.trim().toLowerCase();
+        const rows = kb.filter((x) => !q || JSON.stringify(x).toLowerCase().includes(q));
+        $("#kb-body").innerHTML = rows.map(row).join("");
+        $("#kb-n").textContent = `${rows.length} / ${kb.length}`;
+      };
+      ctx.on($("#kb-q"), "input", draw);
+      draw();
     });
     let state = null, run = null;
     const paintState = () => {
