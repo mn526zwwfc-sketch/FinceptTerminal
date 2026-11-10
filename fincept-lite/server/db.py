@@ -77,6 +77,15 @@ CREATE TABLE IF NOT EXISTS paper_orders (
 CREATE TABLE IF NOT EXISTS cache (
     key TEXT PRIMARY KEY, value TEXT, expires_at REAL
 );
+CREATE TABLE IF NOT EXISTS fund_state (
+    user_id INTEGER PRIMARY KEY, autopilot INTEGER DEFAULT 0, interval_min INTEGER DEFAULT 60,
+    halted INTEGER DEFAULT 0, halt_reason TEXT, peak_equity REAL DEFAULT 0, consecutive_losses INTEGER DEFAULT 0,
+    desk_trust TEXT DEFAULT '{}', last_cycle_at REAL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS fund_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, started REAL, finished REAL, trigger TEXT,
+    status TEXT, equity REAL, report TEXT
+);
 CREATE TABLE IF NOT EXISTS chat_messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER, session_id TEXT, role TEXT, text TEXT, at REAL

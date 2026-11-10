@@ -101,6 +101,24 @@ Está en `src/mcp/server/McpHttpServer*.cpp` y expone las ~900 tools internas a 
 
 ---
 
+## 2b. Fondo de IA multi-agente (pantalla FUND, comando `FUND`)
+
+Un equipo de agentes que funciona como un comité de inversión sobre un universo global multi-activo: renta variable de EE. UU., Europa, Japón, emergentes y España; bonos; oro, plata y petróleo; dólar, euro y yen; y cripto. **Opera solo en la cuenta paper (dinero simulado).**
+
+| Agente | Qué hace | Skill de la que aprende |
+|---|---|---|
+| Estratega macro | Régimen (expansivo/neutro/defensivo) con regla de Sahm, Fed Funds e inflación (DBnomics) | `macro-rates-monitor` |
+| Analista de sentimiento | Tono de los titulares; descarta los que parecen inyección de instrucciones | `llm-trading-agent-security` |
+| Analistas por mesa | Tendencia, momentum, RSI, volatilidad y drawdown de cada activo | `equity-research`, `yfinance-data` |
+| Investigador cuant | Elige entre 4 estrategias con datos in-sample y la valida en el 30 % reservado; si falla, su peso se reduce a la mitad | `backtesting-frameworks` |
+| CIO | Cartera por convicción × confianza × régimen × paridad de riesgo; con Claude redacta el acta, **sin poder cambiar nada** | `claude-api` |
+| Gestor de riesgos (veto) | Límites por activo y mesa, volatilidad objetivo 10 %, caja mínima 5 %, sin apalancamiento ni cortos, cortacircuitos (drawdown 10 % o 3 ciclos en pérdidas) | `llm-trading-agent-security` |
+| Trader | Órdenes con banda de rebalanceo, rotación máx. 30 % por ciclo, ventas primero y compras por convicción | `llm-trading-agent-security` |
+
+**Aprendizaje:** cada ciclo guarda sus opiniones; el siguiente las compara con lo que hizo el mercado y sube o baja la confianza de cada mesa (0,5–1,5). La estrategia de cada activo se reelige con los datos nuevos.
+
+**Ejecución:** el comité solo **propone**. Para ejecutar hace falta el botón de aprobar (la propuesta caduca a los 15 minutos), la tool MCP `fund_execute_run` (con permiso de acciones y aprobación en la terminal) o el **autopiloto**, que hay que activar a mano (mínimo cada 15 minutos). La **parada de emergencia** bloquea las compras y apaga el autopiloto. Todo ciclo queda auditado en `fund_runs`, también lo bloqueado y lo rechazado.
+
 ## 3. Arranque
 
 Requiere Python 3.10 o superior.
@@ -142,7 +160,7 @@ Barra de comandos (`/` o `Ctrl+K`): `AAPL` · `SAN.MC GO` · `BUY 10 NVDA` · `S
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest -q      # 53 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting sin sesgos, analítica, chat
+.venv/bin/python -m pytest -q      # 66 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, analítica, chat
 ```
 
 ### Evaluación del servidor MCP

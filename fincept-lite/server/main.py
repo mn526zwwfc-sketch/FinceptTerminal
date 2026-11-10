@@ -22,6 +22,8 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import ai_chat, auth, mcp_server, news, routes, watchlists
+from .fund import engine as fund_engine
+from .fund import routes as fund_routes
 from .auth import InsufficientCredits, insufficient_credits_response, user_from_api_key
 from .config import ROOT, VERSION, settings
 from .datahub import Subscriber, TopicPolicy, hub, topic_allowed
@@ -70,6 +72,7 @@ def configure_hub() -> None:
     hub.set_policy_pattern("paper:*", TopicPolicy(push_only=True, coalesce_within_ms=150))
     hub.set_policy_pattern("mcp:*", TopicPolicy(push_only=True))
     hub.set_policy_pattern("chat:*", TopicPolicy(push_only=True, drop_on_idle=True))
+    hub.set_policy_pattern("fund:*", TopicPolicy(push_only=True))
     hub.register_producer(QuoteProducer())
     hub.register_producer(NewsProducer())
     hub.on_publish("market:quote:*", matcher.on_quote)
@@ -82,9 +85,11 @@ async def lifespan(app: FastAPI):
     configure_hub()
     hub.start()
     await matcher.restore()
+    autopilot = asyncio.create_task(fund_engine.autopilot_loop())
     mode = "LIVE (Yahoo/RSS/DBnomics, fallback sim)" if settings.live else "SIM"
     print(f"[fincept-lite] v{VERSION} · datos {mode} · http://{settings.host}:{settings.port}", flush=True)
     yield
+    autopilot.cancel()
     await hub.stop()
 
 
@@ -97,7 +102,7 @@ async def _credits_handler(_req, exc: InsufficientCredits):
     return insufficient_credits_response(exc)
 
 
-for r in (auth.router, watchlists.router, routes.router, ai_chat.router, mcp_server.router):
+for r in (auth.router, watchlists.router, routes.router, ai_chat.router, mcp_server.router, fund_routes.router):
     app.include_router(r)
 
 

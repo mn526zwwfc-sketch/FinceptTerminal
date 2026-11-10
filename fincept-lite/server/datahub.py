@@ -44,7 +44,7 @@ class Producer(Protocol):
 Callback = Callable[[dict], Awaitable[None]]
 
 # Tópicos privados: el segundo segmento es el id de usuario (paper:<uid>:account, mcp:<uid>:activity...).
-USER_TOPIC_PREFIXES = ("paper:", "mcp:", "chat:")
+USER_TOPIC_PREFIXES = ("paper:", "mcp:", "chat:", "fund:")
 
 
 def topic_allowed(topic: str, uid: int) -> bool:

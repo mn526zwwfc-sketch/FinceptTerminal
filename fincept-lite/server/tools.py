@@ -444,6 +444,54 @@ async def _wl_add(ctx, a):
     return {"id": row["id"], "name": row["name"], "symbols": json.loads(row["symbols"])}
 
 
+# ── Fondo multi-agente (paper) ──────────────────────────────────────────────
+
+def _fund_summary(run: dict | None) -> dict | None:
+    if not run:
+        return None
+    rep = run["report"]
+    return {"run_id": run["id"], "status": run["status"], "trigger": run["trigger"], "equity": run["equity"],
+            "regime": rep.get("macro"), "target_weights": rep.get("target"), "orders": rep.get("orders"),
+            "risk_checks": rep.get("risk_checks"), "circuit_breaker": rep.get("circuit_breaker"),
+            "desk_trust": rep.get("desk_trust"), "learning": rep.get("learning"), "fills": rep.get("fills"),
+            "memo": rep.get("memo_llm") or rep.get("memo")}
+
+
+@tool("fund_get_state", "Get AI fund state", "State of the multi-agent paper fund: autopilot, kill switch, desk "
+      "trust learned from past calls, and a summary of the last investment committee (regime, target weights, "
+      "orders, risk checks, memo).", "fund", obj({}), idempotent=False)
+async def _fund_state(ctx, a):
+    from .fund import engine
+    st = engine.get_state(ctx.user["id"])
+    return {"autopilot": st["autopilot"], "halted": st["halted"], "halt_reason": st["halt_reason"],
+            "desk_trust": st["desk_trust"], "mode": "paper", "last_run": _fund_summary(engine.last_run(ctx.user["id"]))}
+
+
+@tool("fund_run_cycle", "Run AI fund committee", "Run one investment committee cycle of the multi-agent paper fund "
+      "(macro, sentiment, desk analysts, quant, CIO, risk manager) and return the PROPOSED orders. Never executes; "
+      "use fund_execute_run with the run_id. Slow: may return a job_id.", "fund", obj({}), destructive=True,
+      destructive_hint=False, idempotent=False, open_world=True, long_running=True)
+async def _fund_cycle(ctx, a):
+    from .fund import engine
+    try:
+        return _fund_summary(await engine.run_cycle(ctx.user["id"], execute=False, trigger=f"mcp:{ctx.client}"))
+    except engine.FundError as e:
+        raise ToolError(str(e)) from e
+
+
+@tool("fund_execute_run", "Execute AI fund proposal", "Execute in the PAPER account the orders proposed by a fund "
+      "cycle (must be < 15 min old). Risk limits and the kill switch are re-checked before sending. Needs 'allow "
+      "actions' and the user's approval in the terminal.", "fund",
+      obj({"run_id": p_int("run_id returned by fund_run_cycle.", minimum=1)}, ["run_id"]),
+      destructive=True, needs_approval=True, idempotent=False)
+async def _fund_exec(ctx, a):
+    from .fund import engine
+    try:
+        return _fund_summary(await engine.execute_run(ctx.user["id"], int(a["run_id"])))
+    except engine.FundError as e:
+        raise ToolError(f"{e} Check the last run with fund_get_state.") from e
+
+
 # ── DataHub / sistema ───────────────────────────────────────────────────────
 
 @tool("datahub_topics", "List DataHub topics", "Live DataHub topics (one fetch, many subscribers): subscribers, "

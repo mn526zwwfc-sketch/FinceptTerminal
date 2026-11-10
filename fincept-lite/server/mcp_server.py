@@ -52,7 +52,7 @@ PROTOCOL_VERSIONS = ["2025-06-18", "2025-03-26", "2024-11-05"]
 LOOPBACK = {"127.0.0.1", "localhost", "::1", "[::1]"}
 ESSENTIAL_READS = ["get_quote", "get_quotes", "get_history", "lookup_symbol", "get_technicals", "get_top_news",
                    "get_equity_news", "search_dbnomics", "get_dbnomics_observations", "compute_risk",
-                   "bs_option_price", "pt_get_account", "pt_get_orders", "get_watchlists"]
+                   "bs_option_price", "pt_get_account", "pt_get_orders", "get_watchlists", "fund_get_state"]
 APPROVAL_TIMEOUT_S = 90
 
 def _p(typ: str, desc: str, **kw) -> dict:

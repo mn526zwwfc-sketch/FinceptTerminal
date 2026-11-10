@@ -589,6 +589,88 @@ const SCREENS = {
     if (d.activity.length) Hub.subs.get(`mcp:${S.user.id}:activity`)?.cbs.forEach((cb) => cb(d.activity));
   } },
 
+  fund: { key: "", label: "FUND", async render(el, ctx) {
+    const STAGES = [["memory", "Memoria · aprendizaje"], ["risk_gate", "Cortacircuitos"], ["macro", "Estratega macro"], ["sentiment", "Analista de sentimiento"], ["analysts", "Analistas + cuant"], ["risk", "Gestor de riesgos"], ["cio", "CIO · acta"], ["execution", "Trader (paper)"]];
+    const DESK = { equities: "Renta variable", rates: "Renta fija", commodities: "Materias primas", fx: "Divisas", crypto: "Cripto" };
+    const pct = (v) => (v == null ? "—" : (v * 100).toFixed(1) + "%");
+    el.innerHTML = `<div class="row" style="margin-bottom:6px">
+        <button class="btn primary" id="f-run">CONVOCAR COMITÉ (PROPUESTA)</button>
+        <button class="btn buy" id="f-exec" disabled>APROBAR Y EJECUTAR EN PAPER</button>
+        <button class="btn sell" id="f-halt">PARADA DE EMERGENCIA</button>
+        <span class="sp" style="flex:1"></span>
+        <span class="badge sim">SOLO PAPER · DINERO SIMULADO</span>
+        <button class="btn" id="f-auto">AUTOPILOTO: —</button>
+        <select class="f" id="f-int">${[15, 30, 60, 240, 1440].map((m) => `<option value="${m}">cada ${m >= 60 ? m / 60 + " h" : m + " min"}</option>`).join("")}</select></div>
+      <div class="grid dash">
+        ${panel("Comité en vivo", `<table><tbody>${STAGES.map(([k, l]) => `<tr data-st="${k}"><td>${l}</td><td class="dim" data-m>—</td><td class="num dim" data-s>en espera</td></tr>`).join("")}</tbody></table>`, "<small>fund:&lt;uid&gt;:status</small>")}
+        ${panel("Acta del comité (CIO)", '<div class="empty">Convoca el comité para ver la primera propuesta</div>', "", "chartpanel")}
+        ${panel("Mesas · confianza aprendida", "")}
+        ${panel("Asignación: actual → objetivo", "", '<small id="f-runlbl"></small>', "span2")}
+        ${panel("Controles de riesgo", "")}
+        ${panel("Órdenes", "", "", "span2")}
+        ${panel("Historial de ciclos", "")}</div>`;
+    const [stEl, memoEl, deskEl, allocEl, riskEl, ordEl, histEl] = $$(".panel .body", el);
+    [stEl, allocEl, ordEl, histEl, deskEl].forEach((b) => b.classList.add("flush"));
+    let state = null, run = null;
+    const paintState = () => {
+      $("#f-auto").textContent = `AUTOPILOTO: ${state.autopilot ? "ON" : "OFF"}`;
+      $("#f-auto").classList.toggle("on", state.autopilot);
+      $("#f-int").value = String(state.interval_min);
+      $("#f-halt").textContent = state.halted ? "REANUDAR FONDO" : "PARADA DE EMERGENCIA";
+      $("#f-halt").className = "btn " + (state.halted ? "buy" : "sell");
+      histEl.innerHTML = state.runs.length ? `<table><thead><tr><th>#</th><th>Hora</th><th>Origen</th><th>Régimen</th><th class="num">Órdenes</th><th>Estado</th></tr></thead><tbody>${state.runs.map((r) => `<tr class="click" data-run="${r.id}"><td class="dim">${r.id}</td><td>${new Date(r.started * 1000).toLocaleString("es-ES")}</td><td class="dim">${esc(r.trigger)}</td><td>${esc(r.regime || "—")}</td><td class="num">${r.orders}</td><td class="${r.status === "executed" ? "pos" : r.status === "proposed" ? "warn" : "dim"}">${esc(r.status.toUpperCase())}${r.halted ? " · PARADO" : ""}</td></tr>`).join("")}</tbody></table>` : '<div class="empty">Sin ciclos todavía</div>';
+    };
+    const paintRun = (r) => {
+      run = r; const d = r.report; if (!d) return;
+      $("#f-runlbl").textContent = `ciclo #${r.id} · ${r.status} · equity ${fmtN(d.equity)} · datos ${d.data_source}`;
+      $("#f-exec").disabled = r.status !== "proposed" || !d.orders.length;
+      const cb = d.circuit_breaker, m = d.macro, s = d.sentiment;
+      memoEl.innerHTML = `<div class="row" style="margin-bottom:6px"><span class="chip ${m.regime === "risk_on" ? "positive" : m.regime === "risk_off" ? "negative" : ""}">régimen ${esc(m.regime)}</span><span class="chip">tipos ${esc(m.rates_direction)}</span><span class="chip ${s.avg_sentiment > 0 ? "positive" : s.avg_sentiment < 0 ? "negative" : ""}">sentimiento ${s.avg_sentiment.toFixed(2)}</span>${s.dropped_suspicious ? `<span class="chip negative">${s.dropped_suspicious} titular(es) descartado(s) por posible inyección</span>` : ""}${cb.halted ? `<span class="chip negative">CORTACIRCUITOS: ${esc(cb.reason)}</span>` : ""}</div>
+        <div class="msg"><div class="txt">${md(d.memo_llm || d.memo)}</div></div>
+        <div class="dim" style="margin-top:6px">${m.notes.map(esc).join(" · ")}${d.memo_llm ? " · acta redactada por Claude (no decide nada)" : ""}</div>`;
+      const eq = d.equity, cur = (sym) => ((d.positions[sym] || 0) * (d.prices[sym] || 0)) / eq;
+      const syms = [...new Set([...Object.keys(d.views), ...Object.keys(d.positions)])].sort((a, b) => (d.target[b] || 0) - (d.target[a] || 0));
+      allocEl.innerHTML = `<table><thead><tr><th>Activo</th><th>Mesa</th><th class="num">Puntuación</th><th>Estrategia (cuant)</th><th class="num">Sharpe IS / OOS</th><th class="num">Actual</th><th class="num">Objetivo</th></tr></thead><tbody>${syms.map((sym) => { const v = d.views[sym]; const st = v && v.strategy; return `<tr class="click" data-sym="${esc(sym)}"><td class="sym">${esc(sym)}</td><td class="dim">${esc(DESK[v ? v.desk : ""] || "—")}</td><td class="num ${v ? cls(v.score) : ""}">${v ? v.score.toFixed(2) : "—"}</td><td>${st ? `${esc(st.strategy)} <span class="${st.validated ? "pos" : "warn"}">${st.validated ? "✓ validada" : "✗ no validada"}</span>` : "—"}</td><td class="num dim">${st ? `${st.is_sharpe.toFixed(2)} / ${st.oos_sharpe.toFixed(2)}` : ""}</td><td class="num">${pct(cur(sym))}</td><td class="num ${(d.target[sym] || 0) > cur(sym) ? "pos" : (d.target[sym] || 0) < cur(sym) ? "neg" : ""}">${pct(d.target[sym] || 0)}</td></tr>`; }).join("")}</tbody></table>`;
+      deskEl.innerHTML = `<table><thead><tr><th>Mesa</th><th class="num">Objetivo</th><th class="num">Límite</th><th class="num">Confianza</th><th class="num">Aciertos</th></tr></thead><tbody>${Object.keys(DESK).map((k) => { const t = Object.entries(d.target).filter(([s]) => d.views[s] && d.views[s].desk === k).reduce((a, [, w]) => a + w, 0); const L = d.learning[k]; return `<tr><td>${DESK[k]}</td><td class="num">${pct(t)}</td><td class="num dim">${pct(state.desk_max[k])}</td><td class="num ${(d.desk_trust[k] || 1) > 1 ? "pos" : (d.desk_trust[k] || 1) < 1 ? "neg" : ""}">${(d.desk_trust[k] || 1).toFixed(2)}</td><td class="num dim">${L ? `${(L.hit_rate * 100).toFixed(0)}% de ${L.calls}` : "—"}</td></tr>`; }).join("")}</tbody></table><div class="dim" style="padding:6px">Caja objetivo ${pct(1 - Object.values(d.target).reduce((a, b) => a + b, 0))}. La confianza sube cuando la mesa acierta la dirección y baja cuando falla (0,5–1,5).</div>`;
+      const checks = [...d.risk_checks, ...d.order_checks];
+      riskEl.innerHTML = checks.map((c) => `<div><span class="${c.status === "ok" ? "pos" : c.status === "blocked" ? "neg" : "warn"}">${esc(c.status.toUpperCase())}</span> ${esc(c.check)} <span class="dim">${esc(c.detail)}</span></div>`).join("") + `<div class="dim" style="margin-top:6px">Objetivo de vol ${pct(d.policy.target_vol)} · caja mín. ${pct(d.policy.min_cash)} · rotación máx. ${pct(d.policy.max_turnover)} · parada si drawdown &gt; ${pct(d.policy.max_drawdown_halt)} o ${d.policy.max_consecutive_losses} ciclos en pérdidas</div>`;
+      const rows = (d.fills.length ? d.fills.map((f) => ({ ...f, st: "EJECUTADA", c: "pos" })) : d.orders.map((o) => ({ ...o, st: r.status === "proposed" ? "PROPUESTA" : "—", c: "warn" }))).concat((d.rejected || []).map((o) => ({ ...o, st: "RECHAZADA: " + o.reason, c: "neg" })));
+      ordEl.innerHTML = rows.length ? `<table><thead><tr><th>Activo</th><th>Lado</th><th class="num">Cantidad</th><th class="num">Precio</th><th class="num">Nominal</th><th>Estado</th></tr></thead><tbody>${rows.map((o) => `<tr><td class="sym">${esc(o.symbol)}</td><td class="${o.side === "buy" ? "pos" : "neg"}">${o.side.toUpperCase()}</td><td class="num">${o.qty}</td><td class="num">${fmtPx(o.price)}</td><td class="num">${fmtN(o.qty * o.price)}</td><td class="${o.c}">${esc(o.st)}</td></tr>`).join("")}</tbody></table>` : '<div class="empty">Sin órdenes: la cartera ya está dentro de las bandas de rebalanceo</div>';
+    };
+    const load = async () => { const r = await api("/fund/state"); if (!r.success) return toast(r.message, "err"); state = r.data; paintState(); if (r.data.last_run && !run) paintRun(r.data.last_run); };
+    ctx.sub(`fund:${S.user.id}:status`, (e) => {
+      if (!e) return;
+      const tr = stEl.querySelector(`tr[data-st="${e.stage}"]`);
+      if (tr) { tr.querySelector("[data-m]").textContent = e.msg; const s = tr.querySelector("[data-s]"); s.textContent = e.status === "running" ? "trabajando…" : e.status === "blocked" ? "BLOQUEO" : "✓"; s.className = "num " + (e.status === "running" ? "warn" : e.status === "blocked" ? "neg" : "pos"); }
+    });
+    ctx.on(el, "click", async (e) => {
+      const id = e.target.id;
+      if (id === "f-run") {
+        $$("[data-s]", stEl).forEach((s) => { s.textContent = "en espera"; s.className = "num dim"; });
+        e.target.disabled = true; const r = await api("/fund/cycle", { method: "POST", body: {} }); e.target.disabled = false;
+        if (!r.success) return toast(r.message, "err");
+        paintRun(r.data); toast(`Comité #${r.data.id}: ${r.data.report.orders.length} órdenes propuestas`, "ok"); load();
+      } else if (id === "f-exec" && run) {
+        if (!(await confirmModal("EJECUTAR PROPUESTA EN PAPER", `${run.report.orders.length} órdenes del ciclo #${run.id} con <b>dinero simulado</b>. Los límites de riesgo se revalidan antes de enviar.`))) return;
+        const r = await api(`/fund/runs/${run.id}/execute`, { method: "POST" });
+        if (!r.success) return toast(r.message, "err");
+        paintRun(r.data); toast(`${r.data.report.fills.length} órdenes ejecutadas en paper`, "ok"); load();
+      } else if (id === "f-halt") {
+        const r = await api("/fund/halt", { method: "POST", body: { halted: !state.halted, reason: "parada manual desde la terminal" } });
+        if (r.success) { toast(r.data.halted ? "Fondo parado: no se enviarán compras" : "Fondo reanudado", r.data.halted ? "err" : "ok"); load(); }
+      } else if (id === "f-auto") {
+        if (!state.autopilot && !(await confirmModal("ACTIVAR AUTOPILOTO", `El comité se convocará <b>${$("#f-int").selectedOptions[0].textContent}</b> y ejecutará sus propuestas automáticamente en la cuenta <b>paper</b>, con todos los límites y cortacircuitos activos. Puedes pararlo en cualquier momento.`))) return;
+        const r = await api("/fund/autopilot", { method: "PUT", body: { on: !state.autopilot, interval_min: +$("#f-int").value } });
+        if (!r.success) return toast(r.message, "err"); load();
+      } else {
+        const tr = e.target.closest("tr[data-run]"); if (tr) { const r = await api(`/fund/runs/${tr.dataset.run}`); if (r.success) paintRun(r.data); return; }
+        const sy = e.target.closest("tr[data-sym]"); if (sy) go("equity", sy.dataset.sym);
+      }
+    });
+    ctx.on($("#f-int"), "change", async () => { if (state.autopilot) { await api("/fund/autopilot", { method: "PUT", body: { on: true, interval_min: +$("#f-int").value } }); load(); } });
+    load();
+  } },
+
   profile: { key: "F12", label: "PROFILE", async render(el, ctx) {
     const [p, u, lh] = await Promise.all([api("/user/profile"), api("/user/usage"), api("/user/login-history")]);
     if (!p.success) { el.innerHTML = `<div class="empty">${esc(p.message)}</div>`; return; }
@@ -635,7 +717,7 @@ function buildTabs() {
 const COMMANDS = [
   ["DASH", "Dashboard", "dashboard"], ["MKT", "Mercados", "markets"], ["NEWS", "Noticias", "news"], ["PORT", "Cartera paper", "portfolio"],
   ["BT", "Backtesting", "backtest"], ["WL", "Watchlists", "watchlist"], ["QL", "QuantLib (opciones, riesgo)", "quantlib"], ["MACRO", "Macro DBnomics", "macro"],
-  ["AI", "Chat IA  ·  AI <pregunta>", "ai_chat"], ["MCP", "Servidor MCP", "mcp"], ["PROF", "Perfil / DataHub", "profile"], ["HELP", "Ayuda de comandos", null],
+  ["AI", "Chat IA  ·  AI <pregunta>", "ai_chat"], ["MCP", "Servidor MCP", "mcp"], ["FUND", "Fondo IA multi-agente (paper)", "fund"], ["PROF", "Perfil / DataHub", "profile"], ["HELP", "Ayuda de comandos", null],
 ];
 function helpModal() {
   modal("AYUDA · COMANDOS", `<div class="help">
