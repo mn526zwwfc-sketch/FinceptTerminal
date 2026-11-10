@@ -30,6 +30,7 @@ from ..datahub import hub
 from ..db import get_db
 from ..market.providers import market
 from . import agents as A
+from . import training as T
 from .research import cite
 
 log = logging.getLogger("fincept.fund")
@@ -142,6 +143,13 @@ def _deterministic_memo(rep: dict) -> str:
              f"{sum(v['strategy']['validated'] for v in rep['views'].values())} de {len(rep['views'])} estrategias "
              "superan el Deflated Sharpe y la prueba fuera de muestra; desacuerdo medio entre señales "
              f"{rep['disagreement']:.2f} (se preserva, no se promedia: Huang et al. 2026)."]
+    tr = rep.get("training")
+    if tr:
+        s = tr["summary"]
+        lines.append(f"Estrategias entrenadas hace {tr['age_days']:.1f} días: {s['with_edge']} de {s['trained']} activos "
+                     f"con ventaja en validación, {s['validated']} validadas en la prueba final y {s['beats_buy_hold']} "
+                     "por encima de comprar y mantener. Lo aprendido por mesa: "
+                     + "; ".join(f"{d}: {v}" for d, v in tr["desks"].items()) + ".")
     if rep["circuit_breaker"]["halted"]:
         lines.append(f"CORTACIRCUITOS ACTIVO: {rep['circuit_breaker']['reason']}. Solo se permiten ventas.")
     return " ".join(lines)
@@ -156,13 +164,15 @@ async def _llm_memo(rep: dict) -> str | None:
     brief["views"] = {s: {"score": round(v["score"], 2), "strategy": v["strategy"]["strategy"],
                           "validated": v["strategy"]["validated"]} for s, v in rep["views"].items()}
     brief["sentiment"] = {k: rep["sentiment"][k] for k in ("avg_sentiment", "headlines", "dropped_suspicious")}
+    brief["training"] = rep.get("training")  # lo que aprendieron los agentes y los papers en que se basan
     try:
         resp = await client().beta.messages.create(
             model=settings.ai_model, max_tokens=4000, betas=["server-side-fallback-2026-07-01"], fallbacks="default",
             thinking={"type": "adaptive"}, output_config={"effort": "low"},
             system=("You are the CIO of a paper-trading multi-asset fund. Write a concise investment committee memo "
                     "in Spanish (max 180 words) explaining the allocation below. You cannot change the allocation, "
-                    "the risk limits or the orders; only explain them. Do not invent numbers."),
+                    "the risk limits or the orders; only explain them. Do not invent numbers. When it helps, mention what the "
+                    "agents learned in training (per-desk lessons) and cite the papers listed there."),
             messages=[{"role": "user", "content": json.dumps(brief, default=str)}])
     except Exception as e:  # el memo es opcional: un fallo del LLM nunca para el ciclo
         log.warning("CIO memo failed: %s", e.__class__.__name__)
@@ -170,6 +180,27 @@ async def _llm_memo(rep: dict) -> str | None:
     if resp.stop_reason == "refusal":
         return None
     return "\n".join(b.text for b in resp.content if b.type == "text").strip() or None
+
+
+# ── entrenamiento ───────────────────────────────────────────────────────────
+
+async def _train(uid: int, hist: dict | None = None, trigger: str = "manual") -> dict:
+    await _emit(uid, "training", "running", "Los agentes entrenan sus estrategias (60/20/20 + DSR)")
+    hist = hist if hist is not None else await _histories()
+    result = await asyncio.to_thread(T.train_all, hist)
+    result["trigger"] = trigger
+    T.save(uid, result)
+    s = result["summary"]
+    await _emit(uid, "training", "done", f"{s['with_edge']}/{s['trained']} activos con ventaja, {s['validated']} validados")
+    return T.latest(uid)
+
+
+async def train(uid: int) -> dict:
+    lock = _locks.setdefault(uid, asyncio.Lock())
+    if lock.locked():
+        raise FundError("Ya hay un ciclo o un entrenamiento en curso para esta cuenta.")
+    async with lock:
+        return await _train(uid)
 
 
 # ── ciclo ───────────────────────────────────────────────────────────────────
@@ -224,12 +255,18 @@ async def _run_cycle(uid: int, execute: bool, trigger: str) -> dict:
     # 5. analistas por mesa + investigador cuant
     await _emit(uid, "analysts", "running", f"{len(A.UNIVERSE)} activos en {len(A.DESKS)} mesas")
 
+    # 5a. entrenamiento: si no hay libro de estrategias o tiene más de 30 días, los agentes entrenan antes
+    training = T.latest(uid)
+    if training is None or training["stale"]:
+        training = await _train(uid, hist, trigger="auto")
+    book = training["book"] if training else {}
+
     def analyse() -> dict:
         out = {}
         for s, candles in hist.items():
             try:
                 sig = A.asset_signals([c["c"] for c in candles])
-                strat = A.select_strategy(candles)
+                strat = T.apply_book(book.get(s), candles) or A.select_strategy(candles)
             except ValueError:
                 continue
             out[s] = {"desk": A.BY_SYMBOL[s].desk, "signals": sig, "strategy": strat, "score": sig["score"]}
@@ -265,7 +302,7 @@ async def _run_cycle(uid: int, execute: bool, trigger: str) -> dict:
             "memory": cite("yu2024"), "macro": cite("sahm2019", "kritzman2011"), "sentiment": cite("tetlock2007", "greshake2023"),
             "analysts": cite("moskowitz2012", "jegadeesh1993", "daniel2016", "miyazaki2026"),
             "quant": cite("bailey2014", "bailey2016", "harvey2016", "hurst2017", "faber2007", "brock1992",
-                          "levine2016"),
+                          "levine2016", *(p["id"] for p in (training or {}).get("papers_used", []))),
             "cio": cite("maillard2010", "xiao2024", "huang2026", "glasserman2023"),
             "risk": cite("moreira2017", "demiguel2024", "li2025", "pafka2003", "higham2002", "phillips2015"),
             "execution": cite("bonart2026", "almgren2001"),
@@ -273,6 +310,7 @@ async def _run_cycle(uid: int, execute: bool, trigger: str) -> dict:
         "quantfin": {"fragility": fragility, "bubbles": sorted(bubbles),
                      "risk_budget": A.risk_budget(list(raw), views, cov_info)[1] if raw else None,
                      "covariance": {"assets": len(cov_info[0]), "days": cov_info[2]} if cov_info else None},
+        "training": T.brief(training) | {"id": training["id"], "age_days": training["age_days"]} if training else None,
         "disagreement": round(sum(v["debate"]["disagreement"] for v in views.values()) / max(1, len(views)), 3),
     }
     rep["memo"] = _deterministic_memo(rep)

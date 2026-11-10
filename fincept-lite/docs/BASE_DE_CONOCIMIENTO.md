@@ -328,3 +328,35 @@ Todas se pueden ejecutar con `qf_function(function=..., args={...})`; sin `args`
 - **Fondo (pantalla FUND):** SADF limita activos en burbuja, el absorption ratio vuelve el régimen defensivo, la paridad de riesgo usa la covarianza (reparada con Higham), la volatilidad se corrige con Pafka-Kondor, las estrategias EMA y Donchian compiten en el playbook y cada orden lleva su impacto estimado con la ley de la raíz cuadrada.
 - **Tools:** `qf_bubble_test`, `qf_systemic_fragility`, `qf_pairs_ou`, `qf_risk_parity`, `qf_execution_plan`, `qf_yield_curve`, `qf_bond`, `qf_kelly_binary`, `qf_market_making`, más `qf_catalog` y `qf_function` para las 39 funciones.
 - **Investigación completa:** `docs/quantfin/investigacion.md` (mercado por mercado, cursos, librerías y código).
+
+## 4. Cómo se entrenan los agentes
+
+`POST /fund/train`, el botón ENTRENAR AGENTES o la tool `fund_train` (el comité también entrena solo si no hay libro o tiene más de 30 días). Por activo: 60% de 5 años para entrenar, 20% para validar y 20% de prueba final; ejecución en la apertura siguiente y 10 pb por cambio de posición; la mejor configuración de cada familia se elige solo con el tramo de entrenamiento y el Deflated Sharpe penaliza el número de pruebas; las familias que también ganan en validación forman un conjunto (hasta 3).
+
+### Familias de estrategias
+
+| Familia | Estilo | Configuraciones | Papers | Funciones quantfin |
+|---|---|---|---|---|
+| Precio sobre su media móvil (`trend_sma`) | tendencia | n=100; n=200 (cada una con y sin objetivo de volatilidad) | A Quantitative Approach to Tactical Asset Allocation (2007), A Century of Evidence on Trend-Following Investing (2017) | — |
+| Cruce de medias simples (`sma_cross`) | tendencia | fast=20,slow=100; fast=50,slow=200 (cada una con y sin objetivo de volatilidad) | Simple Technical Trading Rules and the Stochastic Properties (1992), A Quantitative Approach to Tactical Asset Allocation (2007) | — |
+| Cruce de EMAs (`ema_cross`) | tendencia | fast=10,slow=50; fast=20,slow=100; fast=50,slow=200 (cada una con y sin objetivo de volatilidad) | Simple Technical Trading Rules and the Stochastic Properties (1992), Which Trend Is Your Friend? (2016) | `senal_ema`, `ema` |
+| Ruptura del canal de Donchian (`donchian`) | tendencia | n=20; n=55 (cada una con y sin objetivo de volatilidad) | Simple Technical Trading Rules and the Stochastic Properties (1992), Las mismas referencias + historia de Dennis y Eckhardt | `senal_donchian` |
+| Time-series momentum (`tsmom`) | tendencia | lookback=63; lookback=126; lookback=252 (cada una con y sin objetivo de volatilidad) | Time Series Momentum (2012), A Century of Evidence on Trend-Following Investing (2017) | `tsmom` |
+| Reversión por RSI (regla clásica, sin paper propio en la base) (`rsi_reversion`) | reversión | buy=30,sell=55; buy=25,sell=50 (cada una con y sin objetivo de volatilidad) | — | — |
+| Reversión Ornstein-Uhlenbeck (`ou_reversion`) | reversión | entry=1.0; entry=2.0 (cada una con y sin objetivo de volatilidad) | On the Theory of the Brownian Motion (1930) | `ajustar_ou`, `zscore_pairs` |
+
+Objetivo de volatilidad (solo techo, nunca apalanca): The Impact of Volatility Targeting (2018), Volatility-Managed Portfolios (2017), A Multifactor Perspective on Volatility-Managed Po (2024).
+
+### Qué sabe cada agente
+
+| Agente | Skills | Papers | Funciones quantfin | Código |
+|---|---|---|---|---|
+| Estratega macro | macro-rates-monitor, economic-calendar-fetcher | 8 | absorption_ratio, adf_t, duracion_convexidad, sadf | `agents.macro_regime`, `agents.systemic_fragility` |
+| Analista de sentimiento | llm-trading-agent-security | 12 | — | `agents.news_sentiment`, `agents.sanitize_headline` |
+| Analistas por mesa | equity-research, yfinance-data, option-vol-analysis | 20 | basis_momentum, black_scholes, brier, carry_trade, garch11, impermanent_loss, lmsr_precio, lvr_producto_constante, momentum_seccion_cruzada, monte_carlo_call, pnl_cobertura, regresion_factores, roll_yield, sadf | `agents.asset_signals`, `agents.debate` |
+| Investigador cuant | backtesting-frameworks | 21 | ajustar_ns, ajustar_ou, avellaneda_stoikov, deflated_sharpe, ema, kelly_binario, nelson_siegel, senal_donchian, senal_ema, tsmom, vol_target, zscore_pairs | `training.train_asset`, `training.apply_book`, `agents.deflated_sharpe` |
+| CIO | — | 7 | risk_parity | `agents.build_portfolio`, `agents.risk_budget`, `engine._llm_memo` |
+| Gestor de riesgos | backtesting-frameworks, option-vol-analysis, llm-trading-agent-security | 21 | absorption_ratio, adf_t, diversity_weighted, mejora_sharpe, min_varianza, nearest_correlation, sadf, sesgo_optimizador, sharpe, var_es, vol_target | `agents.apply_risk`, `agents.covariance`, `agents.portfolio_vol`, `agents.circuit_breaker` |
+| Trader | llm-trading-agent-security | 2 | almgren_chriss, impacto_raiz | `agents.plan_orders` |
+
+Skills de plataforma (construyen la terminal, no deciden inversiones): fastapi, mcp-builder.

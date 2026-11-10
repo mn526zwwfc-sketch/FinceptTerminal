@@ -386,7 +386,43 @@ def knowledge_markdown() -> str:
             "`qf_execution_plan`, `qf_yield_curve`, `qf_bond`, `qf_kelly_binary`, `qf_market_making`, más "
             "`qf_catalog` y `qf_function` para las 39 funciones.",
             f"- **Investigación completa:** `{RESEARCH_DOC}` (mercado por mercado, cursos, librerías y código).", ""]
+    out += _training_markdown(kb)
     return "\n".join(out)
+
+
+def _training_markdown(kb: list[dict]) -> list[str]:
+    """Sección 4: cómo esta base entrena a los agentes (estrategias y perfiles)."""
+    from . import training as T
+    by_id = {e["id"]: e for e in kb}
+    p = T.TRAIN_FRAC, T.VALID_FRAC
+    out = ["## 4. Cómo se entrenan los agentes", "",
+           f"`POST /fund/train`, el botón ENTRENAR AGENTES o la tool `fund_train` (el comité también entrena solo si no "
+           f"hay libro o tiene más de {T.BOOK_MAX_AGE_DAYS} días). Por activo: {p[0]:.0%} de 5 años para entrenar, "
+           f"{p[1]:.0%} para validar y {1 - sum(p):.0%} de prueba final; ejecución en la apertura siguiente y "
+           f"{T.COST_BPS:g} pb por cambio de posición; la mejor configuración de cada familia se elige solo con el "
+           "tramo de entrenamiento y el Deflated Sharpe penaliza el número de pruebas; las familias que también ganan "
+           f"en validación forman un conjunto (hasta {T.MAX_MEMBERS}).", "",
+           "### Familias de estrategias", "", "| Familia | Estilo | Configuraciones | Papers | Funciones quantfin |",
+           "|---|---|---|---|---|"]
+    for f in T.FAMILIES:
+        grid = "; ".join(",".join(f"{k}={v}" for k, v in g.items()) for g in f.grid)
+        refs = ", ".join(by_id[r]["title"][:60] + (f" ({by_id[r]['year']})" if by_id[r]["year"] and
+                                                    str(by_id[r]["year"]) not in by_id[r]["title"] else "")
+                         for r in f.refs) or "—"
+        out.append(f"| {f.label} (`{f.key}`) | {f.style} | {grid} (cada una con y sin objetivo de volatilidad) | "
+                   f"{refs} | {', '.join(f'`{x}`' for x in f.functions) or '—'} |")
+    out += ["", "Objetivo de volatilidad (solo techo, nunca apalanca): "
+            + ", ".join(f"{by_id[r]['title'][:50]} ({by_id[r]['year']})" for r in T.VT_REFS) + ".", "",
+            "### Qué sabe cada agente", "", "| Agente | Skills | Papers | Funciones quantfin | Código |",
+            "|---|---|---|---|---|"]
+    for a in T.AGENTS:
+        papers = [e for e in kb if T._belongs(e, a)]
+        fns = sorted({f for e in papers for f in e["functions"]})
+        out.append(f"| {a['name']} | {', '.join(a['skills']) or '—'} | {len(papers)} | "
+                   f"{', '.join(fns) or '—'} | {', '.join(f'`{c}`' for c in a['code'])} |")
+    out += ["", "Skills de plataforma (construyen la terminal, no deciden inversiones): "
+            + ", ".join(T.PLATFORM_SKILLS) + ".", ""]
+    return out
 
 
 if __name__ == "__main__":

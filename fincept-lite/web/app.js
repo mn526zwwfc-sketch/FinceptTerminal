@@ -641,11 +641,12 @@ const SCREENS = {
   } },
 
   fund: { key: "", label: "FUND", async render(el, ctx) {
-    const STAGES = [["memory", "Memoria · aprendizaje"], ["risk_gate", "Cortacircuitos"], ["macro", "Estratega macro"], ["sentiment", "Analista de sentimiento"], ["analysts", "Analistas + cuant"], ["risk", "Gestor de riesgos"], ["cio", "CIO · acta"], ["execution", "Trader (paper)"]];
+    const STAGES = [["memory", "Memoria · aprendizaje"], ["risk_gate", "Cortacircuitos"], ["macro", "Estratega macro"], ["sentiment", "Analista de sentimiento"], ["training", "Entrenamiento de agentes"], ["analysts", "Analistas + cuant"], ["risk", "Gestor de riesgos"], ["cio", "CIO · acta"], ["execution", "Trader (paper)"]];
     const DESK = { equities: "Renta variable", rates: "Renta fija", commodities: "Materias primas", fx: "Divisas", crypto: "Cripto" };
     const pct = (v) => (v == null ? "—" : (v * 100).toFixed(1) + "%");
     el.innerHTML = `<div class="row" style="margin-bottom:6px">
         <button class="btn primary" id="f-run">CONVOCAR COMITÉ (PROPUESTA)</button>
+        <button class="btn" id="f-train">ENTRENAR AGENTES</button>
         <button class="btn buy" id="f-exec" disabled>APROBAR Y EJECUTAR EN PAPER</button>
         <button class="btn sell" id="f-halt">PARADA DE EMERGENCIA</button>
         <span class="sp" style="flex:1"></span>
@@ -661,10 +662,12 @@ const SCREENS = {
         ${panel("Órdenes", "", "", "span2")}
         ${panel("Historial de ciclos", "")}
         ${panel('Debate del activo · <span class="cyan" id="f-dsym">pulsa un activo</span>', '<div class="empty">Argumentos alcistas y bajistas de señales independientes (TradingAgents 2024; Huang et al. 2026)</div>', "", "span3")}
+        ${panel("Entrenamiento · libro de estrategias por activo", '<div class="empty">Cargando…</div>', "<small>60/20/20 + Deflated Sharpe</small>", "span3")}
+        ${panel("Agentes · skills, papers y código con que se entrenan", '<div class="empty">Cargando…</div>', "", "span3")}
         ${panel("Base de conocimiento · papers, investigación y código", '<div class="empty">Cargando…</div>', "", "span3")}</div>`;
-    const [stEl, memoEl, deskEl, allocEl, riskEl, ordEl, histEl, dbEl, resEl] = $$(".panel .body", el);
-    [stEl, allocEl, ordEl, histEl, deskEl, resEl].forEach((b) => b.classList.add("flush"));
-    const STAGE_EV = { memory: "memory", risk_gate: "risk", macro: "macro", sentiment: "sentiment", analysts: "quant", risk: "risk", cio: "cio" };
+    const [stEl, memoEl, deskEl, allocEl, riskEl, ordEl, histEl, dbEl, trEl, agEl, resEl] = $$(".panel .body", el);
+    [stEl, allocEl, ordEl, histEl, deskEl, resEl, trEl, agEl].forEach((b) => b.classList.add("flush"));
+    const STAGE_EV = { memory: "memory", risk_gate: "risk", macro: "macro", sentiment: "sentiment", analysts: "quant", training: "quant", risk: "risk", cio: "cio" };
     const doiLink = (doi, txt) => (doi ? `<a href="https://doi.org/${esc(doi)}" target="_blank" rel="noopener noreferrer">${txt}</a>` : txt);
     const showDebate = (sym) => {
       const v = run && run.report.views[sym]; if (!v || !v.debate) return;
@@ -674,6 +677,29 @@ const SCREENS = {
         <div><div class="neg" style="font-weight:700">EN CONTRA</div>${v.debate.bear.map((b) => `<div>▼ ${esc(b)}</div>`).join("") || '<div class="dim">sin argumentos</div>'}</div></div>
         <div class="dim" style="margin-top:6px">Cuant: ${st.candidates.map((c) => `${esc(c.strategy)} IS ${c.is_sharpe.toFixed(2)} / OOS ${c.oos_sharpe.toFixed(2)}`).join(" · ")}. Elegida ${esc(st.strategy)} con Deflated Sharpe ${st.deflated_sharpe.toFixed(2)} (umbral 0,50) → confianza ${st.trust}. <a href="#" data-eq="${esc(sym)}">abrir ficha ▸</a></div>`;
     };
+    const paintTraining = (t) => {
+      if (!t || !t.book) { trEl.innerHTML = '<div class="empty">Aún no hay entrenamiento: pulsa ENTRENAR AGENTES (o convoca el comité, que entrena solo la primera vez).</div>'; return; }
+      const s = t.summary, f2 = (v) => (v == null ? "—" : v.toFixed(2));
+      const cls = (b) => (b.validated ? "pos" : b.edge && b.oos_ok ? "warn" : b.edge ? "neg" : "dim");
+      const rows = Object.entries(t.book).map(([sym, b]) => `<tr><td class="sym">${esc(sym)}</td><td class="dim">${esc(DESK[b.desk] || "")}</td><td class="${cls(b)}" style="white-space:normal;min-width:160px">${esc(b.verdict || b.reason || "")}</td><td style="white-space:normal;min-width:240px">${(b.members || []).map((m) => `${esc(m.config)} <span class="dim">×${m.weight.toFixed(2)}</span>`).join("<br>") || '<span class="dim">—</span>'}</td><td class="num">${f2(b.valid && b.valid.sharpe)}</td><td class="num ${b.test && b.test.sharpe > 0 ? "pos" : "neg"}">${f2(b.test && b.test.sharpe)}</td><td class="num dim">${f2(b.buy_hold_test && b.buy_hold_test.sharpe)}</td><td class="num">${b.exposure_now == null ? "—" : pct(b.exposure_now)}</td></tr>`).join("");
+      const age = t.age_days < 1 ? Math.round(t.age_days * 24) + " h" : t.age_days.toFixed(1) + " días";
+      const configs = t.protocol.families.reduce((n, f) => n + f.configs, 0);
+      trEl.innerHTML = `<div class="help" style="padding:8px">Entrenamiento #${t.id} (${esc(t.trigger || "manual")}) hace ${age}${t.stale ? ' · <span class="warn">caducado: se reentrena en el próximo comité</span>' : ""}. ${s.trained} activos, ${s.with_edge} con ventaja en validación, <b>${s.validated} validados</b> en la prueba final, ${s.beats_buy_hold} por encima de comprar y mantener. Protocolo: ${Math.round(t.protocol.train * 100)}/${Math.round(t.protocol.valid * 100)}/${Math.round(t.protocol.test * 100)} (entrenar / validar / prueba), ${t.protocol.cost_bps} pb por cambio, ejecución en la ${esc(t.protocol.execution)}, ${configs} configuraciones de ${t.protocol.families.length} familias.</div>
+        <div style="padding:0 8px 8px">${Object.entries(t.desks).map(([d, v]) => `<div><span class="cyan">${esc(DESK[d] || d)}</span> <span class="dim">(${v.validated}/${v.assets} validados)</span>: ${esc(v.lesson)}</div>`).join("")}</div>
+        <table><thead><tr><th>Activo</th><th>Mesa</th><th>Veredicto</th><th>Conjunto entrenado</th><th class="num">Sharpe valid.</th><th class="num">Sharpe prueba</th><th class="num">Comprar y mantener</th><th class="num">Exposición hoy</th></tr></thead><tbody>${rows}</tbody></table>
+        <div class="dim" style="padding:8px">Papers aplicados: ${t.papers_used.map((p) => esc(p.title.slice(0, 70)) + (p.year && !p.title.includes(String(p.year)) ? ` (${p.year})` : "")).join(" · ")}</div>`;
+    };
+    const paintAgents = (list) => {
+      agEl.innerHTML = `<div class="grid g3" style="padding:8px;gap:8px">${list.map((a) => `<div style="border:1px solid var(--border);padding:8px">
+        <div class="cyan" style="font-weight:700">${esc(a.name)}</div>
+        <div class="dim" style="margin:4px 0">${a.papers.length} papers · ${a.functions.length} funciones quantfin · ${a.skills.length} skills</div>
+        ${a.skills.map((s) => `<div style="margin-top:4px"><span class="chip">${esc(s.name)}</span> <span class="dim">${esc(s.origin)}</span>${s.lessons.slice(0, 3).map((l) => `<div class="muted" style="font-size:11px">· ${esc(l)}</div>`).join("")}${s.applied_in.slice(0, 2).map((x) => `<div style="font-size:11px">→ ${esc(x)}</div>`).join("")}</div>`).join("")}
+        <div style="margin-top:6px;font-size:11px">${a.papers.slice(0, 4).map((p) => `<div>· ${esc(p.title.slice(0, 80))} ${p.year && !p.title.includes(String(p.year)) ? `(${p.year})` : ""}</div>`).join("")}${a.papers.length > 4 ? `<div class="dim">+${a.papers.length - 4} más en la base de conocimiento</div>` : ""}</div>
+        ${a.functions.length ? `<div class="cyan" style="font-size:11px;margin-top:4px">${a.functions.map((f) => esc(f) + "()").join(", ")}</div>` : ""}
+        <div class="dim" style="font-size:11px;margin-top:4px">Código: ${a.code.map(esc).join(", ")}</div></div>`).join("")}</div>`;
+    };
+    api("/fund/training").then((r) => r.success && paintTraining(r.data));
+    api("/fund/agents").then((r) => r.success && paintAgents(r.data));
     const extLink = (url, txt) => (url && /^https:\/\//.test(url) ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${txt}</a>` : txt);
     api("/fund/research").then((r) => {
       if (!r.success) return;
@@ -734,6 +760,10 @@ const SCREENS = {
         e.target.disabled = true; const r = await api("/fund/cycle", { method: "POST", body: {} }); e.target.disabled = false;
         if (!r.success) return toast(r.message, "err");
         paintRun(r.data); toast(`Comité #${r.data.id}: ${r.data.report.orders.length} órdenes propuestas`, "ok"); load();
+      } else if (id === "f-train") {
+        e.target.disabled = true; const r = await api("/fund/train", { method: "POST" }); e.target.disabled = false;
+        if (!r.success) return toast(r.message, "err");
+        paintTraining(r.data); toast(`Agentes entrenados: ${r.data.summary.validated} estrategias validadas`, "ok");
       } else if (id === "f-exec" && run) {
         if (!(await confirmModal("EJECUTAR PROPUESTA EN PAPER", `${run.report.orders.length} órdenes del ciclo #${run.id} con <b>dinero simulado</b>. Los límites de riesgo se revalidan antes de enviar.`))) return;
         const r = await api(`/fund/runs/${run.id}/execute`, { method: "POST" });

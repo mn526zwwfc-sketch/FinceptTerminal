@@ -89,3 +89,27 @@ async def research_functions(user: dict = Depends(require_auth)):
     """Catálogo de las 39 funciones de quantfin con parámetros, papers y ejemplo."""
     from ..quantfin_catalog import catalog
     return ok(catalog())
+
+
+@router.post("/train")
+async def train(user: dict = Depends(require_auth)):
+    """Los agentes entrenan sus estrategias con la base de conocimiento (solo cálculo, no opera)."""
+    try:
+        return ok(await engine.train(user["id"]))
+    except engine.FundError as e:
+        return fail(str(e))
+
+
+@router.get("/training")
+async def training_state(user: dict = Depends(require_auth)):
+    """Último entrenamiento (libro de estrategias por activo y lo aprendido por mesa)."""
+    from . import training as T
+    t = T.latest(user["id"])
+    return ok(t, "OK" if t else "Los agentes aún no han entrenado: POST /fund/train o convoca el comité.")
+
+
+@router.get("/agents")
+async def agents_profiles(user: dict = Depends(require_auth)):
+    """Perfil de cada agente: skills con sus reglas, papers de la base y código que los aplica."""
+    from . import training as T
+    return ok(T.agent_profiles())

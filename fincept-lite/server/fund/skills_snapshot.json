@@ -1,0 +1,112 @@
+{
+ "backtesting-frameworks": {
+  "name": "backtesting-frameworks",
+  "description": "Build robust backtesting systems for trading strategies with proper handling of look-ahead bias, survivorship bias, and transaction costs. Use when developing trading algorithms, validating strategies, or building backtesting infrastructure.",
+  "lessons": [
+   "Use point-in-time data - Avoid look-ahead bias",
+   "Include transaction costs - Realistic estimates",
+   "Test out-of-sample - Always reserve data",
+   "Use walk-forward - Not just train/test",
+   "Monte Carlo analysis - Understand uncertainty",
+   "Don't overfit - Limit parameters",
+   "Don't ignore survivorship - Include delisted",
+   "Don't use adjusted data carelessly - Understand adjustments"
+  ],
+  "source": "wshobson/agents (MIT)"
+ },
+ "economic-calendar-fetcher": {
+  "name": "economic-calendar-fetcher",
+  "description": "Fetch upcoming economic events and data releases using FMP API. Retrieve scheduled central bank decisions, employment reports, inflation data, GDP releases, and other market-moving economic indicators for specified date ranges (default: next 7 days). The script outputs raw JSON or text; the assistant filters, assesses impact, and generates the Markdown report.",
+  "lessons": [
+   "High Impact: Major market-moving events",
+   "FOMC rate decisions, ECB/BOJ policy meetings",
+   "Non-Farm Payrolls (NFP), CPI, GDP",
+   "Market typically shows 0.5-2%+ intraday volatility",
+   "Medium Impact: Significant but less volatile",
+   "Retail Sales, Industrial Production",
+   "PMI surveys, Consumer Confidence",
+   "Housing data, Durable Goods Orders"
+  ],
+  "source": "tradermonty/claude-trading-skills"
+ },
+ "equity-research": {
+  "name": "equity-research",
+  "description": "Generate comprehensive equity research snapshots combining analyst consensus estimates, company fundamentals, historical prices, and macroeconomic context. Use when researching stocks, comparing estimates to actuals, analyzing company financials, assessing equity valuations, or building investment cases.",
+  "lessons": [
+   "Every piece of data must connect to an investment thesis.",
+   "Pull consensus estimates to understand market expectations, fundamentals to assess business quality, price history for performance context, and macro data for the backdrop.",
+   "The key question is always: where might consensus be wrong?",
+   "Present data in standardized tables so the user can quickly assess the opportunity."
+  ],
+  "source": "anthropics/financial-services"
+ },
+ "fastapi": {
+  "name": "fastapi",
+  "description": "FastAPI best practices and conventions. Use when working with FastAPI APIs, Pydantic models, dependencies, streaming responses including Server-Sent Events (SSE), and serving frontend apps. Keeps FastAPI code clean and up to date with the latest features and patterns.",
+  "lessons": [
+   "FastAPI best practices and conventions.",
+   "Use when working with FastAPI APIs, Pydantic models, dependencies, streaming responses including Server-Sent Events (SSE), and serving frontend apps.",
+   "Keeps FastAPI code clean and up to date with the latest features and patterns."
+  ],
+  "source": "fastapi/fastapi"
+ },
+ "llm-trading-agent-security": {
+  "name": "llm-trading-agent-security",
+  "description": "Security patterns for autonomous trading agents with wallet or transaction authority. Covers prompt injection, spend limits, pre-send simulation, circuit breakers, MEV protection, and key handling. Use when an autonomous agent holds wallet or transaction authority and its limits, simulation, or key handling need review.",
+  "lessons": [
+   "External data is sanitized before entering the LLM context",
+   "Spend limits are enforced independently from model output",
+   "Transactions are simulated before send",
+   "min_amount_out is mandatory",
+   "Circuit breakers halt on drawdown or invalid state",
+   "Keys come from env or a secret manager, never code or logs",
+   "Private mempool or protected routing is used when appropriate",
+   "Slippage and deadlines are set per strategy"
+  ],
+  "source": "affaan-m/everything-claude-code (MIT)"
+ },
+ "macro-rates-monitor": {
+  "name": "macro-rates-monitor",
+  "description": "Build macroeconomic and rates dashboards combining macro indicators, yield curves, inflation breakevens, and swap rates. Use when monitoring macro conditions, analyzing yield curve shape, decomposing real vs nominal rates, assessing policy rate expectations, or evaluating financial conditions.",
+  "lessons": [
+   "Macro analysis synthesizes multiple indicators into a narrative.",
+   "Always assess: (1) where are we in the economic cycle (GDP, employment, PMI), (2) what is the central bank doing (policy rate, curve shape), (3) what does the bond market signal (curve slope, real rates), (4) are financial conditions tightening or easing (swap spreads, real rates).",
+   "Start broad, drill down."
+  ],
+  "source": "anthropics/financial-services"
+ },
+ "mcp-builder": {
+  "name": "mcp-builder",
+  "description": "Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools. Use when building MCP servers to integrate external APIs or services, whether in Python (FastMCP) or Node/TypeScript (MCP SDK).",
+  "lessons": [
+   "Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools.",
+   "Use when building MCP servers to integrate external APIs or services, whether in Python (FastMCP) or Node/TypeScript (MCP SDK)."
+  ],
+  "source": "anthropics/skills"
+ },
+ "option-vol-analysis": {
+  "name": "option-vol-analysis",
+  "description": "Analyze option volatility by combining vol surface data, option pricing with Greeks, and historical price data to assess implied vs realized volatility. Use when pricing options, analyzing volatility surfaces, computing Greeks, assessing vol premiums, or evaluating vol trading strategies.",
+  "lessons": [
+   "Always start from the vol surface — it encodes the market's view of future uncertainty across strikes and expiries.",
+   "Individual option prices are derived from this surface.",
+   "Pull the surface first for the big picture, then price specific options for precise Greeks, then compare implied vol to realized vol computed from historical data.",
+   "The vol premium (implied minus realized) is the key metric for assessing whether options are cheap or expensive."
+  ],
+  "source": "anthropics/financial-services"
+ },
+ "yfinance-data": {
+  "name": "yfinance-data",
+  "description": "Fetch financial and market data with the yfinance Python library (Yahoo Finance). Use this skill whenever the user wants stock data: current quotes and price history, financial statements (income statement, balance sheet, cash flow), options chains, dividends and splits, earnings and analyst estimates, price targets and ratings, institutional and insider holdings, news, multi-ticker comparisons, s",
+  "lessons": [
+   "Always wrap in try/except — Yahoo Finance may rate-limit or return empty data",
+   "Use yf.download() for multi-ticker comparisons — it's faster with multi-threading",
+   "For options, list expiration dates first with ticker.options before calling ticker.option_chain(date)",
+   "For quarterly data, use quarterly_ prefix: ticker.quarterly_income_stmt, ticker.quarterly_balance_sheet, ticker.quarterly_cashflow",
+   "For large date ranges, be mindful of intraday limits — 1m data only goes back ~7 days, 1h data ~730 days",
+   "Print DataFrames clearly — use .to_string() or .to_markdown() for readability, or select key columns",
+   "Timezone handling — yfinance returns tz-aware datetime indices (e.g., America/New_York). When comparing dates, always use pd.Timestamp(..., tz=...) or strip timezones with .tz_localize(None). See the reference file for details."
+  ],
+  "source": "anthropics/financial-services"
+ }
+}

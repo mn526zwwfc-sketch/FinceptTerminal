@@ -680,6 +680,50 @@ def _fund_summary(run: dict | None) -> dict | None:
             "memo": rep.get("memo_llm") or rep.get("memo")}
 
 
+@tool("fund_train", "Train the AI fund agents", "Train the fund's agents: the quant turns the knowledge base "
+      "(papers + quantfin code) into 7 strategy families x parameters (with and without vol targeting), picks the best "
+      "per family on the first 60% of 5y daily history, keeps families that also win on the next 20% and checks the "
+      "ensemble on the last 20% (Deflated Sharpe penalises the number of trials). Saves a strategy book per asset and "
+      "per-desk lessons that later committee cycles use. Computes only; places no orders.", "fund", obj({}),
+      destructive=True, destructive_hint=False, long_running=True, idempotent=False)
+async def _fund_train(ctx, a):
+    from .fund import engine
+    try:
+        t = await engine.train(ctx.user["id"])
+    except engine.FundError as e:
+        raise ToolError(str(e)) from e
+    return _training_summary(t)
+
+
+def _training_summary(t: dict | None) -> dict | None:
+    if not t:
+        return None
+    return {"training_id": t["id"], "age_days": t["age_days"], "summary": t["summary"],
+            "desks": {d: v["lesson"] for d, v in t["desks"].items()},
+            "assets": {s: {"verdict": b.get("verdict") or b.get("reason"),
+                           "members": [m["config"] for m in b.get("members", [])],
+                           "test_sharpe": b.get("test", {}).get("sharpe"),
+                           "buy_hold_test_sharpe": (b.get("buy_hold_test") or {}).get("sharpe"),
+                           "exposure_now": b.get("exposure_now")} for s, b in t["book"].items()},
+            "papers_used": t["papers_used"]}
+
+
+@tool("fund_get_training", "Get AI fund training", "Last training of the fund's agents: per-asset strategy book "
+      "(ensemble members, validation and final-test Sharpe vs buy & hold), per-desk lessons, papers used, and each "
+      "agent's profile (skills with their rules, papers and code). Null training if never trained.", "fund",
+      obj({"include_profiles": {"type": "boolean", "description": "Also return each agent's profile.",
+                                "default": False}}))
+async def _fund_get_training(ctx, a):
+    from .fund import training as T
+    out = {"training": _training_summary(T.latest(ctx.user["id"]))}
+    if a.get("include_profiles"):
+        out["agents"] = [{"name": p["name"], "skills": [{k: s[k] for k in ("name", "lessons", "applied_in")}
+                                                         for s in p["skills"]],
+                          "papers": len(p["papers"]), "functions": p["functions"], "code": p["code"]}
+                         for p in T.agent_profiles()]
+    return out
+
+
 @tool("fund_get_state", "Get AI fund state", "State of the multi-agent paper fund: autopilot, kill switch, desk "
       "trust learned from past calls, and a summary of the last investment committee (regime, target weights, "
       "orders, risk checks, memo).", "fund", obj({}), idempotent=False)

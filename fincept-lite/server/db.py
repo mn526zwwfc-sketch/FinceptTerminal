@@ -86,6 +86,9 @@ CREATE TABLE IF NOT EXISTS fund_runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, started REAL, finished REAL, trigger TEXT,
     status TEXT, equity REAL, report TEXT
 );
+CREATE TABLE IF NOT EXISTS fund_training (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, created REAL, report TEXT
+);
 CREATE TABLE IF NOT EXISTS chat_messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER, session_id TEXT, role TEXT, text TEXT, at REAL

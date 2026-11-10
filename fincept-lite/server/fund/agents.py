@@ -470,8 +470,10 @@ def build_portfolio(views: dict[str, dict], regime: dict, sentiment: dict, desk_
     if not cands:
         return {}
     budget, _ = risk_budget(cands, views, cov_info)
+    def exposure(st: dict) -> float:  # estrategia entrenada y validada: su exposición actual (0..1) modula el peso
+        return st.get("exposure", 1.0) if st.get("trained") and st["validated"] else 1.0
     raw = {s: conv_by[s] * views[s]["strategy"]["trust"] * desk_trust.get(BY_SYMBOL[s].desk, 1.0)
-           * tilt[BY_SYMBOL[s].desk] * budget[s] for s in cands}
+           * tilt[BY_SYMBOL[s].desk] * budget[s] * exposure(views[s]["strategy"]) for s in cands}
     tot = sum(raw.values())
     return {s: x / tot for s, x in raw.items()} if tot else {}
 

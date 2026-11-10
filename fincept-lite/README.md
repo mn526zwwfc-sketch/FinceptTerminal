@@ -110,7 +110,7 @@ Un equipo de agentes que funciona como un comité de inversión sobre un univers
 | Estratega macro | Régimen (expansivo/neutro/defensivo) con regla de Sahm, Fed Funds e inflación (DBnomics) | `macro-rates-monitor` |
 | Analista de sentimiento | Tono de los titulares; descarta los que parecen inyección de instrucciones | `llm-trading-agent-security` |
 | Analistas por mesa | Tendencia, momentum, RSI, volatilidad y drawdown de cada activo | `equity-research`, `yfinance-data` |
-| Investigador cuant | Elige entre 7 estrategias con datos in-sample y la valida en el 30 % reservado; si falla, su peso se reduce a la mitad | `backtesting-frameworks` |
+| Investigador cuant | Entrena un libro de estrategias por activo (7 familias, 32 configuraciones) con validación 60/20/20 y Deflated Sharpe; sin libro, elige entre 7 estrategias con hold-out del 30 % | `backtesting-frameworks` |
 | CIO | Cartera por convicción × confianza × régimen × paridad de riesgo; con Claude redacta el acta, **sin poder cambiar nada** | `claude-api` |
 | Gestor de riesgos (veto) | Límites por activo y mesa, volatilidad objetivo 10 %, caja mínima 5 %, sin apalancamiento ni cortos, cortacircuitos (drawdown 10 % o 3 ciclos en pérdidas) | `llm-trading-agent-security` |
 | Trader | Órdenes con banda de rebalanceo, rotación máx. 30 % por ciclo, ventas primero y compras por convicción | `llm-trading-agent-security` |
@@ -118,6 +118,27 @@ Un equipo de agentes que funciona como un comité de inversión sobre un univers
 **Aprendizaje:** cada ciclo guarda sus opiniones; el siguiente las compara con lo que hizo el mercado y sube o baja la confianza de cada mesa (0,5–1,5). La estrategia de cada activo se reelige con los datos nuevos.
 
 **Ejecución:** el comité solo **propone**. Para ejecutar hace falta el botón de aprobar (la propuesta caduca a los 15 minutos), la tool MCP `fund_execute_run` (con permiso de acciones y aprobación en la terminal) o el **autopiloto**, que hay que activar a mano (mínimo cada 15 minutos). La **parada de emergencia** bloquea las compras y apaga el autopiloto. Todo ciclo queda auditado en `fund_runs`, también lo bloqueado y lo rechazado.
+
+### Entrenamiento de los agentes
+
+Los agentes forman sus estrategias con todo lo anterior: el código (`quantfin` y el motor del fondo), las skills y la base de conocimiento. Se entrena con el botón **ENTRENAR AGENTES** de FUND, `POST /fund/train` o la tool `fund_train`. Además, el comité entrena solo si no hay libro o tiene más de 30 días (`server/fund/training.py`).
+
+No se ajusta ninguna red neuronal ni se reentrena el LLM. Entrenar significa esto:
+
+1. **Estrategias sacadas de los papers.** Son 7 familias: tendencia sobre media móvil (Faber 2007; Hurst et al. 2017), cruces de medias y de EMAs (Brock et al. 1992; Levine y Pedersen 2016), Donchian, time-series momentum (Moskowitz et al. 2012), reversión por RSI y reversión Ornstein-Uhlenbeck (Uhlenbeck y Ornstein 1930). Cada configuración se prueba con y sin objetivo de volatilidad (Harvey et al. 2018), que solo actúa como techo y nunca apalanca (DeMiguel et al. 2024). En total, 32 configuraciones que usan funciones de `quantfin`.
+2. **Protocolo sin trampas (skill `backtesting-frameworks`).** Para cada activo se usan 5 años: el 60 % entrena, el 20 % valida y el 20 % es la prueba final. La posición decidida al cierre se ejecuta en la apertura siguiente y cada cambio de posición paga 10 pb. Los parámetros de Ornstein-Uhlenbeck se estiman solo con el tramo de entrenamiento.
+3. **Selección.** La mejor configuración de cada familia se elige solo con el tramo de entrenamiento, y el Deflated Sharpe penaliza las 32 pruebas. Las familias que también ganan en validación forman un conjunto de hasta 3, ponderado por su Sharpe de validación. La prueba final mide ese conjunto, incluso contra comprar y mantener. Un test comprueba que cambiar los datos de la prueba final no altera lo elegido.
+4. **Uso en el comité.** El investigador cuant usa el conjunto entrenado de cada activo. Si está validado, su exposición actual (0–1) modula el peso. Si un activo no tiene ventaja, el comité usa solo las señales.
+5. **Lecciones por mesa.** Cada mesa aprende qué familias funcionan en su clase de activo, y el acta del CIO lo cuenta. El LLM recibe esas lecciones y los papers para explicarlas, pero sigue sin poder cambiar nada.
+
+**Perfil de cada agente** (`GET /fund/agents` y panel *Agentes* en FUND):
+- Sus skills, con las reglas extraídas de cada SKILL.md y la función del código que las hace cumplir.
+- Los papers de la base de conocimiento que le tocan. Las 83 entradas quedan repartidas entre los 7 agentes; un test lo comprueba.
+- Sus funciones de `quantfin` y su código.
+
+Las reglas de las skills se guardan también en `server/fund/skills_snapshot.json`. Así funcionan aunque una skill no esté instalada en la máquina: `llm-trading-agent-security`, por ejemplo, viene de un plugin con licencia MIT. Esa copia se regenera con `python -m server.fund.skills`.
+
+Con datos simulados, el primer entrenamiento validó 3 de 17 activos y solo 3 superaron a comprar y mantener en la prueba final. Un libro honesto puede decir «sin ventaja», y el comité lo respeta.
 
 ### Base de conocimiento (papers, investigación y código)
 
@@ -197,7 +218,7 @@ Barra de comandos (`/` o `Ctrl+K`): `AAPL` · `SAN.MC GO` · `BUY 10 NVDA` · `S
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest -q      # 155 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
+.venv/bin/python -m pytest -q      # 163 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
 ```
 
 ### Evaluación del servidor MCP
