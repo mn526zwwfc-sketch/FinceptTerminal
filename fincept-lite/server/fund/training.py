@@ -24,6 +24,7 @@ estrategias concretas y las somete a un protocolo que no puede hacer trampa:
 from __future__ import annotations
 
 import json
+from pathlib import Path
 import math
 import time
 from dataclasses import dataclass
@@ -401,6 +402,29 @@ def latest(uid: int) -> dict | None:
     rep["id"], rep["age_days"] = row["id"], (time.time() - row["created"]) / 86400
     rep["stale"] = rep["age_days"] > BOOK_MAX_AGE_DAYS
     return rep
+
+
+SEED_DIR = Path(__file__).resolve().parents[2] / "agentes"
+
+
+def seed(uid: int, min_cost_bps: float) -> dict | None:
+    """Si el usuario aún no ha entrenado, carga los agentes ya entrenados de `agentes/` (los genera
+    server.fund.export_agents con datos reales). Usa el libro con el menor coste que cubra el necesario,
+    y solo si tiene menos de BOOK_MAX_AGE_DAYS días: después, el comité reentrena con datos frescos."""
+    best = None
+    for path in sorted(SEED_DIR.glob("entrenamiento_*pb.json")):
+        try:
+            res = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        cost = res.get("protocol", {}).get("cost_bps", 0)
+        fresh = (time.time() - res.get("created", 0)) / 86400 <= BOOK_MAX_AGE_DAYS
+        if fresh and cost >= min_cost_bps - 1e-6 and (best is None or cost < best["protocol"]["cost_bps"]):
+            best = res
+    if best is None:
+        return None
+    save(uid, best | {"trigger": "precargado"})
+    return latest(uid)
 
 
 def brief(training: dict | None) -> dict | None:

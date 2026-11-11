@@ -125,6 +125,18 @@ Cada acta incluye `team`: lo que aportó cada agente y qué pasó con cada recom
 
 **Ejecución:** el comité solo **propone**. Para ejecutar hace falta el botón de aprobar (la propuesta caduca a los 15 minutos), la tool MCP `fund_execute_run` (con permiso de acciones y aprobación en la terminal) o el **autopiloto**, que hay que activar a mano (mínimo cada 15 minutos). La **parada de emergencia** bloquea las compras y apaga el autopiloto. Todo ciclo queda auditado en `fund_runs`, también lo bloqueado y lo rechazado.
 
+### Agentes ya entrenados (`agentes/`)
+
+El repo incluye a los agentes ya entrenados con 5 años de datos reales, sin necesidad de abrir la terminal:
+- **`agentes/RESUMEN.md`**: el resultado para leer.
+- **`agentes/entrenamiento_10pb.json`**: libro de estrategias al coste del modo paper.
+- **`agentes/entrenamiento_105pb.json`**: libro al coste real de una cuenta de 200 USD en IBKR Fixed.
+- **`agentes/perfiles.json`**: qué sabe cada agente.
+
+El fondo los carga solo la primera vez, si aún no has entrenado tú; usa el libro con el coste que corresponde al modo activo. Pasados 30 días, el comité reentrena con datos frescos.
+
+Para regenerarlos: `FINCEPT_DATA_MODE=live .venv/bin/python -m server.fund.export_agents --capital 200 --max-order 200 --plan fixed`.
+
 ### Modo real con Interactive Brokers
 
 El fondo puede operar con dinero real en tu cuenta de IBKR a través de la **Client Portal Web API** (`server/fund/ibkr.py`, `server/fund/live.py`). Viene **apagado**.
@@ -261,7 +273,7 @@ Barra de comandos (`/` o `Ctrl+K`): `AAPL` · `SAN.MC GO` · `BUY 10 NVDA` · `S
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest -q      # 194 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
+.venv/bin/python -m pytest -q      # 197 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
 ```
 
 ### Evaluación del servidor MCP

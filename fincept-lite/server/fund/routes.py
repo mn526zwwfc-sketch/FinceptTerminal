@@ -109,7 +109,7 @@ async def train(user: dict = Depends(require_auth)):
 async def training_state(user: dict = Depends(require_auth)):
     """Último entrenamiento (libro de estrategias por activo y lo aprendido por mesa)."""
     from . import training as T
-    t = T.latest(user["id"])
+    t = T.latest(user["id"]) or T.seed(user["id"], engine.required_cost(user["id"]))
     return ok(t, "OK" if t else "Los agentes aún no han entrenado: POST /fund/train o convoca el comité.")
 
 

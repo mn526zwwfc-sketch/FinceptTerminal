@@ -38,3 +38,10 @@ def user(client):
     return {"email": email, "password": pw, "api_key": d["api_key"], "session_token": d["session_token"],
             "id": d["user"]["id"],
             "headers": {"X-API-Key": d["api_key"], "X-Session-Token": d["session_token"]}}
+
+
+@pytest.fixture(autouse=True)
+def _no_seed_agents(tmp_path, monkeypatch):
+    """Los tests no cargan los agentes entrenados de agentes/ salvo que lo pidan."""
+    from server.fund import training
+    monkeypatch.setattr(training, "SEED_DIR", tmp_path / "agentes")

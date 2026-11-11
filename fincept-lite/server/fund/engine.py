@@ -206,6 +206,11 @@ async def _train(uid: int, hist: dict | None = None, sources: dict | None = None
     return T.latest(uid)
 
 
+def required_cost(uid: int) -> float:
+    """Coste por operación con que tienen que estar entrenados los agentes en el modo actual."""
+    return max(T.COST_BPS, L.live_cost_bps(L.config(uid))) if L.mode(uid) == "live" else T.COST_BPS
+
+
 async def train(uid: int) -> dict:
     lock = _locks.setdefault(uid, asyncio.Lock())
     if lock.locked():
@@ -286,8 +291,8 @@ async def _run_cycle(uid: int, execute: bool, trigger: str) -> dict:
     await _emit(uid, "analysts", "running", f"{len(A.UNIVERSE)} activos en {len(A.DESKS)} mesas")
 
     # 5a. entrenamiento: si no hay libro de estrategias o tiene más de 30 días, los agentes entrenan antes
-    training = T.latest(uid)
-    need_cost = max(T.COST_BPS, L.live_cost_bps(L.config(uid))) if mode == "live" else T.COST_BPS
+    need_cost = required_cost(uid)
+    training = T.latest(uid) or T.seed(uid, need_cost)  # agentes ya entrenados en agentes/, si no hay propios
     if (training is None or training["stale"]
             or training["protocol"]["cost_bps"] < need_cost - 1e-6):  # entrenado a un coste menor que el real
         training = await _train(uid, hist, hist_src, trigger="auto")

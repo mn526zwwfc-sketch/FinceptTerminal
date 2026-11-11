@@ -114,3 +114,44 @@ def test_cycle_trains_agents_and_uses_the_book(client, user):
     tool = client.post("/api/tools/call", headers=h, json={"name": "fund_get_training",
                                                            "arguments": {"include_profiles": True}}).json()
     assert tool["success"] and tool["data"]["training"]["training_id"] == again["id"] and len(tool["data"]["agents"]) == 7
+
+
+def _write_seed(d, cost, days_old=0, validated=1):
+    import json as _json
+    import time as _time
+    d.mkdir(exist_ok=True)
+    res = {"created": _time.time() - days_old * 86400, "protocol": {"cost_bps": cost}, "book": {},
+           "desks": {}, "summary": {"trained": 17, "validated": validated, "with_edge": 0, "beats_buy_hold": 0},
+           "papers_used": [], "data_sources": ["yahoo"]}
+    (d / f"entrenamiento_{cost}pb.json").write_text(_json.dumps(res))
+
+
+def test_pretrained_agents_are_loaded_once_and_match_the_cost(user, monkeypatch):
+    d = T.SEED_DIR
+    _write_seed(d, 10, validated=6)
+    _write_seed(d, 105, validated=1)
+    _write_seed(d, 50, days_old=40)  # caducado: no se usa
+    uid = user["id"]
+    t = T.seed(uid, 10)
+    assert t["trigger"] == "precargado" and t["protocol"]["cost_bps"] == 10 and t["summary"]["validated"] == 6
+    assert T.seed(user["id"], 200) is None  # ninguno cubre un coste mayor
+
+
+def test_training_endpoint_serves_pretrained_agents(client, user):
+    _write_seed(T.SEED_DIR, 10)
+    t = client.get("/fund/training", headers=user["headers"]).json()["data"]
+    assert t["trigger"] == "precargado"
+    assert client.get("/fund/training", headers=user["headers"]).json()["data"]["id"] == t["id"]  # una sola vez
+
+
+def test_real_pretrained_files_are_valid():
+    import json as _json
+    from pathlib import Path
+    real = Path(__file__).resolve().parents[1] / "agentes"
+    files = sorted(real.glob("entrenamiento_*pb.json"))
+    assert files, "faltan los agentes entrenados (python -m server.fund.export_agents)"
+    for f in files:
+        res = _json.loads(f.read_text())
+        assert res["data_sources"] == ["yahoo"] and len(res["book"]) == 17
+        assert all(b["data_source"] == "yahoo" and b["cost_bps"] == res["protocol"]["cost_bps"]
+                   for b in res["book"].values())

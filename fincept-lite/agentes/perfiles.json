@@ -1,0 +1,1076 @@
+[
+ {
+  "id": "macro",
+  "name": "Estratega macro",
+  "skills": [
+   {
+    "name": "macro-rates-monitor",
+    "description": "Build macroeconomic and rates dashboards combining macro indicators, yield curves, inflation breakevens, and swap rates. Use when monitoring macro conditions, analyzing yield curve shape, decomposing real vs nominal rates, assessing policy rate expectations, or evaluating financial conditions.",
+    "lessons": [
+     "Macro analysis synthesizes multiple indicators into a narrative.",
+     "Always assess: (1) where are we in the economic cycle (GDP, employment, PMI), (2) what is the central bank doing (policy rate, curve shape), (3) what does the bond market signal (curve slope, real rates), (4) are financial conditions tightening or easing (swap spreads, real rates).",
+     "Start broad, drill down."
+    ],
+    "origin": "instalada",
+    "source": "anthropics/financial-services",
+    "applied_in": [
+     "agents.macro_regime: tipos, paro (regla de Sahm) e inflación",
+     "tools.qf_yield_curve: nivel, pendiente y curvatura de la curva"
+    ]
+   },
+   {
+    "name": "economic-calendar-fetcher",
+    "description": "Fetch upcoming economic events and data releases using FMP API. Retrieve scheduled central bank decisions, employment reports, inflation data, GDP releases, and other market-moving economic indicators for specified date ranges (default: next 7 days). The script outputs raw JSON or text; the assistant filters, assesses impact, and generates the Markdown report.",
+    "lessons": [
+     "High Impact: Major market-moving events",
+     "FOMC rate decisions, ECB/BOJ policy meetings",
+     "Non-Farm Payrolls (NFP), CPI, GDP",
+     "Market typically shows 0.5-2%+ intraday volatility",
+     "Medium Impact: Significant but less volatile",
+     "Retail Sales, Industrial Production",
+     "PMI surveys, Consumer Confidence",
+     "Housing data, Durable Goods Orders"
+    ],
+    "origin": "instalada",
+    "source": "tradermonty/claude-trading-skills",
+    "applied_in": [
+     "engine._macro_series: series macro de DBnomics (sin clave de FMP)"
+    ]
+   }
+  ],
+  "papers": [
+   {
+    "id": "qfr07",
+    "year": 2025,
+    "title": "Cao, Shao, Yan y Geman (2025), Johns Hopkins, preprint",
+    "finding": "Combina LPPL de Sornette, sentimiento con FinBERT y un índice de atención mediática en un Transformer; probado solo en 32 acciones",
+    "functions": []
+   },
+   {
+    "id": "qfr08",
+    "year": 2024,
+    "title": "Shu, Yu y Mulvey (2024, Princeton), J. of Asset Management; Bemporad et al. (2018)",
+    "finding": "\"Statistical jump model\": clustering con penalización por cambiar de estado; cambia de señal menos que un HMM y redujo caídas en S&P, DAX y Nikkei",
+    "functions": []
+   },
+   {
+    "id": "sahm2019",
+    "year": 2019,
+    "title": "Direct Stimulus Payments to Individuals (regla de Sahm)",
+    "finding": "Si la media de 3 meses del paro sube ≥ 0,5 pp sobre su mínimo de 12 meses, la economía suele estar entrando en recesión.",
+    "functions": []
+   },
+   {
+    "id": "phillips2015",
+    "year": 2015,
+    "title": "Testing for Multiple Bubbles: Historical Episodes of Exuberance and Collapse in the S&P 500",
+    "finding": "La prueba recursiva SADF detecta un régimen explosivo mientras ocurre (no predice cuándo revienta).",
+    "functions": [
+     "sadf"
+    ]
+   },
+   {
+    "id": "kritzman2011",
+    "year": 2011,
+    "title": "Principal Components as a Measure of Systemic Risk",
+    "finding": "El 'absorption ratio' (varianza que absorben los primeros componentes principales) sube antes de las crisis.",
+    "functions": [
+     "absorption_ratio"
+    ]
+   },
+   {
+    "id": "qfr09",
+    "year": 2010,
+    "title": "Dai, Zhang y Zhu (2010), SIAM J. Financial Math",
+    "finding": "Con regímenes alcista y bajista ocultos, la regla óptima vende cuando la probabilidad de régimen alcista cae bajo un umbral, no según el precio",
+    "functions": []
+   },
+   {
+    "id": "qf_adf_t",
+    "year": 1979,
+    "title": "Dickey y Fuller (1979)",
+    "finding": "Estadístico t de Dickey-Fuller aumentado.",
+    "functions": [
+     "adf_t"
+    ]
+   },
+   {
+    "id": "qf_duracion_convexidad",
+    "year": 1938,
+    "title": "Macaulay (1938); Fabozzi",
+    "finding": "Precio, duración modificada y convexidad de un bono.",
+    "functions": [
+     "duracion_convexidad"
+    ]
+   }
+  ],
+  "functions": [
+   "absorption_ratio",
+   "adf_t",
+   "duracion_convexidad",
+   "sadf"
+  ],
+  "code": [
+   "agents.macro_regime",
+   "agents.systemic_fragility"
+  ]
+ },
+ {
+  "id": "sentiment",
+  "name": "Analista de sentimiento",
+  "skills": [
+   {
+    "name": "llm-trading-agent-security",
+    "description": "Security patterns for autonomous trading agents with wallet or transaction authority. Covers prompt injection, spend limits, pre-send simulation, circuit breakers, MEV protection, and key handling. Use when an autonomous agent holds wallet or transaction authority and its limits, simulation, or key handling need review.",
+    "lessons": [
+     "External data is sanitized before entering the LLM context",
+     "Spend limits are enforced independently from model output",
+     "Transactions are simulated before send",
+     "min_amount_out is mandatory",
+     "Circuit breakers halt on drawdown or invalid state",
+     "Keys come from env or a secret manager, never code or logs",
+     "Private mempool or protected routing is used when appropriate",
+     "Slippage and deadlines are set per strategy"
+    ],
+    "origin": "instalada",
+    "source": "affaan-m/everything-claude-code (MIT)",
+    "applied_in": [
+     "agents.sanitize_headline: el texto externo se sanea antes del LLM",
+     "agents.apply_risk y circuit_breaker: límites que no dependen del modelo",
+     "engine.execute_run: revalidación antes de ejecutar (simulación previa)",
+     "fund_runs: cada decisión queda auditada, también las bloqueadas"
+    ]
+   }
+  ],
+  "papers": [
+   {
+    "id": "kirtac2024",
+    "year": 2024,
+    "title": "Sentiment trading with large language models",
+    "finding": "El sentimiento extraído con LLM de 965.375 noticias predice rendimientos mejor que diccionarios.",
+    "functions": []
+   },
+   {
+    "id": "qfr18",
+    "year": 2024,
+    "title": "van der Beck, Bouchaud y Villamaina (2024), Harvard WP",
+    "finding": "En ETFs concentrados, los flujos inflan precios por impacto, y los inversionistas persiguen ese rendimiento inflado",
+    "functions": []
+   },
+   {
+    "id": "greshake2023",
+    "year": 2023,
+    "title": "Not What You've Signed Up For: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection",
+    "finding": "El contenido externo que lee un LLM (webs, noticias) puede contener instrucciones que lo secuestren.",
+    "functions": []
+   },
+   {
+    "id": "qfr17",
+    "year": 2022,
+    "title": "Lou y Polk (2022, LSE), RFS",
+    "finding": "\"Comomentum\": la correlación anormal entre ganadores y perdedores mide qué tan saturado está el trade y anticipa rendimientos bajos",
+    "functions": []
+   },
+   {
+    "id": "qfr12",
+    "year": 2021,
+    "title": "Gabaix y Koijen (2021), NBER WP 28967",
+    "finding": "Multiplicador ≈ 5: un dólar que entra a acciones sube la capitalización total unos 5 dólares (working paper, sin revisión por pares)",
+    "functions": []
+   },
+   {
+    "id": "qfr14",
+    "year": 2014,
+    "title": "Hanson y Sunderam (2014), RFS",
+    "finding": "El alfa que queda = desajuste × (1 − fracción de inversionistas que usan la señal); se mide con interés en corto",
+    "functions": []
+   },
+   {
+    "id": "qfr16",
+    "year": 2007,
+    "title": "Khandani y Lo (2007, MIT), J. Investment Management",
+    "finding": "Estrategias de reversión muy apalancadas y concentradas perdieron cerca de 27% en tres días por una liquidación forzada",
+    "functions": []
+   },
+   {
+    "id": "tetlock2007",
+    "year": 2007,
+    "title": "Giving Content to Investor Sentiment: The Role of Media in the Stock Market",
+    "finding": "El pesimismo de los medios predice presión bajista temporal sobre los precios.",
+    "functions": []
+   },
+   {
+    "id": "qfr15",
+    "year": 2005,
+    "title": "Brunnermeier y Pedersen (2005), Journal of Finance",
+    "finding": "Si todos saben que un fondo tiene que vender, los demás venden con él y recompran en el fondo",
+    "functions": []
+   },
+   {
+    "id": "qfr19",
+    "year": 1990,
+    "title": "De Long et al. (1990); Shleifer y Vishny (1997); Baker y Wurgler (2006)",
+    "finding": "El sentimiento es ruido, riesgo y señal a la vez; si está alto, se esperan rendimientos bajos en acciones difíciles de valuar",
+    "functions": []
+   },
+   {
+    "id": "qfr13",
+    "year": 1981,
+    "title": "Shiller (1981), AER",
+    "finding": "Los precios son mucho más volátiles que los dividendos que descuentan; citado por el Nobel 2013",
+    "functions": []
+   },
+   {
+    "id": "qfr11",
+    "year": 1980,
+    "title": "Grossman y Stiglitz (1980), AER",
+    "finding": "Si la información cuesta, un mercado perfectamente eficiente no puede existir: siempre queda algo de alfa",
+    "functions": []
+   }
+  ],
+  "functions": [],
+  "code": [
+   "agents.news_sentiment",
+   "agents.sanitize_headline"
+  ]
+ },
+ {
+  "id": "analysts",
+  "name": "Analistas por mesa",
+  "skills": [
+   {
+    "name": "equity-research",
+    "description": "Generate comprehensive equity research snapshots combining analyst consensus estimates, company fundamentals, historical prices, and macroeconomic context. Use when researching stocks, comparing estimates to actuals, analyzing company financials, assessing equity valuations, or building investment cases.",
+    "lessons": [
+     "Every piece of data must connect to an investment thesis.",
+     "Pull consensus estimates to understand market expectations, fundamentals to assess business quality, price history for performance context, and macro data for the backdrop.",
+     "The key question is always: where might consensus be wrong?",
+     "Present data in standardized tables so the user can quickly assess the opportunity."
+    ],
+    "origin": "instalada",
+    "source": "anthropics/financial-services",
+    "applied_in": [
+     "agents.asset_signals: tendencia, momentum, RSI, volatilidad y drawdown por activo"
+    ]
+   },
+   {
+    "name": "yfinance-data",
+    "description": "Fetch financial and market data with the yfinance Python library (Yahoo Finance). Use this skill whenever the user wants stock data: current quotes and price history, financial statements (income statement, balance sheet, cash flow), options chains, dividends and splits, earnings and analyst estimates, price targets and ratings, institutional and insider holdings, news, multi-ticker comparisons, s",
+    "lessons": [
+     "Always wrap in try/except — Yahoo Finance may rate-limit or return empty data",
+     "Use yf.download() for multi-ticker comparisons — it's faster with multi-threading",
+     "For options, list expiration dates first with ticker.options before calling ticker.option_chain(date)",
+     "For quarterly data, use quarterly_ prefix: ticker.quarterly_income_stmt, ticker.quarterly_balance_sheet, ticker.quarterly_cashflow",
+     "For large date ranges, be mindful of intraday limits — 1m data only goes back ~7 days, 1h data ~730 days",
+     "Print DataFrames clearly — use .to_string() or .to_markdown() for readability, or select key columns",
+     "Timezone handling — yfinance returns tz-aware datetime indices (e.g., America/New_York). When comparing dates, always use pd.Timestamp(..., tz=...) or strip timezones with .tz_localize(None). See the reference file for details."
+    ],
+    "origin": "instalada",
+    "source": "anthropics/financial-services",
+    "applied_in": [
+     "market.providers.YahooProvider: históricos diarios de 5 años para entrenar"
+    ]
+   },
+   {
+    "name": "option-vol-analysis",
+    "description": "Analyze option volatility by combining vol surface data, option pricing with Greeks, and historical price data to assess implied vs realized volatility. Use when pricing options, analyzing volatility surfaces, computing Greeks, assessing vol premiums, or evaluating vol trading strategies.",
+    "lessons": [
+     "Always start from the vol surface — it encodes the market's view of future uncertainty across strikes and expiries.",
+     "Individual option prices are derived from this surface.",
+     "Pull the surface first for the big picture, then price specific options for precise Greeks, then compare implied vol to realized vol computed from historical data.",
+     "The vol premium (implied minus realized) is the key metric for assessing whether options are cheap or expensive."
+    ],
+    "origin": "instalada",
+    "source": "anthropics/financial-services",
+    "applied_in": [
+     "agents.realized_vol: volatilidad realizada 20/60 sesiones",
+     "tools.bs_option_price e implied_vol"
+    ]
+   }
+  ],
+  "papers": [
+   {
+    "id": "qfr01",
+    "year": 2023,
+    "title": "Guyon y Lekeufack (2023), Quantitative Finance",
+    "finding": "Con solo rendimientos pasados se explica cerca de 90% de la volatilidad implícita del S&P 500 (dentro de muestra); la volatilidad depende sobre todo de la trayectoria",
+    "functions": []
+   },
+   {
+    "id": "qf_lvr_producto_constante",
+    "year": 2022,
+    "title": "Milionis, Moallemi, Roughgarden y Zhang (2022)",
+    "finding": "Loss-versus-rebalancing anual de un pool x·y = k.",
+    "functions": [
+     "lvr_producto_constante"
+    ]
+   },
+   {
+    "id": "qf_impermanent_loss",
+    "year": 2020,
+    "title": "Uniswap v2 (Adams et al. 2020)",
+    "finding": "Pérdida impermanente para un cambio de precio ρ.",
+    "functions": [
+     "impermanent_loss"
+    ]
+   },
+   {
+    "id": "qf_basis_momentum",
+    "year": 2019,
+    "title": "Boons y Porras Prado (2019)",
+    "finding": "Momentum del 1.er vencimiento menos el del 2.º.",
+    "functions": [
+     "basis_momentum"
+    ]
+   },
+   {
+    "id": "qfr02",
+    "year": 2018,
+    "title": "Gatheral, Jaisson y Rosenbaum (2018); Hager, Horst, Wagenhofer y Xu (arXiv 2603.13170, 2026)",
+    "finding": "Volatilidad \"rugosa\" con Hurst ≈ 0.1; el preprint de 2026 la deriva del flujo de órdenes",
+    "functions": []
+   },
+   {
+    "id": "daniel2016",
+    "year": 2016,
+    "title": "Momentum crashes",
+    "finding": "El momentum sufre caídas bruscas en 'estados de pánico': tras fuertes descensos y con volatilidad alta.",
+    "functions": []
+   },
+   {
+    "id": "phillips2015",
+    "year": 2015,
+    "title": "Testing for Multiple Bubbles: Historical Episodes of Exuberance and Collapse in the S&P 500",
+    "finding": "La prueba recursiva SADF detecta un régimen explosivo mientras ocurre (no predice cuándo revienta).",
+    "functions": [
+     "sadf"
+    ]
+   },
+   {
+    "id": "asness2013",
+    "year": 2013,
+    "title": "Value and Momentum Everywhere",
+    "finding": "El momentum aparece en todas las clases de activos y países, con correlación entre ellas.",
+    "functions": []
+   },
+   {
+    "id": "qf_carry_trade",
+    "year": 2011,
+    "title": "Lustig, Roussanov y Verdelhan (2011); Menkhoff et al. (2012)",
+    "finding": "Cartera carry: compra las monedas de tipo alto y vende las de tipo bajo.",
+    "functions": [
+     "carry_trade"
+    ]
+   },
+   {
+    "id": "qf_roll_yield",
+    "year": 2006,
+    "title": "Erb y Harvey (2006); Koijen et al. (2018)",
+    "finding": "Roll yield anualizado (> 0 = backwardation).",
+    "functions": [
+     "roll_yield"
+    ]
+   },
+   {
+    "id": "qf_lmsr_precio",
+    "year": 2003,
+    "title": "Hanson (2003)",
+    "finding": "Precios del market maker LMSR de Hanson.",
+    "functions": [
+     "lmsr_precio"
+    ]
+   },
+   {
+    "id": "qfr05",
+    "year": 2000,
+    "title": "Li (2000), Journal of Fixed Income",
+    "finding": "Cópula gaussiana para CDOs: un solo parámetro de correlación que falló cuando los incumplimientos se agruparon",
+    "functions": []
+   },
+   {
+    "id": "qfr03",
+    "year": 1998,
+    "title": "El Karoui, Jeanblanc-Picqué y Shreve (1998), Mathematical Finance",
+    "finding": "Si cubres con una volatilidad siempre mayor a la real, la cobertura no pierde en ninguna trayectoria",
+    "functions": [
+     "pnl_cobertura"
+    ]
+   },
+   {
+    "id": "qf_regresion_factores",
+    "year": 1993,
+    "title": "Fama y French (1993); Jensen, Kelly y Pedersen (2023)",
+    "finding": "Alfa y betas de un activo contra factores (tipo Fama-French).",
+    "functions": [
+     "regresion_factores"
+    ]
+   },
+   {
+    "id": "jegadeesh1993",
+    "year": 1993,
+    "title": "Returns to Buying Winners and Selling Losers",
+    "finding": "Los ganadores de 3-12 meses siguen ganando a corto plazo; se omite el último mes por reversión.",
+    "functions": [
+     "momentum_seccion_cruzada"
+    ]
+   },
+   {
+    "id": "qf_garch11",
+    "year": 1986,
+    "title": "Bollerslev (1986)",
+    "finding": "Volatilidad condicional GARCH(1,1) de una serie de rendimientos.",
+    "functions": [
+     "garch11"
+    ]
+   },
+   {
+    "id": "qf_monte_carlo_call",
+    "year": 1977,
+    "title": "Boyle (1977)",
+    "finding": "Call europea por Monte Carlo (semilla fija).",
+    "functions": [
+     "monte_carlo_call"
+    ]
+   },
+   {
+    "id": "qf_black_scholes",
+    "year": 1973,
+    "title": "Black y Scholes (1973); Merton (1973)",
+    "finding": "Precio y griegas de una opción europea.",
+    "functions": [
+     "black_scholes"
+    ]
+   },
+   {
+    "id": "qfr04",
+    "year": 1963,
+    "title": "Mandelbrot (1963); Cont (2001); Gabaix et al. (2003, Nature); Peters (2019)",
+    "finding": "Simula tus supuestos, no los verifica: colas pesadas, memoria de volatilidad y la diferencia entre la media del conjunto y una trayectoria típica",
+    "functions": []
+   },
+   {
+    "id": "qf_brier",
+    "year": 1950,
+    "title": "Brier (1950)",
+    "finding": "Brier score de unas probabilidades frente al resultado.",
+    "functions": [
+     "brier"
+    ]
+   }
+  ],
+  "functions": [
+   "basis_momentum",
+   "black_scholes",
+   "brier",
+   "carry_trade",
+   "garch11",
+   "impermanent_loss",
+   "lmsr_precio",
+   "lvr_producto_constante",
+   "momentum_seccion_cruzada",
+   "monte_carlo_call",
+   "pnl_cobertura",
+   "regresion_factores",
+   "roll_yield",
+   "sadf"
+  ],
+  "code": [
+   "agents.asset_signals",
+   "agents.debate"
+  ]
+ },
+ {
+  "id": "quant",
+  "name": "Investigador cuant",
+  "skills": [
+   {
+    "name": "backtesting-frameworks",
+    "description": "Build robust backtesting systems for trading strategies with proper handling of look-ahead bias, survivorship bias, and transaction costs. Use when developing trading algorithms, validating strategies, or building backtesting infrastructure.",
+    "lessons": [
+     "Use point-in-time data - Avoid look-ahead bias",
+     "Include transaction costs - Realistic estimates",
+     "Test out-of-sample - Always reserve data",
+     "Use walk-forward - Not just train/test",
+     "Monte Carlo analysis - Understand uncertainty",
+     "Don't overfit - Limit parameters",
+     "Don't ignore survivorship - Include delisted",
+     "Don't use adjusted data carelessly - Understand adjustments"
+    ],
+    "origin": "instalada",
+    "source": "wshobson/agents (MIT)",
+    "applied_in": [
+     "training.train_asset: walk-forward 60/20/20, ejecución en la apertura siguiente y costes en cada cambio de posición",
+     "agents.select_strategy: hold-out 30 % + DSR",
+     "backtest.run_signals: sin sesgo de anticipación"
+    ]
+   }
+  ],
+  "papers": [
+   {
+    "id": "qfr28",
+    "year": 2025,
+    "title": "Futter, Horvath (Oxford) y Wiese (2025), Quantitative Finance",
+    "finding": "Cualquier indicador se aproxima con la \"firma\" de la trayectoria; extiende Markowitz a estrategias que dependen del camino. Librerías: signatory, iisignature",
+    "functions": []
+   },
+   {
+    "id": "qfr43",
+    "year": 2024,
+    "title": "Kelly, Malamud y Zhou (2024); críticas de Nagel (2025) y Buncic (2025)",
+    "finding": "Actualiza la sección 2.1: hay debate abierto sobre si la \"virtud de la complejidad\" es en realidad un efecto de volatility timing",
+    "functions": []
+   },
+   {
+    "id": "qfr20",
+    "year": 2019,
+    "title": "Lou, Polk y Skouras (2019), JFE (DOI correcto: 10.1016/j.jfineco.2019.03.011)",
+    "finding": "El momentum gana casi todo de noche; valor y baja volatilidad, de día",
+    "functions": []
+   },
+   {
+    "id": "harvey2018",
+    "year": 2018,
+    "title": "The Impact of Volatility Targeting",
+    "finding": "El objetivo de volatilidad mejora el Sharpe en activos de riesgo y siempre reduce la volatilidad de la volatilidad.",
+    "functions": [
+     "vol_target"
+    ]
+   },
+   {
+    "id": "qfr41",
+    "year": 2018,
+    "title": "López de Prado (2018), Advances in Financial ML; Bailey et al. (2017)",
+    "finding": "Validación cruzada combinatoria con purga y embargo: da una distribución de Sharpes y la probabilidad de sobreajuste (PBO)",
+    "functions": []
+   },
+   {
+    "id": "hurst2017",
+    "year": 2017,
+    "title": "A Century of Evidence on Trend-Following Investing",
+    "finding": "El seguimiento de tendencia multiactivo fue rentable en cada década desde 1880, también en crisis.",
+    "functions": []
+   },
+   {
+    "id": "bailey2016",
+    "year": 2016,
+    "title": "The probability of backtest overfitting",
+    "finding": "La probabilidad de que la mejor estrategia in-sample rinda por debajo de la mediana fuera de muestra puede ser alta.",
+    "functions": []
+   },
+   {
+    "id": "harvey2016",
+    "year": 2016,
+    "title": "… and the Cross-Section of Expected Returns",
+    "finding": "Con cientos de factores probados, el umbral de significación debe subir (t > 3).",
+    "functions": []
+   },
+   {
+    "id": "levine2016",
+    "year": 2016,
+    "title": "Which Trend Is Your Friend?",
+    "finding": "Cruces de medias móviles y time-series momentum son casi la misma señal con distintos filtros.",
+    "functions": [
+     "senal_ema"
+    ]
+   },
+   {
+    "id": "bailey2014",
+    "year": 2014,
+    "title": "The Deflated Sharpe Ratio",
+    "finding": "Elegir la mejor de N estrategias infla su Sharpe; el DSR corrige por número de pruebas, asimetría y curtosis.",
+    "functions": [
+     "deflated_sharpe"
+    ]
+   },
+   {
+    "id": "moskowitz2012",
+    "year": 2012,
+    "title": "Time Series Momentum",
+    "finding": "El rendimiento pasado de 12 meses de un activo predice su rendimiento futuro en renta variable, bonos, divisas y materias primas (58 futuros).",
+    "functions": [
+     "tsmom"
+    ]
+   },
+   {
+    "id": "avellaneda2008",
+    "year": 2008,
+    "title": "High-frequency trading in a limit order book",
+    "finding": "Un creador de mercado ajusta su precio de reserva según su inventario y la volatilidad.",
+    "functions": [
+     "avellaneda_stoikov"
+    ]
+   },
+   {
+    "id": "faber2007",
+    "year": 2007,
+    "title": "A Quantitative Approach to Tactical Asset Allocation",
+    "finding": "Estar largo solo cuando el precio supera su media de 10 meses reduce el drawdown sin sacrificar mucha rentabilidad.",
+    "functions": []
+   },
+   {
+    "id": "qfr21",
+    "year": 2006,
+    "title": "Ang, Hodrick, Xing y Zhang (2006, Columbia), Journal of Finance",
+    "finding": "No: las de mayor volatilidad idiosincrática rinden mucho menos, un rompecabezas que sigue sin explicación de consenso",
+    "functions": []
+   },
+   {
+    "id": "qfr23",
+    "year": 1999,
+    "title": "Shumway y Warther (1999), Journal of Finance",
+    "finding": "Al corregir los rendimientos de empresas deslistadas, el \"efecto tamaño\" en Nasdaq desaparece; usa datos point-in-time",
+    "functions": []
+   },
+   {
+    "id": "brock1992",
+    "year": 1992,
+    "title": "Simple Technical Trading Rules and the Stochastic Properties of Stock Returns",
+    "finding": "Medias móviles y rupturas de rango tuvieron poder predictivo en el Dow Jones (1897-1986); la ventaja en un solo activo se ha erosionado con el tiempo.",
+    "functions": [
+     "ema",
+     "senal_donchian",
+     "senal_ema"
+    ]
+   },
+   {
+    "id": "qfr22",
+    "year": 1989,
+    "title": "Bernard y Thomas (1989); Martineau (2022), Critical Finance Review",
+    "finding": "El \"drift\" posterior a resultados ya casi desapareció en acciones grandes desde 2006",
+    "functions": []
+   },
+   {
+    "id": "nelson1987",
+    "year": 1987,
+    "title": "Parsimonious Modeling of Yield Curves",
+    "finding": "Tres factores (nivel, pendiente, curvatura) describen la curva de tipos.",
+    "functions": [
+     "ajustar_ns",
+     "nelson_siegel"
+    ]
+   },
+   {
+    "id": "kelly1956",
+    "year": 1956,
+    "title": "A New Interpretation of Information Rate",
+    "finding": "La fracción óptima a apostar maximiza el crecimiento logarítmico del capital.",
+    "functions": [
+     "kelly_binario"
+    ]
+   },
+   {
+    "id": "uhlenbeck1930",
+    "year": 1930,
+    "title": "On the Theory of the Brownian Motion",
+    "finding": "Proceso de reversión a la media dX = θ(μ − X)dt + σdW, base del pairs trading.",
+    "functions": [
+     "ajustar_ou",
+     "zscore_pairs"
+    ]
+   },
+   {
+    "id": "qfr25",
+    "year": null,
+    "title": "Las mismas referencias + historia de Dennis y Eckhardt",
+    "finding": "Ruptura del máximo o mínimo de 20 días; las ganancias de los Turtles son historia sin auditar",
+    "functions": [
+     "senal_donchian"
+    ]
+   }
+  ],
+  "functions": [
+   "ajustar_ns",
+   "ajustar_ou",
+   "avellaneda_stoikov",
+   "deflated_sharpe",
+   "ema",
+   "kelly_binario",
+   "nelson_siegel",
+   "senal_donchian",
+   "senal_ema",
+   "tsmom",
+   "vol_target",
+   "zscore_pairs"
+  ],
+  "code": [
+   "training.train_asset",
+   "training.apply_book",
+   "agents.deflated_sharpe"
+  ]
+ },
+ {
+  "id": "cio",
+  "name": "CIO",
+  "skills": [],
+  "papers": [
+   {
+    "id": "huang2026",
+    "year": 2026,
+    "title": "Multi-Agent Debate for Explainable Trading",
+    "finding": "Fallo principal: 'convergencia complaciente'. Preservar el desacuerdo mejoró el Sharpe en +0,14; mejorar el razonamiento medido no mejoró resultados.",
+    "functions": []
+   },
+   {
+    "id": "miyazaki2026",
+    "year": 2026,
+    "title": "Toward Expert Investment Teams: A Multi-Agent LLM System with Fine-Grained Trading Tasks",
+    "finding": "Descomponer el análisis en tareas finas y concretas mejora el rendimiento ajustado al riesgo frente a roles genéricos.",
+    "functions": []
+   },
+   {
+    "id": "saha2025",
+    "year": 2025,
+    "title": "Large Language Model Agents for Investment Management: Foundations, Benchmarks, and Research Frontiers",
+    "finding": "Revisión del estado del arte de agentes LLM en inversión: cartera, riesgo y generación de estrategias.",
+    "functions": []
+   },
+   {
+    "id": "xiao2024",
+    "year": 2024,
+    "title": "TradingAgents: Multi-Agents LLM Financial Trading Framework",
+    "finding": "Analistas especializados, investigadores alcistas/bajistas que debaten, trader y equipo de riesgo.",
+    "functions": []
+   },
+   {
+    "id": "yu2024",
+    "year": 2024,
+    "title": "FinCon: A Synthesized LLM Multi-Agent System with Conceptual Verbal Reinforcement",
+    "finding": "Un gestor que actualiza sus creencias con la experiencia de episodios previos mejora las decisiones.",
+    "functions": []
+   },
+   {
+    "id": "glasserman2023",
+    "year": 2023,
+    "title": "Assessing Look-Ahead Bias in Stock Return Predictions Generated by GPT Sentiment Analysis",
+    "finding": "Backtestear señales de un LLM sobre periodos que el modelo vio en su entrenamiento produce sesgo de anticipación.",
+    "functions": []
+   },
+   {
+    "id": "maillard2010",
+    "year": 2010,
+    "title": "The Properties of Equally Weighted Risk Contribution Portfolios",
+    "finding": "Igualar contribuciones al riesgo da carteras más diversificadas que pesos iguales.",
+    "functions": [
+     "risk_parity"
+    ]
+   }
+  ],
+  "functions": [
+   "risk_parity"
+  ],
+  "code": [
+   "agents.build_portfolio",
+   "agents.risk_budget",
+   "engine._llm_memo"
+  ]
+ },
+ {
+  "id": "risk",
+  "name": "Gestor de riesgos",
+  "skills": [
+   {
+    "name": "backtesting-frameworks",
+    "description": "Build robust backtesting systems for trading strategies with proper handling of look-ahead bias, survivorship bias, and transaction costs. Use when developing trading algorithms, validating strategies, or building backtesting infrastructure.",
+    "lessons": [
+     "Use point-in-time data - Avoid look-ahead bias",
+     "Include transaction costs - Realistic estimates",
+     "Test out-of-sample - Always reserve data",
+     "Use walk-forward - Not just train/test",
+     "Monte Carlo analysis - Understand uncertainty",
+     "Don't overfit - Limit parameters",
+     "Don't ignore survivorship - Include delisted",
+     "Don't use adjusted data carelessly - Understand adjustments"
+    ],
+    "origin": "instalada",
+    "source": "wshobson/agents (MIT)",
+    "applied_in": [
+     "training.train_asset: walk-forward 60/20/20, ejecución en la apertura siguiente y costes en cada cambio de posición",
+     "agents.select_strategy: hold-out 30 % + DSR",
+     "backtest.run_signals: sin sesgo de anticipación"
+    ]
+   },
+   {
+    "name": "option-vol-analysis",
+    "description": "Analyze option volatility by combining vol surface data, option pricing with Greeks, and historical price data to assess implied vs realized volatility. Use when pricing options, analyzing volatility surfaces, computing Greeks, assessing vol premiums, or evaluating vol trading strategies.",
+    "lessons": [
+     "Always start from the vol surface — it encodes the market's view of future uncertainty across strikes and expiries.",
+     "Individual option prices are derived from this surface.",
+     "Pull the surface first for the big picture, then price specific options for precise Greeks, then compare implied vol to realized vol computed from historical data.",
+     "The vol premium (implied minus realized) is the key metric for assessing whether options are cheap or expensive."
+    ],
+    "origin": "instalada",
+    "source": "anthropics/financial-services",
+    "applied_in": [
+     "agents.realized_vol: volatilidad realizada 20/60 sesiones",
+     "tools.bs_option_price e implied_vol"
+    ]
+   },
+   {
+    "name": "llm-trading-agent-security",
+    "description": "Security patterns for autonomous trading agents with wallet or transaction authority. Covers prompt injection, spend limits, pre-send simulation, circuit breakers, MEV protection, and key handling. Use when an autonomous agent holds wallet or transaction authority and its limits, simulation, or key handling need review.",
+    "lessons": [
+     "External data is sanitized before entering the LLM context",
+     "Spend limits are enforced independently from model output",
+     "Transactions are simulated before send",
+     "min_amount_out is mandatory",
+     "Circuit breakers halt on drawdown or invalid state",
+     "Keys come from env or a secret manager, never code or logs",
+     "Private mempool or protected routing is used when appropriate",
+     "Slippage and deadlines are set per strategy"
+    ],
+    "origin": "instalada",
+    "source": "affaan-m/everything-claude-code (MIT)",
+    "applied_in": [
+     "agents.sanitize_headline: el texto externo se sanea antes del LLM",
+     "agents.apply_risk y circuit_breaker: límites que no dependen del modelo",
+     "engine.execute_run: revalidación antes de ejecutar (simulación previa)",
+     "fund_runs: cada decisión queda auditada, también las bloqueadas"
+    ]
+   }
+  ],
+  "papers": [
+   {
+    "id": "qfr37",
+    "year": 2026,
+    "title": "Bongiorno, Manolakis y Mantegna (2026), J. of Finance and Data Science",
+    "finding": "RIEnet: red neuronal entrenada de punta a punta para minimizar la varianza; `pip install rienet`",
+    "functions": []
+   },
+   {
+    "id": "qfr07",
+    "year": 2025,
+    "title": "Cao, Shao, Yan y Geman (2025), Johns Hopkins, preprint",
+    "finding": "Combina LPPL de Sornette, sentimiento con FinBERT y un índice de atención mediática en un Transformer; probado solo en 32 acciones",
+    "functions": []
+   },
+   {
+    "id": "li2025",
+    "year": 2025,
+    "title": "HedgeAgents: A Balanced-aware Multi-agent Financial Trading System",
+    "finding": "Los agentes LLM sufren pérdidas de ~20 % en caídas rápidas; expertos de cobertura por clase de activo y un gestor central mejoran la robustez.",
+    "functions": []
+   },
+   {
+    "id": "qfr36",
+    "year": 2024,
+    "title": "Bongiorno y Challet (2024), Quantitative Finance",
+    "finding": "10,000 backtests: el \"Average Oracle\" gana a la contracción no lineal con 19 veces menos rotación",
+    "functions": []
+   },
+   {
+    "id": "demiguel2024",
+    "year": 2024,
+    "title": "A Multifactor Perspective on Volatility-Managed Portfolios",
+    "finding": "Las versiones de un solo factor fallan fuera de muestra y no sobreviven a costes; solo la versión condicional multifactor lo hace.",
+    "functions": []
+   },
+   {
+    "id": "qfr08",
+    "year": 2024,
+    "title": "Shu, Yu y Mulvey (2024, Princeton), J. of Asset Management; Bemporad et al. (2018)",
+    "finding": "\"Statistical jump model\": clustering con penalización por cambiar de estado; cambia de señal menos que un HMM y redujo caídas en S&P, DAX y Nikkei",
+    "functions": []
+   },
+   {
+    "id": "qfr33",
+    "year": 2022,
+    "title": "Blanchet (Stanford), Chen y Zhou (Columbia) (2022), Management Science",
+    "finding": "Ridge o Lasso sobre los pesos equivale exactamente a protegerse del peor caso dentro de una bola de Wasserstein",
+    "functions": []
+   },
+   {
+    "id": "qfr35",
+    "year": 2022,
+    "title": "Bongiorno y Challet (2022), European J. of Finance",
+    "finding": "k-BAHC: limpia las direcciones (eigenvectores) con clustering jerárquico; necesita unas 4 veces menos datos",
+    "functions": []
+   },
+   {
+    "id": "qfr38",
+    "year": 2022,
+    "title": "Goldberg, Papanicolaou y Shkolnik (2022, Berkeley), SIAM JFM; Goldberg y Kercheval (2023), PNAS",
+    "finding": "El error grande está en el eigenvector principal; se corrige con contracción tipo James-Stein",
+    "functions": []
+   },
+   {
+    "id": "harvey2018",
+    "year": 2018,
+    "title": "The Impact of Volatility Targeting",
+    "finding": "El objetivo de volatilidad mejora el Sharpe en activos de riesgo y siempre reduce la volatilidad de la volatilidad.",
+    "functions": [
+     "vol_target"
+    ]
+   },
+   {
+    "id": "moreira2017",
+    "year": 2017,
+    "title": "Volatility-Managed Portfolios",
+    "finding": "Reducir exposición cuando la volatilidad es alta mejora el Sharpe de muchos factores.",
+    "functions": []
+   },
+   {
+    "id": "phillips2015",
+    "year": 2015,
+    "title": "Testing for Multiple Bubbles: Historical Episodes of Exuberance and Collapse in the S&P 500",
+    "finding": "La prueba recursiva SADF detecta un régimen explosivo mientras ocurre (no predice cuándo revienta).",
+    "functions": [
+     "sadf"
+    ]
+   },
+   {
+    "id": "kritzman2011",
+    "year": 2011,
+    "title": "Principal Components as a Measure of Systemic Risk",
+    "finding": "El 'absorption ratio' (varianza que absorben los primeros componentes principales) sube antes de las crisis.",
+    "functions": [
+     "absorption_ratio"
+    ]
+   },
+   {
+    "id": "qfr09",
+    "year": 2010,
+    "title": "Dai, Zhang y Zhu (2010), SIAM J. Financial Math",
+    "finding": "Con regímenes alcista y bajista ocultos, la regla óptima vende cuando la probabilidad de régimen alcista cae bajo un umbral, no según el precio",
+    "functions": []
+   },
+   {
+    "id": "qfr40",
+    "year": 2005,
+    "title": "Fernholz, Karatzas y Kardaras (2005, Columbia), Finance and Stochastics",
+    "finding": "Teoría estocástica de portafolios: el portafolio ponderado por diversidad le gana al mercado si éste se mantiene diverso",
+    "functions": [
+     "diversity_weighted"
+    ]
+   },
+   {
+    "id": "pafka2003",
+    "year": 2003,
+    "title": "Noisy covariance matrices and portfolio optimization II",
+    "finding": "El riesgo estimado con una covarianza de muestra es (1 − n/T) del real (en desviación típica).",
+    "functions": [
+     "sesgo_optimizador"
+    ]
+   },
+   {
+    "id": "higham2002",
+    "year": 2002,
+    "title": "Computing the nearest correlation matrix — a problem from finance",
+    "finding": "La correlación válida más cercana se obtiene con proyecciones alternadas y corrección de Dykstra.",
+    "functions": [
+     "nearest_correlation"
+    ]
+   },
+   {
+    "id": "qf_var_es",
+    "year": 1999,
+    "title": "Artzner et al. (1999); Basilea FRTB",
+    "finding": "VaR y Expected Shortfall históricos.",
+    "functions": [
+     "var_es"
+    ]
+   },
+   {
+    "id": "qf_adf_t",
+    "year": 1979,
+    "title": "Dickey y Fuller (1979)",
+    "finding": "Estadístico t de Dickey-Fuller aumentado.",
+    "functions": [
+     "adf_t"
+    ]
+   },
+   {
+    "id": "qf_sharpe",
+    "year": 1966,
+    "title": "Sharpe (1966)",
+    "finding": "Sharpe anualizado.",
+    "functions": [
+     "sharpe"
+    ]
+   },
+   {
+    "id": "qfr31",
+    "year": 1952,
+    "title": "Markowitz (1952); Tobin (1958); Merton (1972); Broadie (1993)",
+    "finding": "El portafolio tangente maximiza el Sharpe; el error de estimación aleja la frontera calculada de la real",
+    "functions": [
+     "mejora_sharpe",
+     "min_varianza"
+    ]
+   }
+  ],
+  "functions": [
+   "absorption_ratio",
+   "adf_t",
+   "diversity_weighted",
+   "mejora_sharpe",
+   "min_varianza",
+   "nearest_correlation",
+   "sadf",
+   "sesgo_optimizador",
+   "sharpe",
+   "var_es",
+   "vol_target"
+  ],
+  "code": [
+   "agents.apply_risk",
+   "agents.covariance",
+   "agents.portfolio_vol",
+   "agents.circuit_breaker"
+  ]
+ },
+ {
+  "id": "trader",
+  "name": "Trader",
+  "skills": [
+   {
+    "name": "llm-trading-agent-security",
+    "description": "Security patterns for autonomous trading agents with wallet or transaction authority. Covers prompt injection, spend limits, pre-send simulation, circuit breakers, MEV protection, and key handling. Use when an autonomous agent holds wallet or transaction authority and its limits, simulation, or key handling need review.",
+    "lessons": [
+     "External data is sanitized before entering the LLM context",
+     "Spend limits are enforced independently from model output",
+     "Transactions are simulated before send",
+     "min_amount_out is mandatory",
+     "Circuit breakers halt on drawdown or invalid state",
+     "Keys come from env or a secret manager, never code or logs",
+     "Private mempool or protected routing is used when appropriate",
+     "Slippage and deadlines are set per strategy"
+    ],
+    "origin": "instalada",
+    "source": "affaan-m/everything-claude-code (MIT)",
+    "applied_in": [
+     "agents.sanitize_headline: el texto externo se sanea antes del LLM",
+     "agents.apply_risk y circuit_breaker: límites que no dependen del modelo",
+     "engine.execute_run: revalidación antes de ejecutar (simulación previa)",
+     "fund_runs: cada decisión queda auditada, también las bloqueadas"
+    ]
+   }
+  ],
+  "papers": [
+   {
+    "id": "bonart2026",
+    "year": 2026,
+    "title": "Ley de la raíz cuadrada del impacto de mercado (arXiv 2606.07059)",
+    "finding": "El impacto de una orden es ∝ σ·√(Q/V) (volatilidad diaria, tamaño, volumen diario).",
+    "functions": [
+     "impacto_raiz"
+    ]
+   },
+   {
+    "id": "almgren2001",
+    "year": 2001,
+    "title": "Optimal execution of portfolio transactions",
+    "finding": "Calendario óptimo de liquidación: equilibra impacto y riesgo de precio (TWAP si no hay aversión).",
+    "functions": [
+     "almgren_chriss"
+    ]
+   }
+  ],
+  "functions": [
+   "almgren_chriss",
+   "impacto_raiz"
+  ],
+  "code": [
+   "agents.plan_orders"
+  ]
+ }
+]
