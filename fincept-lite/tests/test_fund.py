@@ -167,3 +167,19 @@ def test_llm_writes_memo_but_cannot_change_decisions(client, user, monkeypatch):
     assert rep["target"].get("BTC-USD", 0) <= A.BY_SYMBOL["BTC-USD"].max_weight
     assert "tools" not in seen and seen["model"] == "claude-opus-5-5"  # sin herramientas: no puede actuar
     assert "sample" not in seen["messages"][0]["content"]  # los titulares no entran en el prompt
+
+
+def test_stale_macro_data_is_flagged_and_not_used():
+    from server.fund import agents as A2
+    from server.fund import engine as E2
+    une = [3.5] * 12 + [4.2, 4.3, 4.4]  # dispararía la regla de Sahm (recesión)
+    fresh = A2.macro_regime(None, une, None, None, {"unemployment": {"last_period": "2026-09", "age_months": 2,
+                                                                     "stale": False}})
+    assert fresh["regime"] == "risk_off" and "[2026-09]" in fresh["notes"][0]
+    old = A2.macro_regime(None, une, None, None, {"unemployment": {"last_period": "2025-01", "age_months": 22,
+                                                                   "stale": True}})
+    assert old["regime"] == "neutral" and old["score"] == 0 and old["data_quality"]["stale"] == ["unemployment"]
+    assert "caducado" in old["notes"][0] and "2025-01" in old["notes"][0]
+    now = 1794400000  # noviembre de 2026
+    assert E2.months_old("2026-10-31", now) == 1 and E2.months_old("2025-01", now) == 22
+    assert E2.months_old(None, now) is None

@@ -126,15 +126,44 @@ def liquidity(hist: dict[str, list[dict]]) -> dict[str, tuple[float, float]]:
     return out
 
 
+MACRO_SOURCES = {  # por indicador, series candidatas en DBnomics: se usa la que tenga el dato más reciente
+    "fed": ["FED/H15/RIFSPFF_N.M"],
+    "unemployment": ["BLS/ln/LNS14000000", "Eurostat/une_rt_m/M.SA.TOTAL.PC_ACT.T.US", "IMF/IFS/M.US.LUR_PT"],
+    "inflation": ["Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA", "ECB/ICP/M.U2.N.000000.4.ANR"],
+}
+MACRO_MAX_AGE_MONTHS = 4  # un dato mensual con más retraso que esto no describe la economía de hoy
+
+
+def months_old(period: str | None, now: float | None = None) -> int | None:
+    """Meses entre un periodo 'AAAA-MM[-DD]' y hoy."""
+    try:
+        y, m = int(period[:4]), int(period[5:7])
+    except (TypeError, ValueError):
+        return None
+    t = time.gmtime(now if now is not None else time.time())
+    return (t.tm_year - y) * 12 + (t.tm_mon - m)
+
+
 async def _macro_series() -> dict:
-    async def values(sid: str) -> list[float] | None:
+    """Series macro (más reciente al final) y, en `meta`, de dónde sale cada una y si está caducada."""
+    async def fetch(sid: str) -> dict | None:
         try:
-            return [o["value"] for o in (await macro.observations(sid, 24))["observations"]]
+            o = await macro.observations(sid, 24)
+            return {"series": sid, "last_period": o["last_period"], "values": [x["value"] for x in o["observations"]]}
         except (macro.MacroError, KeyError):
             return None
-    fed, une, hicp = await asyncio.gather(values("FED/H15/RIFSPFF_N.M"), values("BLS/ln/LNS14000000"),
-                                          values("Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA"))
-    return {"fed": fed, "unemployment": une, "inflation": hicp}
+
+    async def best(key: str) -> dict | None:
+        got = [r for r in await asyncio.gather(*(fetch(s) for s in MACRO_SOURCES[key])) if r and r["values"]]
+        return max(got, key=lambda r: r["last_period"] or "") if got else None
+    res = dict(zip(MACRO_SOURCES, await asyncio.gather(*(best(k) for k in MACRO_SOURCES))))
+    meta = {}
+    for k, r in res.items():
+        if r:
+            age = months_old(r["last_period"])
+            meta[k] = {"series": r["series"], "last_period": r["last_period"], "age_months": age,
+                       "stale": age is None or age > MACRO_MAX_AGE_MONTHS}
+    return {k: (r["values"] if r else None) for k, r in res.items()} | {"meta": meta}
 
 
 # ── memo del CIO (opcional, Claude) ─────────────────────────────────────────
@@ -281,7 +310,7 @@ async def _run_cycle(uid: int, execute: bool, trigger: str) -> dict:
     rets = aligned_returns(hist)
     matrix = np.array([r for r in rets.values()]).T if rets and len({len(r) for r in rets.values()}) == 1 else None
     fragility = await asyncio.to_thread(A.systemic_fragility, matrix) if matrix is not None else None
-    regime = A.macro_regime(series["fed"], series["unemployment"], series["inflation"], fragility)
+    regime = A.macro_regime(series["fed"], series["unemployment"], series["inflation"], fragility, series["meta"])
     await _emit(uid, "macro", "done", f"régimen {regime['regime']}")
     await _emit(uid, "sentiment", "running", "Analizando titulares")
     sent = A.news_sentiment(await news.top_news(60))

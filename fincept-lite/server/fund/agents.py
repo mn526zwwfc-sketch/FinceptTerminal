@@ -277,37 +277,56 @@ def systemic_fragility(returns: np.ndarray, window: int = 63, step: int = 5) -> 
     return {"absorption_ratio": cur, "z": z, "fragile": z >= 1.0, "windows": len(series)}
 
 
+MACRO_LABELS = {"fed": "tipo de la Fed", "unemployment": "paro de EE. UU.", "inflation": "inflación de la zona euro"}
+
+
 def macro_regime(fed: list[float] | None, unemployment: list[float] | None, inflation: list[float] | None,
-                 fragility: dict | None = None) -> dict:
-    """Régimen a partir de series mensuales (más reciente al final). Sin datos → neutral."""
-    notes, score = [], 0.0
+                 fragility: dict | None = None, meta: dict | None = None) -> dict:
+    """Régimen a partir de series mensuales (más reciente al final). Sin datos → neutral.
+
+    `meta[indicador] = {last_period, age_months, stale}`: un indicador caducado NO puntúa (no se decide el
+    régimen de hoy con datos de hace un año); se anota en el acta con la fecha de su último dato."""
+    meta = meta or {}
+    stale = {k for k, m in meta.items() if m.get("stale")}
+    notes, score, warnings = [], 0.0, []
+    for k in ("fed", "unemployment", "inflation"):
+        if k in stale:
+            m = meta[k]
+            warnings.append(f"{MACRO_LABELS[k]}: último dato {m['last_period']} ({m['age_months']} meses), "
+                            "caducado: no se usa para el régimen")
+
+    def when(k: str) -> str:
+        return f" [{meta[k]['last_period']}]" if k in meta else ""
     if fragility:
         notes.append(f"Absorption ratio {fragility['absorption_ratio']:.2f} (z {fragility['z']:+.1f})")
         if fragility["fragile"]:
             score -= 0.5
             notes.append("mercado frágil: correlaciones concentradas")
-    if unemployment and len(unemployment) >= 13:
+    if unemployment and len(unemployment) >= 13 and "unemployment" not in stale:
         sahm = statistics.fmean(unemployment[-3:]) - min(unemployment[-13:-1])
-        notes.append(f"Regla de Sahm {sahm:+.2f} pp")
+        notes.append(f"Regla de Sahm {sahm:+.2f} pp{when('unemployment')}")
         if sahm >= 0.5:
             score -= 1.0
             notes.append("señal de recesión")
         elif sahm <= 0.2:
             score += 0.5
-    if fed and len(fed) >= 7:
+    fed_ok = bool(fed) and len(fed) >= 7 and "fed" not in stale
+    if fed_ok:
         chg = fed[-1] - fed[-7]
-        notes.append(f"Fed funds {fed[-1]:.2f}% ({chg:+.2f} pp en 6 meses)")
+        notes.append(f"Fed funds {fed[-1]:.2f}% ({chg:+.2f} pp en 6 meses){when('fed')}")
         score += 0.5 if chg < -0.1 else -0.5 if chg > 0.25 else 0.0
-    if inflation and inflation[-1] is not None:
-        notes.append(f"Inflación zona euro {inflation[-1]:.1f}%")
+    if inflation and inflation[-1] is not None and "inflation" not in stale:
+        notes.append(f"Inflación zona euro {inflation[-1]:.1f}%{when('inflation')}")
         score -= 0.5 if inflation[-1] > 4 else 0.0
+    notes += [f"AVISO: {w}" for w in warnings]
     if not notes:
         return {"regime": "neutral", "score": 0.0, "notes": ["Sin datos macro (modo sim o red no disponible)"],
-                "rates_direction": "flat"}
+                "rates_direction": "flat", "data_quality": {"stale": [], "sources": meta}}
     regime = "risk_on" if score >= 0.5 else "risk_off" if score <= -0.5 else "neutral"
-    rates = "falling" if fed and len(fed) >= 7 and fed[-1] < fed[-7] - 0.1 else \
-        "rising" if fed and len(fed) >= 7 and fed[-1] > fed[-7] + 0.25 else "flat"
-    return {"regime": regime, "score": score, "notes": notes, "rates_direction": rates}
+    rates = "falling" if fed_ok and fed[-1] < fed[-7] - 0.1 else \
+        "rising" if fed_ok and fed[-1] > fed[-7] + 0.25 else "flat"
+    return {"regime": regime, "score": score, "notes": notes, "rates_direction": rates,
+            "data_quality": {"stale": sorted(stale), "sources": meta}}
 
 
 REGIME_TILT = {  # multiplicador por mesa según el régimen

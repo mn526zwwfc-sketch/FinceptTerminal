@@ -34,6 +34,8 @@ ROLES = {
         "method": ["Lee tu parte del acta (`regimen`, `fragilidad_sistemica`).",
                    "Explica cada nota del régimen: regla de Sahm, tendencia de los tipos de la Fed, inflación de "
                    "la zona euro y absorption ratio (z ≥ 1 = mercado frágil).",
+                   "Mira `regimen.data_quality`: di la fecha del último dato de cada indicador y cuáles están "
+                   "caducados (no puntúan). Si faltan el paro o la inflación, dilo: el régimen se apoya en menos datos.",
                    "Señala qué dato podría cambiar el régimen en el próximo ciclo y en qué dirección."],
         "deliver": "Régimen, las 3 razones principales con sus cifras, el riesgo macro que vigilarías y qué mesa "
                    "favorece o penaliza.",
