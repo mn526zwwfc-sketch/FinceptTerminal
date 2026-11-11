@@ -256,6 +256,7 @@ ANTHROPIC_API_KEY=sk-ant-… ./run.sh       # chat IA con Claude (Opus 5.5, tool
 | `FINCEPT_DEV` | `1` | Devuelve el OTP en la respuesta y crea el usuario demo. **Ponlo a `0` fuera de local.** |
 | `FINCEPT_AI` | — | `offline` fuerza el agente sin LLM |
 | `FINCEPT_AI_MODEL` / `FINCEPT_AI_EFFORT` | `claude-opus-5-5` / `medium` | Modelo y esfuerzo del chat |
+| `FRED_API_KEY` | — | Clave gratuita de FRED. Con ella el fondo usa paro (UNRATE), tipo de la Fed (FEDFUNDS) e IPC de EE. UU. (CPIAUCSL, interanual) al día; sin ella usa DBnomics, cuyos datos de paro e inflación van con meses de retraso |
 | `FINCEPT_IBKR_URL` | `https://localhost:5000/v1/api` | Gateway de la Client Portal Web API de IBKR. Solo se acepta loopback |
 | `FINCEPT_IBKR_CA` | — | Certificado del gateway; vacío = certificado autofirmado aceptado solo en loopback |
 | `FINCEPT_MCP_GRACE` | `8` | Segundos antes de que una tool larga pase a ser un job |
@@ -281,7 +282,7 @@ Barra de comandos (`/` o `Ctrl+K`): `AAPL` · `SAN.MC GO` · `BUY 10 NVDA` · `S
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest -q      # 202 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
+.venv/bin/python -m pytest -q      # 204 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
 ```
 
 ### Evaluación del servidor MCP

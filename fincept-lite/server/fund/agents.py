@@ -292,7 +292,7 @@ def macro_regime(fed: list[float] | None, unemployment: list[float] | None, infl
     for k in ("fed", "unemployment", "inflation"):
         if k in stale:
             m = meta[k]
-            warnings.append(f"{MACRO_LABELS[k]}: último dato {m['last_period']} ({m['age_months']} meses), "
+            warnings.append(f"{m.get('label') or MACRO_LABELS[k]}: último dato {m['last_period']} ({m['age_months']} meses), "
                             "caducado: no se usa para el régimen")
 
     def when(k: str) -> str:
@@ -316,7 +316,8 @@ def macro_regime(fed: list[float] | None, unemployment: list[float] | None, infl
         notes.append(f"Fed funds {fed[-1]:.2f}% ({chg:+.2f} pp en 6 meses){when('fed')}")
         score += 0.5 if chg < -0.1 else -0.5 if chg > 0.25 else 0.0
     if inflation and inflation[-1] is not None and "inflation" not in stale:
-        notes.append(f"Inflación zona euro {inflation[-1]:.1f}%{when('inflation')}")
+        label = meta.get("inflation", {}).get("label") or "Inflación zona euro"
+        notes.append(f"{label} {inflation[-1]:.1f}%{when('inflation')}")
         score -= 0.5 if inflation[-1] > 4 else 0.0
     notes += [f"AVISO: {w}" for w in warnings]
     if not notes:

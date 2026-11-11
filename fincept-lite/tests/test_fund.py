@@ -183,3 +183,45 @@ def test_stale_macro_data_is_flagged_and_not_used():
     now = 1794400000  # noviembre de 2026
     assert E2.months_old("2026-10-31", now) == 1 and E2.months_old("2025-01", now) == 22
     assert E2.months_old(None, now) is None
+
+
+def test_fred_gives_fresh_macro_data(monkeypatch):
+    import asyncio
+    import time as _t
+
+    import httpx
+
+    from server import fred, macro
+    from server.config import settings
+    from server.fund import engine as E2
+    seen = []
+
+    def handler(req):
+        sid = req.url.params["series_id"]
+        seen.append(dict(req.url.params))
+        base = {"UNRATE": 4.0, "FEDFUNDS": 3.9, "CPIAUCSL": 300.0}[sid]
+        t = _t.gmtime()
+        obs = []
+        for k in range(40):  # más reciente primero; el mes pasado es el último dato
+            m = t.tm_year * 12 + t.tm_mon - 2 - k
+            val = base * (1 + 0.0025 * (39 - k)) if sid == "CPIAUCSL" else base + (0.6 if k < 3 and sid == "UNRATE" else 0)
+            obs.append({"date": f"{m // 12}-{m % 12 + 1:02d}-01", "value": "." if k == 5 and sid == "FEDFUNDS" else str(val)})
+        return httpx.Response(200, json={"observations": obs})
+
+    async def no_dbnomics(sid, limit=24, **kw):
+        raise macro.MacroError("sin red")
+    monkeypatch.setattr(fred, "transport", httpx.MockTransport(handler))
+    monkeypatch.setattr(fred, "_cache", {})
+    monkeypatch.setattr(macro, "observations", no_dbnomics)
+    monkeypatch.setattr(settings, "data_mode", "live")
+    assert not fred.available()  # sin clave no se usa
+    assert asyncio.run(E2._macro_series())["meta"] == {}
+    monkeypatch.setenv("FRED_API_KEY", "k" * 32)
+    out = asyncio.run(E2._macro_series())
+    meta = out["meta"]
+    assert {m["provider"] for m in meta.values()} == {"FRED"} and not any(m["stale"] for m in meta.values())
+    assert meta["inflation"]["label"].startswith("Inflación de EE. UU.") and 2.5 < out["inflation"][-1] < 3.5
+    assert all(p["api_key"] == "k" * 32 and p["file_type"] == "json" for p in seen)
+    reg = A.macro_regime(out["fed"], out["unemployment"], out["inflation"], None, meta)
+    assert reg["regime"] == "risk_off" and reg["data_quality"]["stale"] == []  # Sahm +0,60 con datos al día
+    assert any("Inflación de EE. UU." in n for n in reg["notes"])

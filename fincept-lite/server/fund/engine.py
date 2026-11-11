@@ -25,7 +25,7 @@ import time
 
 import numpy as np
 
-from .. import macro, news, paper
+from .. import fred, macro, news, paper
 from ..datahub import hub
 from ..db import get_db
 from ..market.providers import market
@@ -144,24 +144,49 @@ def months_old(period: str | None, now: float | None = None) -> int | None:
     return (t.tm_year - y) * 12 + (t.tm_mon - m)
 
 
+FRED_SOURCES = {  # con FRED_API_KEY: series oficiales al día (indicador → serie, transformación, etiqueta)
+    "fed": ("FEDFUNDS", None, "Fed funds"),
+    "unemployment": ("UNRATE", None, "paro de EE. UU."),
+    "inflation": ("CPIAUCSL", "yoy", "Inflación de EE. UU. (IPC)"),
+}
+DBNOMICS_LABELS = {"fed": "Fed funds", "unemployment": "paro de EE. UU.", "inflation": "Inflación zona euro"}
+
+
 async def _macro_series() -> dict:
-    """Series macro (más reciente al final) y, en `meta`, de dónde sale cada una y si está caducada."""
-    async def fetch(sid: str) -> dict | None:
+    """Series macro (más reciente al final) y, en `meta`, de dónde sale cada una y si está caducada.
+    Para cada indicador se usa la fuente con el dato más reciente: FRED (si hay clave) o DBnomics."""
+    async def dbn(sid: str, key: str) -> dict | None:
         try:
             o = await macro.observations(sid, 24)
-            return {"series": sid, "last_period": o["last_period"], "values": [x["value"] for x in o["observations"]]}
+            return {"series": sid, "provider": "DBnomics", "label": DBNOMICS_LABELS[key],
+                    "last_period": o["last_period"], "values": [x["value"] for x in o["observations"]]}
         except (macro.MacroError, KeyError):
             return None
 
+    async def fr(key: str) -> dict | None:
+        if not fred.available():
+            return None
+        sid, how, label = FRED_SOURCES[key]
+        try:
+            obs = await fred.observations(sid, 40)
+        except fred.FredError as e:
+            log.warning("FRED %s: %s", sid, e)
+            return None
+        obs = (fred.yoy(obs) if how == "yoy" else obs)[-24:]
+        return {"series": f"FRED/{sid}", "provider": "FRED", "label": label,
+                "last_period": obs[-1]["period"], "values": [x["value"] for x in obs]} if obs else None
+
     async def best(key: str) -> dict | None:
-        got = [r for r in await asyncio.gather(*(fetch(s) for s in MACRO_SOURCES[key])) if r and r["values"]]
-        return max(got, key=lambda r: r["last_period"] or "") if got else None
+        got = await asyncio.gather(fr(key), *(dbn(s, key) for s in MACRO_SOURCES[key]))
+        got = [r for r in got if r and r["values"]]
+        return max(got, key=lambda r: (r["last_period"] or "")[:7]) if got else None  # empate: gana FRED
     res = dict(zip(MACRO_SOURCES, await asyncio.gather(*(best(k) for k in MACRO_SOURCES))))
     meta = {}
     for k, r in res.items():
         if r:
             age = months_old(r["last_period"])
-            meta[k] = {"series": r["series"], "last_period": r["last_period"], "age_months": age,
+            meta[k] = {"series": r["series"], "provider": r["provider"], "label": r["label"],
+                       "last_period": r["last_period"], "age_months": age,
                        "stale": age is None or age > MACRO_MAX_AGE_MONTHS}
     return {k: (r["values"] if r else None) for k, r in res.items()} | {"meta": meta}
 
