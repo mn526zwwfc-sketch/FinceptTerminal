@@ -70,7 +70,10 @@ def test_every_paper_and_skill_reaches_an_agent():
     profiles = T.agent_profiles()
     assert len(profiles) == 7
     covered = {p["id"] for a in profiles for p in a["papers"]}
-    assert covered == {e["id"] for e in knowledge_base()}  # toda la base de conocimiento se reparte
+    out = {e["id"] for e in knowledge_base() if T.excluded(e)}
+    assert covered == {e["id"] for e in knowledge_base()} - out  # toda la base se reparte, salvo lo excluido
+    assert out and not {"min_varianza", "mejora_sharpe"} & {f for a in profiles for f in a["functions"]}
+    assert not any("Markowitz" in p["title"] for a in profiles for p in a["papers"])  # decisión del usuario
     skills = {s["name"] for a in profiles for s in a["skills"]}
     assert skills | set(T.PLATFORM_SKILLS) == set(SK.APPLIED)
     for a in profiles:

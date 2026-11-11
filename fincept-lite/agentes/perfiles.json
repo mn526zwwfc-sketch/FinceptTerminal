@@ -986,24 +986,12 @@
     "functions": [
      "sharpe"
     ]
-   },
-   {
-    "id": "qfr31",
-    "year": 1952,
-    "title": "Markowitz (1952); Tobin (1958); Merton (1972); Broadie (1993)",
-    "finding": "El portafolio tangente maximiza el Sharpe; el error de estimación aleja la frontera calculada de la real",
-    "functions": [
-     "mejora_sharpe",
-     "min_varianza"
-    ]
    }
   ],
   "functions": [
    "absorption_ratio",
    "adf_t",
    "diversity_weighted",
-   "mejora_sharpe",
-   "min_varianza",
    "nearest_correlation",
    "sadf",
    "sesgo_optimizador",

@@ -316,7 +316,19 @@ AGENTS = [
 PLATFORM_SKILLS = ["fastapi", "mcp-builder"]  # construyen la terminal, no deciden inversiones
 
 
+# Decisión del usuario: el equipo no usa la optimización media-varianza de Markowitz. Las funciones siguen
+# en la librería quantfin (no se toca), pero ningún agente las recibe ni recibe su paper.
+EXCLUDED_FUNCTIONS = {"min_varianza", "mejora_sharpe"}
+
+
+def excluded(entry: dict) -> bool:
+    fns = set(entry.get("functions") or [])
+    return bool(fns) and fns <= EXCLUDED_FUNCTIONS
+
+
 def _belongs(entry: dict, agent: dict) -> bool:
+    if excluded(entry):
+        return False
     topic = entry.get("topic") or ""
     return (topic in agent["topics"] or (entry.get("agent") or "") in agent["tags"]
             or any(topic == f"Fondo · {t}" for t in agent["tags"]))

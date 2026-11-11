@@ -11,7 +11,7 @@ Equipo de inversión del fondo Fincept como subagentes de Claude Code: estratega
 | `fincept-analistas-mesa` | Analistas por mesa | equity-research, yfinance-data, option-vol-analysis | 20 |
 | `fincept-investigador-cuant` | Investigador cuant | backtesting-frameworks | 21 |
 | `fincept-cio` | CIO | — | 7 |
-| `fincept-gestor-riesgos` | Gestor de riesgos | backtesting-frameworks, option-vol-analysis, llm-trading-agent-security | 21 |
+| `fincept-gestor-riesgos` | Gestor de riesgos | backtesting-frameworks, option-vol-analysis, llm-trading-agent-security | 20 |
 | `fincept-trader` | Trader | llm-trading-agent-security | 2 |
 
 Cada subagente trae en su definición su misión, su método, su entregable, sus papers (de la base de conocimiento de Fincept Lite), sus funciones de `quantfin` y el código del fondo que le corresponde. Trabajan sobre el repositorio FinceptTerminal (`fincept-lite/`) y obtienen sus datos con `python -m server.fund.team <rol>`, que convoca el comité en paper sin tocar ninguna cuenta.

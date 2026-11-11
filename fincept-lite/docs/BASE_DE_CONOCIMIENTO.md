@@ -356,7 +356,7 @@ Objetivo de volatilidad (solo techo, nunca apalanca): The Impact of Volatility T
 | Analistas por mesa | equity-research, yfinance-data, option-vol-analysis | 20 | basis_momentum, black_scholes, brier, carry_trade, garch11, impermanent_loss, lmsr_precio, lvr_producto_constante, momentum_seccion_cruzada, monte_carlo_call, pnl_cobertura, regresion_factores, roll_yield, sadf | `agents.asset_signals`, `agents.debate` |
 | Investigador cuant | backtesting-frameworks | 21 | ajustar_ns, ajustar_ou, avellaneda_stoikov, deflated_sharpe, ema, kelly_binario, nelson_siegel, senal_donchian, senal_ema, tsmom, vol_target, zscore_pairs | `training.train_asset`, `training.apply_book`, `agents.deflated_sharpe` |
 | CIO | — | 7 | risk_parity | `agents.build_portfolio`, `agents.risk_budget`, `engine._llm_memo` |
-| Gestor de riesgos | backtesting-frameworks, option-vol-analysis, llm-trading-agent-security | 21 | absorption_ratio, adf_t, diversity_weighted, mejora_sharpe, min_varianza, nearest_correlation, sadf, sesgo_optimizador, sharpe, var_es, vol_target | `agents.apply_risk`, `agents.covariance`, `agents.portfolio_vol`, `agents.circuit_breaker` |
+| Gestor de riesgos | backtesting-frameworks, option-vol-analysis, llm-trading-agent-security | 20 | absorption_ratio, adf_t, diversity_weighted, nearest_correlation, sadf, sesgo_optimizador, sharpe, var_es, vol_target | `agents.apply_risk`, `agents.covariance`, `agents.portfolio_vol`, `agents.circuit_breaker` |
 | Trader | llm-trading-agent-security | 2 | almgren_chriss, impacto_raiz | `agents.plan_orders` |
 
 Skills de plataforma (construyen la terminal, no deciden inversiones): fastapi, mcp-builder.

@@ -1,6 +1,6 @@
 # Agentes entrenados
 
-Entrenados el 2026-11-11 12:21 UTC con 5 años de datos diarios reales (yahoo) de los 17 activos del fondo. Protocolo: 60 % entrenar, 20 % validar, 20 % prueba final; ejecución en la apertura siguiente; Deflated Sharpe por las 32 configuraciones probadas.
+Entrenados el 2026-11-11 15:02 UTC con 5 años de datos diarios reales (yahoo) de los 17 activos del fondo. Protocolo: 60 % entrenar, 20 % validar, 20 % prueba final; ejecución en la apertura siguiente; Deflated Sharpe por las 32 configuraciones probadas.
 
 Se regeneran con `FINCEPT_DATA_MODE=live python -m server.fund.export_agents`. El fondo los usa hasta que entrenes tú (botón ENTRENAR AGENTES) o pasen 30 días.
 
@@ -10,29 +10,29 @@ Se regeneran con `FINCEPT_DATA_MODE=live python -m server.fund.export_agents`. E
 
 | Activo | Mesa | Veredicto | Estrategias del conjunto | Sharpe validación | Sharpe prueba | Comprar y mantener | Exposición hoy |
 |---|---|---|---|---|---|---|---|
-| SPY | equities | validada | donchian(20)+vt ×0.51, trend_sma(100)+vt ×0.31, tsmom(252) ×0.18 | 0.78 | 0.16 | 0.80 | 18% |
-| QQQ | equities | validada | donchian(20)+vt ×0.46, trend_sma(200) ×0.36, tsmom(252) ×0.18 | 1.08 | 0.10 | 0.51 | 18% |
-| VGK | equities | validada | ou_reversion(1.0) ×0.45, tsmom(126) ×0.30, ema_cross(20,100) ×0.25 | 2.07 | 0.35 | 0.66 | 30% |
-| EWJ | equities | validada | rsi_reversion(30,55) ×0.44, tsmom(252) ×0.35, ou_reversion(1.0) ×0.21 | 1.71 | 0.10 | 0.47 | 100% |
-| EEM | equities | validada | rsi_reversion(25,50)+vt ×0.44, tsmom(126) ×0.30, sma_cross(20,100)+vt ×0.26 | 1.45 | 0.45 | 0.48 | 23% |
-| EWP | equities | positiva fuera de muestra pero sin superar el DSR | sma_cross(20,100) ×0.34, trend_sma(200) ×0.33, ema_cross(50,200) ×0.33 | 2.05 | 0.52 | 0.88 | 66% |
-| TLT | rates | falla en la prueba final | rsi_reversion(25,50) ×1.00 | 0.13 | -0.67 | -0.94 | 0% |
-| IEF | rates | falla en la prueba final | ou_reversion(1.0) ×0.52, rsi_reversion(30,55) ×0.48 | 0.96 | -0.30 | -1.08 | 0% |
-| GLD | commodities | validada | sma_cross(20,100) ×0.33, ema_cross(20,100) ×0.33, donchian(55) ×0.33 | 2.51 | 0.12 | 0.06 | 0% |
-| SLV | commodities | positiva fuera de muestra pero sin superar el DSR | rsi_reversion(30,55) ×0.36, tsmom(252)+vt ×0.32, sma_cross(50,200) ×0.32 | 2.35 | 0.22 | 0.33 | 48% |
-| USO | commodities | falla en la prueba final | ou_reversion(1.0)+vt ×0.52, rsi_reversion(30,55) ×0.48 | 1.19 | -0.08 | 1.50 | 16% |
-| UUP | fx | positiva fuera de muestra pero sin superar el DSR | ou_reversion(2.0) ×0.60, rsi_reversion(30,55) ×0.35, sma_cross(20,100) ×0.04 | 0.22 | 0.32 | 0.55 | 4% |
-| FXE | fx | falla en la prueba final | ema_cross(10,50) ×0.61, donchian(20) ×0.39 | 1.13 | -1.27 | -0.60 | 0% |
-| FXY | fx | falla en la prueba final | ou_reversion(1.0) ×0.71, ema_cross(10,50) ×0.29 | 1.04 | -2.28 | -0.38 | 0% |
+| SPY | equities | validada | donchian(20)+vt ×0.51, trend_sma(100)+vt ×0.31, tsmom(252) ×0.18 | 0.79 | 0.11 | 0.83 | 18% |
+| QQQ | equities | validada | donchian(20)+vt ×0.46, trend_sma(200) ×0.36, tsmom(252) ×0.18 | 1.10 | 0.08 | 0.59 | 54% |
+| VGK | equities | validada | ou_reversion(1.0) ×0.44, tsmom(126) ×0.30, ema_cross(20,100) ×0.26 | 2.10 | 0.29 | 0.58 | 30% |
+| EWJ | equities | validada | rsi_reversion(30,55) ×0.44, tsmom(252) ×0.36, ou_reversion(1.0) ×0.20 | 1.74 | 0.25 | 0.47 | 100% |
+| EEM | equities | validada | rsi_reversion(25,50)+vt ×0.40, tsmom(126) ×0.30, ou_reversion(1.0) ×0.30 | 1.72 | 0.53 | 0.55 | 30% |
+| EWP | equities | positiva fuera de muestra pero sin superar el DSR | sma_cross(20,100) ×0.34, trend_sma(200) ×0.33, ema_cross(50,200) ×0.33 | 2.16 | 0.40 | 0.76 | 66% |
+| TLT | rates | falla en la prueba final | rsi_reversion(25,50) ×1.00 | 0.07 | -0.67 | -0.99 | 0% |
+| IEF | rates | falla en la prueba final | rsi_reversion(30,55) ×0.91, ou_reversion(1.0) ×0.09 | 0.93 | -0.53 | -1.12 | 0% |
+| GLD | commodities | validada | sma_cross(20,100) ×0.33, ema_cross(20,100) ×0.33, donchian(55) ×0.33 | 2.69 | 0.12 | 0.04 | 0% |
+| SLV | commodities | positiva fuera de muestra pero sin superar el DSR | rsi_reversion(30,55) ×0.34, sma_cross(50,200) ×0.33, ema_cross(50,200) ×0.33 | 2.47 | 0.26 | 0.32 | 34% |
+| USO | commodities | falla en la prueba final | ou_reversion(1.0)+vt ×0.52, rsi_reversion(30,55) ×0.48 | 1.19 | -0.08 | 1.59 | 17% |
+| UUP | fx | positiva fuera de muestra pero sin superar el DSR | ou_reversion(2.0) ×0.63, rsi_reversion(30,55) ×0.37 | 0.22 | 0.32 | 0.62 | 0% |
+| FXE | fx | falla en la prueba final | ema_cross(10,50) ×0.61, donchian(20) ×0.39 | 1.13 | -1.27 | -0.70 | 0% |
+| FXY | fx | falla en la prueba final | ou_reversion(1.0) ×0.71, ema_cross(10,50) ×0.29 | 1.04 | -2.28 | -0.37 | 0% |
 | BTC-USD | crypto | falla en la prueba final | rsi_reversion(30,55) ×0.55, ema_cross(50,200) ×0.29, ou_reversion(1.0)+vt ×0.16 | 1.13 | -0.71 | -0.50 | 84% |
 | ETH-USD | crypto | falla en la prueba final | rsi_reversion(30,55) ×0.36, donchian(55)+vt ×0.33, tsmom(63)+vt ×0.31 | 1.30 | -1.06 | -0.51 | 36% |
 | SOL-USD | crypto | falla en la prueba final | rsi_reversion(30,55)+vt ×0.62, donchian(20)+vt ×0.38 | 0.59 | -1.31 | -0.68 | 21% |
 
 **Lo que aprendió cada mesa:**
 
-- equities: funcionan tsmom, rsi_reversion, trend_sma
-- rates: funcionan rsi_reversion, ou_reversion, sma_cross; no funcionan tsmom, ema_cross, trend_sma, donchian
-- commodities: funcionan rsi_reversion, tsmom, donchian
+- equities: funcionan tsmom, trend_sma, donchian
+- rates: funcionan rsi_reversion, sma_cross, ou_reversion; no funcionan ema_cross, tsmom, trend_sma, donchian
+- commodities: funcionan tsmom, rsi_reversion, donchian
 - fx: funcionan ema_cross, ou_reversion, sma_cross; no funcionan donchian
 - crypto: funcionan rsi_reversion, donchian, tsmom; no funcionan ou_reversion
 
@@ -42,20 +42,20 @@ Se regeneran con `FINCEPT_DATA_MODE=live python -m server.fund.export_agents`. E
 
 | Activo | Mesa | Veredicto | Estrategias del conjunto | Sharpe validación | Sharpe prueba | Comprar y mantener | Exposición hoy |
 |---|---|---|---|---|---|---|---|
-| SPY | equities | validada | donchian(55)+vt ×0.59, tsmom(252) ×0.21, ema_cross(50,200) ×0.20 | 0.49 | 0.53 | 0.80 | 41% |
-| QQQ | equities | falla en la prueba final | donchian(55) ×0.44, trend_sma(200) ×0.39, tsmom(252) ×0.18 | 0.89 | -0.04 | 0.51 | 18% |
-| VGK | equities | falla en la prueba final | ou_reversion(1.0) ×0.41, ema_cross(20,100) ×0.31, sma_cross(20,100) ×0.28 | 1.37 | -0.25 | 0.66 | 0% |
-| EWJ | equities | falla en la prueba final | rsi_reversion(30,55) ×0.50, tsmom(252) ×0.32, ou_reversion(1.0) ×0.19 | 1.03 | -0.16 | 0.47 | 100% |
-| EEM | equities | falla en la prueba final | rsi_reversion(25,50) ×0.49, ou_reversion(1.0) ×0.36, sma_cross(50,200) ×0.14 | 0.78 | -0.00 | 0.48 | 100% |
-| EWP | equities | positiva fuera de muestra pero sin superar el DSR | donchian(55) ×0.35, tsmom(252) ×0.34, sma_cross(20,100) ×0.30 | 2.20 | 0.35 | 0.88 | 34% |
-| TLT | rates | sin ventaja: ninguna familia gana en validación; el comité usa solo las señales | — | — | — | -0.94 | — |
-| IEF | rates | sin ventaja: ninguna familia gana en validación; el comité usa solo las señales | — | — | — | -1.08 | — |
-| GLD | commodities | falla en la prueba final | sma_cross(20,100) ×0.33, ema_cross(20,100) ×0.33, donchian(55) ×0.33 | 2.51 | -0.00 | 0.06 | 0% |
-| SLV | commodities | positiva fuera de muestra pero sin superar el DSR | sma_cross(50,200) ×0.36, ema_cross(50,200) ×0.36, rsi_reversion(30,55) ×0.28 | 2.11 | 0.25 | 0.33 | 28% |
-| USO | commodities | falla en la prueba final | rsi_reversion(30,55) ×0.66, ou_reversion(2.0) ×0.34 | 0.44 | -0.42 | 1.50 | 0% |
-| UUP | fx | sin ventaja: ninguna familia gana en validación; el comité usa solo las señales | — | — | — | 0.55 | — |
-| FXE | fx | sin ventaja: ninguna familia gana en validación; el comité usa solo las señales | — | — | — | -0.60 | — |
-| FXY | fx | sin ventaja: ninguna familia gana en validación; el comité usa solo las señales | — | — | — | -0.38 | — |
+| SPY | equities | validada | donchian(55)+vt ×0.59, tsmom(252) ×0.22, ema_cross(50,200) ×0.20 | 0.50 | 0.51 | 0.83 | 41% |
+| QQQ | equities | falla en la prueba final | donchian(55) ×0.43, trend_sma(200) ×0.39, tsmom(252) ×0.18 | 0.91 | -0.05 | 0.59 | 57% |
+| VGK | equities | falla en la prueba final | ou_reversion(1.0) ×0.40, ema_cross(20,100) ×0.31, sma_cross(20,100) ×0.29 | 1.40 | -0.30 | 0.58 | 0% |
+| EWJ | equities | falla en la prueba final | rsi_reversion(30,55) ×0.46, tsmom(252) ×0.32, ou_reversion(1.0) ×0.21 | 1.06 | -0.00 | 0.47 | 100% |
+| EEM | equities | positiva fuera de muestra pero sin superar el DSR | rsi_reversion(25,50) ×0.47, ou_reversion(1.0) ×0.35, sma_cross(50,200) ×0.18 | 0.79 | 0.28 | 0.55 | 53% |
+| EWP | equities | positiva fuera de muestra pero sin superar el DSR | donchian(55) ×0.35, tsmom(252) ×0.34, sma_cross(20,100) ×0.31 | 2.31 | 0.24 | 0.76 | 34% |
+| TLT | rates | sin ventaja: ninguna familia gana en validación; el comité usa solo las señales | — | — | — | -0.99 | — |
+| IEF | rates | sin ventaja: ninguna familia gana en validación; el comité usa solo las señales | — | — | — | -1.12 | — |
+| GLD | commodities | falla en la prueba final | sma_cross(20,100) ×0.33, ema_cross(20,100) ×0.33, donchian(55) ×0.33 | 2.69 | -0.00 | 0.04 | 0% |
+| SLV | commodities | positiva fuera de muestra pero sin superar el DSR | sma_cross(50,200) ×0.38, ema_cross(50,200) ×0.38, rsi_reversion(30,55) ×0.24 | 2.30 | 0.27 | 0.32 | 24% |
+| USO | commodities | falla en la prueba final | rsi_reversion(30,55) ×0.66, ou_reversion(2.0) ×0.34 | 0.44 | -0.36 | 1.59 | 0% |
+| UUP | fx | sin ventaja: ninguna familia gana en validación; el comité usa solo las señales | — | — | — | 0.62 | — |
+| FXE | fx | sin ventaja: ninguna familia gana en validación; el comité usa solo las señales | — | — | — | -0.70 | — |
+| FXY | fx | sin ventaja: ninguna familia gana en validación; el comité usa solo las señales | — | — | — | -0.37 | — |
 | BTC-USD | crypto | falla en la prueba final | rsi_reversion(30,55) ×0.35, ema_cross(50,200) ×0.33, tsmom(252) ×0.33 | 0.78 | -1.58 | -0.50 | 100% |
 | ETH-USD | crypto | falla en la prueba final | donchian(55)+vt ×0.50, rsi_reversion(30,55) ×0.44, trend_sma(200) ×0.06 | 0.92 | -1.44 | -0.51 | 44% |
 | SOL-USD | crypto | falla en la prueba final | rsi_reversion(30,55)+vt ×0.67, donchian(20)+vt ×0.33 | 0.33 | -1.80 | -0.68 | 23% |
@@ -64,7 +64,7 @@ Se regeneran con `FINCEPT_DATA_MODE=live python -m server.fund.export_agents`. E
 
 - equities: funcionan tsmom, ema_cross, donchian
 - rates: ninguna familia gana en validación; no funcionan ou_reversion, sma_cross, rsi_reversion, ema_cross, donchian, tsmom, trend_sma
-- commodities: funcionan rsi_reversion, sma_cross, donchian
+- commodities: funcionan sma_cross, donchian, ema_cross
 - fx: ninguna familia gana en validación; no funcionan ou_reversion, ema_cross, donchian, sma_cross, trend_sma, rsi_reversion, tsmom
 - crypto: funcionan rsi_reversion, donchian, ema_cross; no funcionan trend_sma, sma_cross, ou_reversion
 
@@ -104,7 +104,7 @@ Se regeneran con `FINCEPT_DATA_MODE=live python -m server.fund.export_agents`. E
 
 ### Gestor de riesgos
 
-21 papers · funciones quantfin: absorption_ratio, adf_t, diversity_weighted, mejora_sharpe, min_varianza, nearest_correlation, sadf, sesgo_optimizador, sharpe, var_es, vol_target · código: agents.apply_risk, agents.covariance, agents.portfolio_vol, agents.circuit_breaker
+20 papers · funciones quantfin: absorption_ratio, adf_t, diversity_weighted, nearest_correlation, sadf, sesgo_optimizador, sharpe, var_es, vol_target · código: agents.apply_risk, agents.covariance, agents.portfolio_vol, agents.circuit_breaker
 
 - Skill **backtesting-frameworks**: Use point-in-time data - Avoid look-ahead bias; Include transaction costs - Realistic estimates; Test out-of-sample - Always reserve data
 - Skill **option-vol-analysis**: Always start from the vol surface — it encodes the market's view of future uncertainty across strikes and expiries.; Individual option prices are derived from this surface.; Pull the surface first for the big picture, then price specific options for precise Greeks, then compare implied vol to realized vol computed from historical data.
