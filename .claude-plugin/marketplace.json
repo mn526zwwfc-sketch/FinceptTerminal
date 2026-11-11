@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "fincept",
+  "owner": {
+    "name": "mn526zwwfc-sketch"
+  },
+  "metadata": {
+    "description": "Plugins del fondo Fincept: el equipo de inversión como subagentes con sus skills."
+  },
+  "plugins": [
+    {
+      "name": "fincept-fondo",
+      "source": "./plugins/fincept-fondo",
+      "description": "Equipo de inversión del fondo Fincept como subagentes de Claude Code: estratega macro, analista de sentimiento, analistas por mesa, investigador cuant, CIO, gestor de riesgos y trader, cada uno con sus skills, sus papers y su código, más la skill comite-fincept que los coordina.",
+      "version": "1.0.0"
+    }
+  ]
+}

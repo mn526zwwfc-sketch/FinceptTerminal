@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "fincept": {
+      "source": {
+        "source": "directory",
+        "path": "./"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "fincept-fondo@fincept": true
+  }
+}

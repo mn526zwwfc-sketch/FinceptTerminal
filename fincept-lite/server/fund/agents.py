@@ -446,7 +446,8 @@ def risk_budget(cands: list[str], views: dict[str, dict], cov_info) -> tuple[dic
     if cov_info and len(cands) >= 2 and all(c in cov_info[0] for c in cands):
         syms, cov, _ = cov_info
         idx = [syms.index(c) for c in cands]
-        w = qm.risk_parity(cov[np.ix_(idx, idx)])
+        with np.errstate(invalid="ignore"):  # con correlaciones negativas puede no converger: se usa el plan B
+            w = qm.risk_parity(cov[np.ix_(idx, idx)])
         if np.all(np.isfinite(w)) and w.min() > 0:
             return dict(zip(cands, map(float, w))), "paridad de riesgo (covarianza)"
     inv = {c: 1 / max(views[c]["signals"]["vol60"], 0.04) for c in cands}

@@ -137,6 +137,14 @@ El fondo los carga solo la primera vez, si aún no has entrenado tú; usa el lib
 
 Para regenerarlos: `FINCEPT_DATA_MODE=live .venv/bin/python -m server.fund.export_agents --capital 200 --max-order 200 --plan fixed`.
 
+### Plugin de Claude Code `fincept-fondo` (el equipo como subagentes)
+
+`plugins/fincept-fondo/` convierte a los 7 agentes del fondo en subagentes de Claude Code. Cada uno lleva sus skills, su misión, su método, su entregable, sus papers de la base de conocimiento, sus funciones de `quantfin` y su código. La skill `comite-fincept` los coordina: primero el equipo de investigación en paralelo, después el comité de inversión y por último el acta final. Ninguno aprueba ni envía órdenes reales.
+
+- **Instalación.** Está instalado en este proyecto (`.claude/settings.json`); al abrir el repositorio en Claude Code se carga solo. En otra máquina: `/plugin marketplace add <ruta del repositorio>` y `/plugin install fincept-fondo@fincept`.
+- **Datos.** Los agentes trabajan con `python -m server.fund.team <rol>`, que convoca el comité en paper sobre una base de datos en memoria y muestra la parte de cada agente. Con `--out acta.json` se guarda el acta una vez y con `--from` cada agente la lee.
+- **Regenerarlo.** Tras cambiar el fondo o la base de conocimiento, ejecuta `.venv/bin/python -m server.fund.build_plugin`; un test avisa si el plugin queda desactualizado.
+
 ### Modo real con Interactive Brokers
 
 El fondo puede operar con dinero real en tu cuenta de IBKR a través de la **Client Portal Web API** (`server/fund/ibkr.py`, `server/fund/live.py`). Viene **apagado**.
@@ -273,7 +281,7 @@ Barra de comandos (`/` o `Ctrl+K`): `AAPL` · `SAN.MC GO` · `BUY 10 NVDA` · `S
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest -q      # 197 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
+.venv/bin/python -m pytest -q      # 202 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
 ```
 
 ### Evaluación del servidor MCP
