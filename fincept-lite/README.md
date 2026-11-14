@@ -125,6 +125,17 @@ Cada acta incluye `team`: lo que aportó cada agente y qué pasó con cada recom
 
 **Ejecución:** el comité solo **propone**. Para ejecutar hace falta el botón de aprobar (la propuesta caduca a los 15 minutos), la tool MCP `fund_execute_run` (con permiso de acciones y aprobación en la terminal) o el **autopiloto**, que hay que activar a mano (mínimo cada 15 minutos). La **parada de emergencia** bloquea las compras y apaga el autopiloto. Todo ciclo queda auditado en `fund_runs`, también lo bloqueado y lo rechazado.
 
+### Monitores multi-mercado (pantalla MARKETS, F2)
+
+La pantalla MARKETS cubre 101 instrumentos en siete clases, con una pestaña por clase: índices mundiales, acciones (EE. UU., México, Europa y Asia), divisas, tasas y renta fija, materias primas, cripto y los ETF del fondo.
+
+- **Cada fila** muestra último precio, variación del día, rendimiento a 5 días, 1 mes, 3 meses, en el año y a 1 año, la posición en el rango de 52 semanas y un minigráfico de 30 días. Los rendimientos del Tesoro se comparan en puntos básicos.
+- **Tasas** dibuja la curva del Tesoro de EE. UU. con su ajuste Nelson-Siegel (`quantfin`). Con datos simulados no se dibuja.
+- **Divisas** añade la matriz de cruces entre USD, EUR, GBP, JPY, CHF, CAD, AUD y MXN.
+- **Al pulsar una fila** se abre el instrumento en EQUITY, que ahora incluye una ficha con rendimientos, riesgo (volatilidad, Sharpe, caída máxima, CVaR, beta frente al S&P 500, SADF) y la opinión del fondo: veredicto del comité, peso objetivo y estrategia entrenada.
+
+El catálogo está en `server/universe.py` y la API en `server/vx.py` (`GET /vx/universe`, `/vx/monitor/{clase}`, `/vx/security/{símbolo}`).
+
 ### Agentes ya entrenados (`agentes/`)
 
 El repo incluye a los agentes ya entrenados con 5 años de datos reales, sin necesidad de abrir la terminal:
@@ -282,7 +293,7 @@ Barra de comandos (`/` o `Ctrl+K`): `AAPL` · `SAN.MC GO` · `BUY 10 NVDA` · `S
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest -q      # 204 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
+.venv/bin/python -m pytest -q      # 216 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
 ```
 
 ### Evaluación del servidor MCP

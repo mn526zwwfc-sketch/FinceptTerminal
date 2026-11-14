@@ -270,9 +270,52 @@ const SCREENS = {
     ctx.sub(`paper:${S.user.id}:account`, paint);
   } },
 
-  markets: { key: "F2", label: "MARKETS", render(el, ctx) {
-    el.innerHTML = `<div class="grid g3">${Object.keys(SETS).map((k) => panel(esc(k), "", `<small>${SETS[k].length}</small>`)).join("")}</div>`;
-    $$(".panel .body", el).forEach((b, i) => { b.classList.add("flush"); liveQuotes(ctx, b, Object.values(SETS)[i], { cols: ["sym", "last", "chg", "pct", "high", "low"] }); });
+  markets: { key: "F2", label: "MARKETS", async render(el, ctx, arg) {
+    const CLASSES = [["indices", "Índices"], ["acciones", "Acciones"], ["divisas", "Divisas"], ["tasas", "Tasas"], ["materias", "Materias primas"], ["cripto", "Cripto"], ["etf", "ETF del fondo"]];
+    let cur = CLASSES.some(([k]) => k === arg) ? arg : store.get("mkt") || "indices";
+    el.innerHTML = `<div class="row" style="margin-bottom:6px"><div class="seg" id="mk-tabs">${CLASSES.map(([k, l]) => `<button data-k="${k}">${l}</button>`).join("")}</div><span class="sp" style="flex:1"></span><span class="dim" id="mk-info"></span></div>
+      ${panel('<span id="mk-title">Mercados</span>', '<div class="empty">Cargando…</div>', "<small>pulsa una fila para abrir el instrumento</small>")}`;
+    const body = $(".panel .body", el); body.classList.add("flush");
+    const pc = (v, y) => (v == null ? '<span class="dim">—</span>' : y ? `<span class="${cls(v)}">${v >= 0 ? "+" : ""}${v.toFixed(0)} pb</span>` : `<span class="${cls(v)}">${fmtFrac(v)}</span>`);
+    const spark = (vals) => {
+      if (!vals || vals.length < 2) return "";
+      const lo = Math.min(...vals), hi = Math.max(...vals), w = 84, h = 18;
+      const pts = vals.map((v, i) => `${((i / (vals.length - 1)) * w).toFixed(1)},${(h - 1 - (hi > lo ? (v - lo) / (hi - lo) : 0.5) * (h - 2)).toFixed(1)}`).join(" ");
+      return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke-width="1.3" stroke="var(--${vals[vals.length - 1] >= vals[0] ? "pos" : "neg"})"/></svg>`;
+    };
+    const curve = (c) => {
+      if (!c) return "";
+      const W = 560, H = 170, L = 40, R = 10, T = 10, B = 22, all = [...c.points, ...(c.fit || [])].map((p) => p.yield);
+      const lo = Math.floor((Math.min(...all) - 0.1) * 4) / 4, hi = Math.ceil((Math.max(...all) + 0.1) * 4) / 4;
+      const x = (t) => L + ((Math.log10(t) - Math.log10(0.25)) / (Math.log10(30) - Math.log10(0.25))) * (W - L - R), y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+      const ticks = [0, 1, 2, 3, 4].map((i) => lo + ((hi - lo) * i) / 4);
+      return `<div style="padding:8px"><div class="muted">Curva del Tesoro de EE. UU.${c.slope_10y_3m != null ? ` · pendiente 10 años − 3 meses: <span class="${cls(c.slope_10y_3m)}">${(c.slope_10y_3m * 100).toFixed(0)} pb</span>` : ""}</div>
+        <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:640px;display:block">${ticks.map((v) => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--border-dim)"/><text x="${L - 5}" y="${y(v) + 3}" text-anchor="end" fill="var(--text-3)" font-size="10">${v.toFixed(2)}%</text>`).join("")}
+        ${[[0.25, "3M"], [1, "1A"], [2, "2A"], [5, "5A"], [10, "10A"], [30, "30A"]].map(([t, l]) => `<text x="${x(t)}" y="${H - 6}" text-anchor="middle" fill="var(--text-3)" font-size="10">${l}</text>`).join("")}
+        ${c.fit ? `<polyline fill="none" stroke="var(--cyan)" stroke-width="1.5" points="${c.fit.map((p) => `${x(p.tenor).toFixed(1)},${y(p.yield).toFixed(1)}`).join(" ")}"/>` : ""}
+        ${c.points.map((p) => `<circle cx="${x(p.tenor)}" cy="${y(p.yield)}" r="3.5" fill="var(--accent)"/>`).join("")}</svg>
+        <div class="dim">Puntos: rendimientos observados. Línea: ajuste Nelson-Siegel (quantfin) con ${c.points.length} plazos, orientativo.</div></div>`;
+    };
+    const cross = (m) => (!m ? "" : `<div style="padding:8px 8px 0" class="muted">Cruces: 1 unidad de la fila en la moneda de la columna</div><table><thead><tr><th></th>${m.ccys.map((c) => `<th class="num">${c}</th>`).join("")}</tr></thead><tbody>${m.matrix.map((r, i) => `<tr><td class="sym">${m.ccys[i]}</td>${r.map((v, j) => `<td class="num ${i === j ? "dim" : ""}">${i === j ? "1" : fmtN(v, v >= 100 ? 2 : v >= 1 ? 4 : 5)}</td>`).join("")}</tr>`).join("")}</tbody></table>`);
+    const load = async () => {
+      $$("#mk-tabs button", el).forEach((b) => b.classList.toggle("on", b.dataset.k === cur));
+      store.set("mkt", cur);
+      const r = await api(`/vx/monitor/${cur}`);
+      if (ctx.disposed) return;
+      if (!r.success) { body.innerHTML = `<div class="empty">${esc(r.message)}</div>`; return; }
+      const d = r.data, up = d.rows.filter((x) => x.chg > 0).length, dn = d.rows.filter((x) => x.chg < 0).length;
+      $("#mk-title").textContent = d.name;
+      $("#mk-info").innerHTML = `${d.rows.length} instrumentos · <span class="pos">${up} suben</span> · <span class="neg">${dn} bajan</span> · ${d.as_of ? new Date(d.as_of * 1000).toLocaleString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : ""} ${d.sources.includes("sim") ? '<span class="badge sim">SIM</span>' : '<span class="badge live">YAHOO</span>'}`;
+      let g = null;
+      body.innerHTML = `${cur === "tasas" ? curve(d.curve) : ""}<table><thead><tr><th>Instrumento</th><th class="num">Último</th><th class="num">Var</th><th class="num">Var %</th><th class="num">5 d</th><th class="num">1 m</th><th class="num">3 m</th><th class="num">Año</th><th class="num">1 a</th><th>52 sem.</th><th>30 días</th></tr></thead><tbody>${d.rows.map((x) => `${x.group !== g ? `<tr><td colspan="11" class="muted" style="background:var(--bg-raised);font-weight:700">${esc((g = x.group)).toUpperCase()}</td></tr>` : ""}<tr class="click" data-sym="${esc(x.symbol)}"><td>${esc(x.name)} <span class="sym" style="font-weight:400;font-size:10px">${esc(x.symbol)}</span>${x.source === "sim" ? ' <span class="chip">SIM</span>' : ""}</td>
+        <td class="num">${x.is_yield ? x.last.toFixed(3) + "%" : fmtPx(x.last)}</td><td class="num ${cls(x.chg)}">${x.is_yield ? (x.chg >= 0 ? "+" : "") + (x.chg * 100).toFixed(1) + " pb" : fmtChg(x.chg, x.last)}</td><td class="num ${cls(x.chg_pct)}">${fmtPct(x.chg_pct)}</td>
+        <td class="num">${pc(x.p5d, x.is_yield)}</td><td class="num">${pc(x.p1m, x.is_yield)}</td><td class="num">${pc(x.p3m, x.is_yield)}</td><td class="num">${pc(x.ytd, x.is_yield)}</td><td class="num">${pc(x.p1y, x.is_yield)}</td>
+        <td><span class="rng"><i style="left:${Math.max(0, Math.min(1, x.pos52 ?? 0.5)) * 100}%"></i></span></td><td>${spark(x.spark)}</td></tr>`).join("")}</tbody></table>${cur === "divisas" ? cross(d.cross) : ""}`;
+    };
+    ctx.on($("#mk-tabs"), "click", (e) => { const k = e.target.dataset.k; if (k) { cur = k; body.innerHTML = '<div class="empty">Cargando…</div>'; load(); } });
+    ctx.on(body, "click", (e) => { const tr = e.target.closest("tr[data-sym]"); if (tr) go("equity", tr.dataset.sym); });
+    ctx.every(() => { if (document.visibilityState === "visible") load(); }, 90000);
+    await load();
   } },
 
   news: { key: "F3", label: "NEWS", render(el, ctx) {
@@ -532,8 +575,25 @@ const SCREENS = {
     S.focus = sym; store.set("focus", sym);
     el.innerHTML = `<div class="quotehead" id="e-head"><span class="sym" style="font-size:20px">${esc(sym)}</span><span class="nm">…</span></div>
       <div class="grid dash">${panel("Datos", "", "")}${panel("Gráfico", "", "", "chartpanel")}${panel("Ticket paper", "")}
-      ${panel("Técnico y riesgo", '<div class="empty">…</div>')}${panel("Noticias", '<div class="empty">…</div>', "", "span2")}</div>`;
-    const [stEl, chEl, tkEl, taEl, nwEl] = $$(".panel .body", el);
+      ${panel("Técnico y riesgo", '<div class="empty">…</div>')}${panel("Noticias", '<div class="empty">…</div>', "", "span2")}
+      ${panel("Ficha · rendimiento, riesgo y opinión del fondo", '<div class="empty">…</div>', "", "span3")}</div>`;
+    const [stEl, chEl, tkEl, taEl, nwEl, fiEl] = $$(".panel .body", el);
+    api(`/vx/security/${encodeURIComponent(sym)}`).then((r) => {
+      if (ctx.disposed) return;
+      if (!r.success) { fiEl.innerHTML = `<div class="empty">${esc(r.message)}</div>`; return; }
+      const d = r.data, s = d.stats, g = s.signals, f = d.fund, y = s.is_yield;
+      const P = (v) => (v == null ? "—" : y ? `<span class="${cls(v)}">${v >= 0 ? "+" : ""}${v.toFixed(0)} pb</span>` : `<span class="${cls(v)}">${fmtFrac(v)}</span>`);
+      const tb = (rows) => `<table><tbody>${rows.filter(Boolean).map(([l, v]) => `<tr><td class="muted">${l}</td><td class="num">${v}</td></tr>`).join("")}</tbody></table>`;
+      const DESKS = { equities: "Renta variable", rates: "Renta fija", commodities: "Materias primas", fx: "Divisas", crypto: "Cripto" };
+      const fund = !f ? '<div class="dim" style="padding:6px 0">Este instrumento no está en el universo del fondo.</div>'
+        : `<div class="row" style="margin:4px 0"><span class="chip">${esc(DESKS[f.desk] || f.desk)}</span>${f.view ? `<span class="chip ${f.view.verdict === "alcista" ? "positive" : f.view.verdict === "bajista" ? "negative" : ""}">comité: ${esc(f.view.verdict)}</span><span class="chip">peso objetivo ${f.view.target ? (f.view.target * 100).toFixed(1) + "%" : "0%"}</span>` : '<span class="dim">el comité aún no ha opinado</span>'}</div>
+          ${f.view ? f.view.bull.map((x) => `<div><span class="pos">▲</span> <span class="muted">${esc(x)}</span></div>`).join("") + f.view.bear.map((x) => `<div><span class="neg">▼</span> <span class="muted">${esc(x)}</span></div>`).join("") : ""}
+          ${f.book ? `<div class="row" style="margin:6px 0 2px"><span class="chip ${f.book.validated ? "positive" : ""}">estrategia: ${esc(f.book.verdict || "")}</span></div>${tb([["Conjunto", f.book.members.map((m) => `${esc(m.config)} ×${fmtN(m.weight)}`).join("<br>") || "—"], ["Sharpe prueba / comprar y mantener", `${fmtN(f.book.test_sharpe)} / ${fmtN(f.book.buy_hold_sharpe)}`]])}` : ""}`;
+      fiEl.innerHTML = `<div class="row" style="margin-bottom:6px">${d.class_name ? `<span class="chip">${esc(d.class_name)} · ${esc(d.group)}</span>` : ""}${g && g.bubble ? '<span class="chip negative">régimen explosivo (SADF)</span>' : ""}${g && g.panic_state ? '<span class="chip negative">estado de pánico</span>' : ""}</div>
+        <div class="grid g3"><div><div class="muted">RENDIMIENTO</div>${tb([["5 días", P(s.p5d)], ["1 mes", P(s.p1m)], ["3 meses", P(s.p3m)], ["6 meses", y ? "—" : P(s.p6m)], ["En el año", P(s.ytd)], ["1 año", P(s.p1y)]])}</div>
+        <div><div class="muted">RIESGO · 1 AÑO</div>${tb([["Vol. 20 / 60 d", `${s.vol20 != null ? (s.vol20 * 100).toFixed(1) : "—"}% / ${s.vol60 != null ? (s.vol60 * 100).toFixed(1) : "—"}%`], ["Sharpe / Sortino", `${fmtN(s.sharpe)} / ${fmtN(s.sortino)}`], ["Caída máxima", `<span class="neg">${fmtFrac(s.max_drawdown)}</span>`], ["CVaR 95 % (1 d)", s.cvar95 != null ? (s.cvar95 * 100).toFixed(2) + "%" : "—"], ["Beta / corr. S&P 500", s.beta === undefined ? "referencia" : `${fmtN(s.beta)} / ${fmtN(s.corr)}`], g ? ["Momentum 12-1", P(g.mom_12_1)] : null, g ? ["SADF (burbuja > 1,5)", `<span class="${g.bubble ? "neg" : ""}">${fmtN(g.sadf)}</span>`] : null])}</div>
+        <div><div class="muted">FONDO DE AGENTES</div>${fund}</div></div>`;
+    });
     chEl.classList.add("flush");
     chartPanel(ctx, chEl, sym, { period: "6mo", height: 330 });
     orderTicket(ctx, tkEl, sym);

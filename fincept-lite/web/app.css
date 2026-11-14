@@ -201,3 +201,9 @@ pre.code { background: var(--bg-base); border: 1px solid var(--border-med); padd
   .span2 { grid-column: auto; }
   .chat { height: calc(100vh - 140px); }
 }
+
+/* monitores multi-mercado */
+.spark { width: 84px; height: 18px; display: block; }
+.rng { position: relative; display: inline-block; width: 70px; height: 4px; background: var(--border-bright); vertical-align: middle; }
+.rng i { position: absolute; top: -3px; width: 2px; height: 10px; background: var(--text); }
+.span3 { grid-column: 1 / -1; }

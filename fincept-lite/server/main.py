@@ -21,7 +21,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import ai_chat, auth, mcp_server, news, routes, watchlists
+from . import ai_chat, auth, mcp_server, news, routes, vx, watchlists
 from .fund import engine as fund_engine
 from .fund import routes as fund_routes
 from .auth import InsufficientCredits, insufficient_credits_response, user_from_api_key
@@ -102,7 +102,8 @@ async def _credits_handler(_req, exc: InsufficientCredits):
     return insufficient_credits_response(exc)
 
 
-for r in (auth.router, watchlists.router, routes.router, ai_chat.router, mcp_server.router, fund_routes.router):
+for r in (auth.router, watchlists.router, routes.router, ai_chat.router, mcp_server.router, fund_routes.router,
+          vx.router):
     app.include_router(r)
 
 
