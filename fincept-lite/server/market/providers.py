@@ -353,6 +353,36 @@ class MarketService:
         self.sim = SimProvider()
         self.yahoo = YahooProvider()
         self._quote_cache: dict[str, tuple[float, dict]] = {}
+        self._stream: dict[str, dict] = {}  # último tick en tiempo real por símbolo (market/stream.py)
+        self._base: dict[str, tuple[float, dict]] = {}
+        self._alive: dict[str, float] = {}  # último mensaje recibido de cada flujo
+
+    # ── tiempo real ─────────────────────────────────────────────────────────
+    def set_stream_quote(self, quote: dict) -> None:
+        self._stream[quote["symbol"]] = quote
+        self._alive[quote["source"]] = time.time()
+
+    def stream_quote(self, symbol: str, max_age: float = 20.0) -> dict | None:
+        """Último precio en tiempo real del símbolo, mientras su flujo siga vivo.
+
+        Un par poco negociado puede pasar un rato sin operaciones: su último precio sigue siendo el actual
+        si el flujo está recibiendo datos. Si el flujo calla más de `max_age` segundos, se deja de usar."""
+        q = self._stream.get(symbol)
+        if not q or time.time() - self._alive.get(q["source"], 0.0) > max_age or time.time() - q["ts"] > 900:
+            return None
+        return q
+
+    async def base_quote(self, symbol: str) -> dict | None:
+        """Cotización del proveedor normal (nombre, cierre previo, rango), para vestir un tick de streaming."""
+        hit = self._base.get(symbol)
+        if hit and time.time() - hit[0] < 300:
+            return hit[1]
+        try:
+            q = await self.yahoo.quote(symbol)
+        except ProviderError:
+            return hit[1] if hit else None
+        self._base[symbol] = (time.time(), q)
+        return q
 
     @property
     def primary(self):
@@ -368,6 +398,9 @@ class MarketService:
 
     async def quote(self, symbol: str, max_age: float | None = None) -> dict:
         symbol = normalize_symbol(symbol)
+        live_tick = self.stream_quote(symbol) if settings.live else None
+        if live_tick:  # hay tiempo real: gana sobre la cotización con retraso
+            return live_tick
         ttl = (settings.quote_ttl_live_ms if settings.live else settings.quote_ttl_sim_ms) / 1000
         ttl = ttl if max_age is None else max_age
         hit = self._quote_cache.get(symbol)

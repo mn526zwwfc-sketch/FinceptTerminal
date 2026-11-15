@@ -30,7 +30,8 @@ from ..market.providers import market
 from . import agents as A
 from .ibkr import IBKRClient, IBKRError
 
-LIVE_SOURCE = "yahoo"  # proveedor de datos reales; "sim" nunca sirve para dinero real
+LIVE_SOURCE = "yahoo"  # proveedor de los históricos reales con que se entrena
+REAL_SOURCES = {"yahoo", "alpaca", "kraken"}  # precios reales (con retraso o en tiempo real); "sim" nunca
 SLIPPAGE_BPS = 5.0
 # Comisiones de IBKR Pro para acciones/ETF de EE. UU. (USD). Compruébalas en tu cuenta: pueden cambiar.
 COMMISSION_PLANS = {"fixed": {"per_share": 0.005, "min": 1.00, "max_pct": 0.01},
@@ -276,7 +277,7 @@ def plan(uid: int, run_id: int, target: dict[str, float], views: dict, prices: d
     out = []
     for o in raw:  # ventas primero (plan_orders ya las ordena así)
         s, side, px = o["symbol"], o["side"], prices.get(o["symbol"])
-        if sources.get(s) != LIVE_SOURCE:
+        if sources.get(s) not in REAL_SOURCES:
             checks.append({"check": f"real {s}", "status": "blocked", "detail": "precio no real (fuente simulada)"})
             continue
         if side == "buy" and not allow_buys:
@@ -377,7 +378,7 @@ async def approve(uid: int, order_id: int, confirm: str, run_finished: float, ha
     if not rec["ok"]:
         block("no se pudo conciliar con IBKR: " + rec.get("error", ""))
     q = await market.quote(o["symbol"])
-    if q.get("source") != LIVE_SOURCE:
+    if q.get("source") not in REAL_SOURCES:
         block("el precio actual no viene de una fuente real")
     if abs(q["price"] / o["ref_price"] - 1) > MAX_DRIFT:
         block(f"el precio se ha movido más de un {MAX_DRIFT:.0%} desde la propuesta")

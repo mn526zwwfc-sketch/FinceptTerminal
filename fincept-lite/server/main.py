@@ -29,6 +29,7 @@ from .config import ROOT, VERSION, settings
 from .datahub import Subscriber, TopicPolicy, hub, topic_allowed
 from .db import get_db
 from .market.providers import market
+from .market.stream import streams
 from .paper import matcher
 
 WEB = ROOT / "web"
@@ -86,10 +87,16 @@ async def lifespan(app: FastAPI):
     hub.start()
     await matcher.restore()
     autopilot = asyncio.create_task(fund_engine.autopilot_loop())
+    if settings.live:  # precios en tiempo real: cripto (Kraken) y, con clave, acciones de EE. UU. (Alpaca)
+        from . import universe
+        from .fund.agents import UNIVERSE
+        crypto = [s for s, _, _ in universe.symbols("cripto")] + [a.symbol for a in UNIVERSE if a.desk == "crypto"]
+        streams.start(market, hub, list(dict.fromkeys(crypto)))
     mode = "LIVE (Yahoo/RSS/DBnomics, fallback sim)" if settings.live else "SIM"
     print(f"[fincept-lite] v{VERSION} · datos {mode} · http://{settings.host}:{settings.port}", flush=True)
     yield
     autopilot.cancel()
+    await streams.stop()
     await hub.stop()
 
 
@@ -112,6 +119,7 @@ async def health():
     return {"ok": True, "status": "healthy", "name": "fincept-terminal", "version": VERSION,
             "data_mode": settings.data_mode, "ai_mode": "claude" if ai_chat.claude_available() else "offline",
             "market_provider": market.yahoo.status() if settings.live else {"provider": "sim", "state": "ok"},
+            "streams": streams.status(),
             "time": int(time.time())}
 
 

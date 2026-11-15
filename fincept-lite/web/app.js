@@ -33,6 +33,7 @@ function md(text) { // markdown mínimo y seguro (escapa primero)
     .replace(/`([^`]+)`/g, "<code>$1</code>");
 }
 
+const SRC_BADGE = (s) => (s === "sim" ? '<span class="badge sim">DATOS SIMULADOS</span>' : s === "kraken" ? '<span class="badge live">TIEMPO REAL · KRAKEN</span>' : s === "alpaca" ? '<span class="badge live">TIEMPO REAL · IEX</span>' : '<span class="badge live">YAHOO · CON RETRASO</span>');
 const S = { apiKey: null, session: null, user: null, health: {}, focus: store.get("focus") || "AAPL", screen: null };
 
 // ── API (cabeceras X-API-Key / X-Session-Token como el HttpClient del terminal) ──
@@ -146,7 +147,7 @@ function liveQuotes(ctx, container, symbols, { cols = ["sym", "last", "chg", "pc
     ctx.sub(`market:quote:${s}`, (q, m) => {
       if (!q) { if (m && m.type === "error" && !m.stale) tr.querySelector('[data-c="last"]').textContent = "n/d"; return; }
       const set = (c, html, k) => { const td = tr.querySelector(`[data-c="${c}"]`); if (td) { td.innerHTML = html; if (k) td.className = "num " + k; } };
-      set("sym", esc(q.symbol) + (q.source === "sim" ? '<span class="src">SIM</span>' : ""));
+      set("sym", esc(q.symbol) + (q.source === "sim" ? '<span class="src">SIM</span>' : q.source === "kraken" || q.source === "alpaca" ? '<span class="src" style="color:var(--pos)" title="Tiempo real">RT</span>' : ""));
       set("name", esc(q.name));
       set("last", fmtPx(q.price));
       set("chg", fmtChg(q.change, q.price), cls(q.change));
@@ -305,16 +306,16 @@ const SCREENS = {
       if (!r.success) { body.innerHTML = `<div class="empty">${esc(r.message)}</div>`; return; }
       const d = r.data, up = d.rows.filter((x) => x.chg > 0).length, dn = d.rows.filter((x) => x.chg < 0).length;
       $("#mk-title").textContent = d.name;
-      $("#mk-info").innerHTML = `${d.rows.length} instrumentos · <span class="pos">${up} suben</span> · <span class="neg">${dn} bajan</span> · ${d.as_of ? new Date(d.as_of * 1000).toLocaleString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : ""} ${d.sources.includes("sim") ? '<span class="badge sim">SIM</span>' : '<span class="badge live">YAHOO</span>'}`;
+      $("#mk-info").innerHTML = `${d.rows.length} instrumentos · <span class="pos">${up} suben</span> · <span class="neg">${dn} bajan</span> · ${d.as_of ? new Date(d.as_of * 1000).toLocaleString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : ""} ${d.sources.includes("sim") ? '<span class="badge sim">SIM</span>' : d.sources.some((x) => x === "kraken" || x === "alpaca") ? '<span class="badge live">TIEMPO REAL</span>' : '<span class="badge live">YAHOO</span>'}`;
       let g = null;
-      body.innerHTML = `${cur === "tasas" ? curve(d.curve) : ""}<table><thead><tr><th>Instrumento</th><th class="num">Último</th><th class="num">Var</th><th class="num">Var %</th><th class="num">5 d</th><th class="num">1 m</th><th class="num">3 m</th><th class="num">Año</th><th class="num">1 a</th><th>52 sem.</th><th>30 días</th></tr></thead><tbody>${d.rows.map((x) => `${x.group !== g ? `<tr><td colspan="11" class="muted" style="background:var(--bg-raised);font-weight:700">${esc((g = x.group)).toUpperCase()}</td></tr>` : ""}<tr class="click" data-sym="${esc(x.symbol)}"><td>${esc(x.name)} <span class="sym" style="font-weight:400;font-size:10px">${esc(x.symbol)}</span>${x.source === "sim" ? ' <span class="chip">SIM</span>' : ""}</td>
+      body.innerHTML = `${cur === "tasas" ? curve(d.curve) : ""}<table><thead><tr><th>Instrumento</th><th class="num">Último</th><th class="num">Var</th><th class="num">Var %</th><th class="num">5 d</th><th class="num">1 m</th><th class="num">3 m</th><th class="num">Año</th><th class="num">1 a</th><th>52 sem.</th><th>30 días</th></tr></thead><tbody>${d.rows.map((x) => `${x.group !== g ? `<tr><td colspan="11" class="muted" style="background:var(--bg-raised);font-weight:700">${esc((g = x.group)).toUpperCase()}</td></tr>` : ""}<tr class="click" data-sym="${esc(x.symbol)}"><td>${esc(x.name)} <span class="sym" style="font-weight:400;font-size:10px">${esc(x.symbol)}</span>${x.source === "sim" ? ' <span class="chip">SIM</span>' : x.source === "kraken" || x.source === "alpaca" ? ' <span class="chip positive">RT</span>' : ""}</td>
         <td class="num">${x.is_yield ? x.last.toFixed(3) + "%" : fmtPx(x.last)}</td><td class="num ${cls(x.chg)}">${x.is_yield ? (x.chg >= 0 ? "+" : "") + (x.chg * 100).toFixed(1) + " pb" : fmtChg(x.chg, x.last)}</td><td class="num ${cls(x.chg_pct)}">${fmtPct(x.chg_pct)}</td>
         <td class="num">${pc(x.p5d, x.is_yield)}</td><td class="num">${pc(x.p1m, x.is_yield)}</td><td class="num">${pc(x.p3m, x.is_yield)}</td><td class="num">${pc(x.ytd, x.is_yield)}</td><td class="num">${pc(x.p1y, x.is_yield)}</td>
         <td><span class="rng"><i style="left:${Math.max(0, Math.min(1, x.pos52 ?? 0.5)) * 100}%"></i></span></td><td>${spark(x.spark)}</td></tr>`).join("")}</tbody></table>${cur === "divisas" ? cross(d.cross) : ""}`;
     };
     ctx.on($("#mk-tabs"), "click", (e) => { const k = e.target.dataset.k; if (k) { cur = k; body.innerHTML = '<div class="empty">Cargando…</div>'; load(); } });
     ctx.on(body, "click", (e) => { const tr = e.target.closest("tr[data-sym]"); if (tr) go("equity", tr.dataset.sym); });
-    ctx.every(() => { if (document.visibilityState === "visible") load(); }, 90000);
+    ctx.every(() => { if (document.visibilityState === "visible") load(); }, 15000);
     await load();
   } },
 
@@ -601,7 +602,7 @@ const SCREENS = {
       if (!q) return;
       $("#e-head").innerHTML = `<span class="sym" style="font-size:20px">${esc(q.symbol)}</span><span class="nm">${esc(q.name)} · ${esc(q.exchange)} · ${esc(q.currency)}</span>
         <span class="px">${fmtPx(q.price)}</span><span class="${cls(q.change)}" style="font-size:16px">${q.change >= 0 ? "▲" : "▼"} ${fmtChg(Math.abs(q.change), q.price).replace("+", "")} (${fmtPct(q.change_pct)})</span>
-        ${q.source === "sim" ? '<span class="badge sim">DATOS SIMULADOS</span>' : '<span class="badge live">YAHOO</span>'}<span class="dim">actualizado ${new Date(q.ts * 1000).toLocaleTimeString("es-ES")}</span>`;
+        ${SRC_BADGE(q.source)}<span class="dim">actualizado ${new Date(q.ts * 1000).toLocaleTimeString("es-ES")}</span>`;
       stEl.innerHTML = `<table><tbody>${[["Apertura", fmtPx(q.open)], ["Máximo", fmtPx(q.high)], ["Mínimo", fmtPx(q.low)], ["Cierre anterior", fmtPx(q.prev_close)], ["Volumen", fmtVol(q.volume)], ["Máx. 52 sem.", fmtPx(q.fifty_two_week_high)], ["Mín. 52 sem.", fmtPx(q.fifty_two_week_low)], ["Tipo", esc(q.type || "—")]].map(([l, v]) => `<tr><td class="muted">${l}</td><td class="num">${v}</td></tr>`).join("")}</tbody></table>`;
     });
     const [t, r, n] = await Promise.all([tool("get_technicals", { symbol: sym }), api(`/market/risk/${encodeURIComponent(sym)}`), api(`/market/news/${encodeURIComponent(sym)}?limit=12`)]);
@@ -1149,7 +1150,8 @@ async function refreshUser() {
 function paintBadges() {
   const h = S.health, mp = h.market_provider || {};
   const data = h.data_mode === "sim" ? '<span class="badge sim">DATOS SIM</span>' : mp.state === "cooldown" ? `<span class="badge sim" title="Yahoo devolvió 429; reintento en ${mp.cooldown_seconds}s">YAHOO PAUSADO · SIM</span>` : '<span class="badge live">LIVE · YAHOO</span>';
-  $("#badges").innerHTML = data + `<span class="badge ai">IA ${h.ai_mode === "claude" ? "CLAUDE" : "OFFLINE"}</span>`;
+  const rt = Object.entries(h.streams || {}).filter(([, v]) => v.state === "en vivo").map(([k]) => k.toUpperCase());
+  $("#badges").innerHTML = data + (rt.length ? `<span class="badge live" title="Precios en tiempo real por WebSocket">TIEMPO REAL · ${rt.join(" + ")}</span>` : "") + `<span class="badge ai">IA ${h.ai_mode === "claude" ? "CLAUDE" : "OFFLINE"}</span>`;
   $("#ver").textContent = "v" + (h.version || "");
 }
 async function pollHealth() { try { S.health = await (await fetch("/health")).json(); paintBadges(); } catch { /* */ } }

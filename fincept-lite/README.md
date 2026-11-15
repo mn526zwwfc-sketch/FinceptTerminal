@@ -136,6 +136,15 @@ La pantalla MARKETS cubre 101 instrumentos en siete clases, con una pestaña por
 
 El catálogo está en `server/universe.py` y la API en `server/vx.py` (`GET /vx/universe`, `/vx/monitor/{clase}`, `/vx/security/{símbolo}`).
 
+### Precios en tiempo real
+
+Por defecto los precios vienen de Yahoo Finance, con retraso. Dos flujos por WebSocket dan tiempo real (`server/market/stream.py`), igual que hace el terminal original con los brókers:
+
+- **Cripto (Kraken), sin clave.** Se activa solo con `FINCEPT_DATA_MODE=live`: Bitcoin, Ethereum, Solana, BNB, XRP, Cardano y Dogecoin. La variación es la de las últimas 24 horas.
+- **Acciones y ETF de EE. UU. (Alpaca), con tu clave gratuita.** Exporta `ALPACA_API_KEY` y `ALPACA_API_SECRET` antes de arrancar. Usa el feed IEX: el precio es real y al instante, pero viene de una sola bolsa, no de la cinta consolidada. Sigue hasta 30 símbolos de los que la terminal está mirando.
+
+Los instrumentos en tiempo real llevan la marca `RT` y la insignia «TIEMPO REAL» en la barra superior. Si un flujo se cae, se reconecta solo y mientras tanto esas cotizaciones vuelven a Yahoo. `FINCEPT_STREAMS=0` los desactiva. Índices, divisas, tasas, materias primas y acciones de fuera de EE. UU. siguen con Yahoo.
+
 ### Agentes ya entrenados (`agentes/`)
 
 El repo incluye a los agentes ya entrenados con 5 años de datos reales, sin necesidad de abrir la terminal:
@@ -267,6 +276,8 @@ ANTHROPIC_API_KEY=sk-ant-… ./run.sh       # chat IA con Claude (Opus 5.5, tool
 | `FINCEPT_DEV` | `1` | Devuelve el OTP en la respuesta y crea el usuario demo. **Ponlo a `0` fuera de local.** |
 | `FINCEPT_AI` | — | `offline` fuerza el agente sin LLM |
 | `FINCEPT_AI_MODEL` / `FINCEPT_AI_EFFORT` | `claude-opus-5-5` / `medium` | Modelo y esfuerzo del chat |
+| `ALPACA_API_KEY` / `ALPACA_API_SECRET` | — | Clave gratuita de Alpaca: acciones y ETF de EE. UU. en tiempo real (feed IEX) |
+| `FINCEPT_STREAMS` | `1` | `0` desactiva los flujos en tiempo real (Kraken y Alpaca) |
 | `FRED_API_KEY` | — | Clave gratuita de FRED. Con ella el fondo usa paro (UNRATE), tipo de la Fed (FEDFUNDS) e IPC de EE. UU. (CPIAUCSL, interanual) al día; sin ella usa DBnomics, cuyos datos de paro e inflación van con meses de retraso |
 | `FINCEPT_IBKR_URL` | `https://localhost:5000/v1/api` | Gateway de la Client Portal Web API de IBKR. Solo se acepta loopback |
 | `FINCEPT_IBKR_CA` | — | Certificado del gateway; vacío = certificado autofirmado aceptado solo en loopback |
@@ -293,7 +304,7 @@ Barra de comandos (`/` o `Ctrl+K`): `AAPL` · `SAN.MC GO` · `BUY 10 NVDA` · `S
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest -q      # 216 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
+.venv/bin/python -m pytest -q      # 222 tests: auth, /v1, mercado, paper, DataHub, MCP (+ cliente oficial del SDK), backtesting, fondo multi-agente, investigación, quantfin, analítica, chat
 ```
 
 ### Evaluación del servidor MCP

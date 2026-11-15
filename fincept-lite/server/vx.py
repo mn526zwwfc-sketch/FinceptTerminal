@@ -88,6 +88,12 @@ async def _rows(items: list[tuple[str, str, str]]) -> list[dict]:
     for (s, n, g), h in zip(items, res):
         r = row(s, n, g, h) if isinstance(h, dict) else None
         if r:
+            tick = market.stream_quote(s)
+            if tick and r["source"] != "sim":  # precio en tiempo real sobre el histórico diario
+                prev = h["candles"][-2]["c"] if tick["source"] == "alpaca" else tick["prev_close"]
+                r |= {"last": _r(tick["price"]), "chg": _r(tick["price"] - prev),
+                      "chg_pct": _r((tick["price"] / prev - 1) * 100 if prev else 0.0, 4),
+                      "source": tick["source"], "t": tick["ts"]}
             out.append(r)
     return out
 
